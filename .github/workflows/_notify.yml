@@ -50,7 +50,7 @@ jobs:
     steps:
       - name: Send email notification
         if: env.MAIL_USERNAME != ''
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v16
         env:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
         with:
