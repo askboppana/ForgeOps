@@ -10,7 +10,7 @@
       --bg: #0b0d17; --card: #141825; --border: #2a3048; --text: #e8eaf0;
       --text2: #8b93a8; --text3: #5a6380; --teal: #0dbfbf; --teal-dim: rgba(13,191,191,.12);
       --success: #4cd964; --danger: #f45b69; --warning: #f5a623; --blue: #3b82f6;
-      --purple: #a78bfa; --radius: 8px;
+      --radius: 8px;
     }
     html, body { height: 100%; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
@@ -20,163 +20,175 @@
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-    @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    @keyframes shimmer { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
     .fade-up { animation: fadeUp .35s ease-out; }
-    .skeleton { background: linear-gradient(90deg, var(--card) 0%, #1c2035 50%, var(--card) 100%); background-size: 800px 100%; animation: shimmer 1.8s infinite linear; border-radius: var(--radius); }
+    .skeleton { background: linear-gradient(90deg,var(--card) 0%,#1c2035 50%,var(--card) 100%); background-size:800px 100%; animation:shimmer 1.8s infinite linear; border-radius:var(--radius); }
 
     /* Layout */
-    .app { display: flex; height: 100vh; overflow: hidden; }
-    .sidebar { width: 240px; background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; transition: transform .25s ease; }
-    .sidebar.closed { transform: translateX(-240px); position: absolute; z-index: 100; height: 100%; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
-    .sidebar-overlay.show { display: block; }
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-    .topbar { padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12; background: var(--card); flex-shrink: 0; }
-    .content { flex: 1; overflow-y: auto; padding: 24px; }
+    .app { display:flex; height:100vh; overflow:hidden; }
+    .sidebar { width:240px; background:var(--card); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; overflow-y:auto; }
+    .sidebar.closed { display:none; }
+    .main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .topbar { padding:12px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; background:var(--card); flex-shrink:0; }
+    .content { flex:1; overflow-y:auto; padding:24px; }
+    .logo { padding:20px 18px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+    .nav-section { padding:16px 14px 4px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text3); }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:8px 18px; margin:1px 8px; border-radius:var(--radius); font-size:13.5px; color:var(--text2); cursor:pointer; position:relative; }
+    .nav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+    .nav-item.active { background:var(--teal-dim); color:var(--teal); font-weight:600; }
+    .nav-icon { font-size:16px; width:22px; text-align:center; flex-shrink:0; }
+    .nav-badge { margin-left:auto; background:var(--warning); color:#000; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; }
+    .sidebar-footer { margin-top:auto; padding:14px 18px; border-top:1px solid var(--border); font-size:11px; color:var(--text3); }
+    .status-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; }
 
-    /* Sidebar items */
-    .logo { padding: 20px 18px; display: flex; align-items: center; gap: 10; border-bottom: 1px solid var(--border); }
-    .logo-icon { font-size: 22px; }
-    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
-    .nav-section { padding: 16px 14px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text3); }
-    .nav-item { display: flex; align-items: center; gap: 10; padding: 8px 18px; margin: 1px 8px; border-radius: var(--radius); font-size: 13.5px; color: var(--text2); transition: all .15s; cursor: pointer; position: relative; }
-    .nav-item:hover { background: rgba(255,255,255,.04); color: var(--text); }
-    .nav-item.active { background: var(--teal-dim); color: var(--teal); font-weight: 600; }
-    .nav-item .icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
-    .nav-badge { margin-left: auto; background: var(--warning); color: #000; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; min-width: 18px; text-align: center; }
-    .sidebar-footer { margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3); }
-    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+    .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-bottom:24px; }
+    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; }
+    .stat-label { font-size:12px; color:var(--text2); margin-bottom:4px; }
+    .stat-value { font-size:28px; font-weight:700; line-height:1.2; }
+    .stat-icon { font-size:20px; float:right; opacity:.6; }
+    .badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+    .btn { padding:8px 18px; border-radius:var(--radius); font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; }
+    .btn-teal { background:var(--teal); color:#000; }
+    .btn-teal:hover { background:#0ad4d4; }
+    .btn-success { background:var(--success); color:#000; }
+    .btn-danger { background:transparent; color:var(--danger); border:1px solid rgba(244,91,105,.3); }
+    .btn-ghost { background:rgba(255,255,255,.06); color:var(--text2); }
+    .list-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+    .list-row:last-child { border-bottom:none; }
+    .grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px; }
+    .env-grid { display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; align-items:flex-start; }
+    .env-card { min-width:170px; flex:1 1 170px; border-radius:var(--radius); background:var(--card); border:1px solid var(--border); overflow:hidden; }
+    .env-header { padding:4px; border-radius:6px 6px 0 0; }
+    .env-body { padding:14px; }
+    .stage-graph { display:flex; align-items:center; gap:0; overflow-x:auto; padding:12px 0; }
+    .stage-box { padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; border:2px solid; min-width:60px; text-align:center; cursor:pointer; flex-shrink:0; }
+    .stage-arrow { width:28px; height:2px; background:var(--border); flex-shrink:0; }
 
-    /* Cards & components */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-    .card:hover { border-color: #343b58; }
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
-    .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
-    .stat-value { font-size: 28px; font-weight: 700; line-height: 1.2; }
-    .stat-icon { font-size: 20px; float: right; opacity: .6; }
-    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-    .btn { padding: 8px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 600; transition: all .15s; }
-    .btn-teal { background: var(--teal); color: #000; }
-    .btn-teal:hover { background: #0ad4d4; }
-    .btn-success { background: var(--success); color: #000; }
-    .btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(244,91,105,.3); }
-    .btn-danger:hover { background: rgba(244,91,105,.1); }
-    .btn-ghost { background: rgba(255,255,255,.06); color: var(--text2); }
-    .btn-ghost:hover { background: rgba(255,255,255,.1); }
+    /* Bar chart CSS */
+    .css-chart { display:flex; align-items:flex-end; gap:6px; height:160px; padding:8px 0; }
+    .css-bar-group { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .css-bar-stack { width:100%; display:flex; flex-direction:column-reverse; gap:1px; flex:1; justify-content:flex-start; align-items:stretch; max-width:40px; margin:0 auto; }
+    .css-bar { border-radius:2px 2px 0 0; min-height:0; transition:height .3s; }
+    .css-bar-label { font-size:10px; color:var(--text3); }
 
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
-    .list-row { display: flex; align-items: center; gap: 12; padding: 10px 0; border-bottom: 1px solid var(--border); }
-    .list-row:last-child { border-bottom: none; }
-    .env-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
-    .env-card { border-radius: var(--radius); background: var(--card); border: 1px solid var(--border); overflow: hidden; }
-    .env-header { padding: 4px; }
-    .env-body { padding: 14px; }
-    .stage-graph { display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 12px 0; }
-    .stage-node { display: flex; flex-direction: column; align-items: center; gap: 4; flex-shrink: 0; }
-    .stage-box { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 2px solid; min-width: 60px; text-align: center; cursor: pointer; transition: transform .1s; }
-    .stage-box:hover { transform: scale(1.05); }
-    .stage-arrow { width: 28px; height: 2px; background: var(--border); flex-shrink: 0; }
-
-    /* Connect screen */
-    .connect-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .connect-box { width: 100%; max-width: 400px; }
-    .connect-box .card { padding: 36px; }
-    .input { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 14px; outline: none; transition: border-color .2s; }
-    .input:focus { border-color: var(--teal); }
-    .input-label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
-
-    .hamburger { display: none; background: none; border: none; color: var(--text2); font-size: 20px; padding: 4px 8px; cursor: pointer; }
-
-    @media (max-width: 768px) {
-      .sidebar { position: fixed; z-index: 100; height: 100%; }
-      .sidebar.closed { transform: translateX(-240px); }
-      .hamburger { display: block; }
-      .stat-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-      .grid-2 { grid-template-columns: 1fr; }
-      .env-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-      .content { padding: 16px; }
+    .connect-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .connect-box { width:100%; max-width:400px; }
+    .input { width:100%; padding:10px 14px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-size:14px; outline:none; }
+    .input:focus { border-color:var(--teal); }
+    .input-label { display:block; font-size:12px; color:var(--text2); margin-bottom:6px; font-weight:500; }
+    .error-banner { padding:10px 16px; background:rgba(244,91,105,.1); border:1px solid rgba(244,91,105,.25); border-radius:var(--radius); color:var(--danger); font-size:13px; margin-bottom:14px; }
+    .rate-banner { padding:10px 16px; background:rgba(245,166,35,.1); border:1px solid rgba(245,166,35,.25); border-radius:var(--radius); color:var(--warning); font-size:13px; margin-bottom:14px; }
+    .hamburger { display:none; font-size:20px; padding:4px 8px; cursor:pointer; color:var(--text2); background:none; border:none; }
+    @media(max-width:768px) {
+      .sidebar { position:fixed; z-index:100; height:100%; }
+      .sidebar.closed { display:none; }
+      .hamburger { display:block; }
+      .stat-grid { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+      .grid-2 { grid-template-columns:1fr; }
+      .content { padding:16px; }
     }
-
-    .error-banner { padding: 10px 16px; background: rgba(244,91,105,.1); border: 1px solid rgba(244,91,105,.25); border-radius: var(--radius); color: var(--danger); font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 8; }
-    .rate-banner { padding: 10px 16px; background: rgba(245,166,35,.1); border: 1px solid rgba(245,166,35,.25); border-radius: var(--radius); color: var(--warning); font-size: 13px; margin-bottom: 16px; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+    #fatal-error { color:var(--danger); background:rgba(244,91,105,.1); border:1px solid rgba(244,91,105,.3); border-radius:8px; padding:20px; margin:20px; font-size:14px; }
   </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="module">
-import React from 'https://esm.sh/react@18';
-import { createRoot } from 'https://esm.sh/react-dom@18/client';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'https://esm.sh/recharts@2.12.7?external=react,react-dom';
+<div id="root"><div style="display:flex;justify-content:center;align-items:center;height:100vh;color:#0dbfbf;font-family:sans-serif">Loading ForgeOps...</div></div>
 
-const h = React.createElement;
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+
+<script type="text/babel">
+try {
+
 const { useState, useEffect, useCallback, useRef, useMemo } = React;
+const h = React.createElement;
 
-/* ═══════════════════════════════════════════
-   GitHub API Client
-   ═══════════════════════════════════════════ */
+/* ═══ GitHub API ═══ */
 class GH {
-  constructor(token, user) { this.t = token; this.u = user; this.b = 'https://api.github.com'; this.rateLimited = false; this.retryAfter = 0; }
+  constructor(token, user) { this.t = token; this.u = user; }
   async f(path, opts = {}) {
-    if (this.rateLimited && Date.now() < this.retryAfter) throw new Error(`RATE_LIMITED:${Math.ceil((this.retryAfter - Date.now())/1000)}`);
-    const r = await fetch(`${this.b}${path}`, { ...opts, headers: { Authorization: `Bearer ${this.t}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...opts.headers } });
+    const r = await fetch('https://api.github.com' + path, {
+      ...opts,
+      headers: { Authorization: 'Bearer ' + this.t, Accept: 'application/vnd.github+json', ...opts.headers }
+    });
     if (r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0') {
-      const reset = parseInt(r.headers.get('x-ratelimit-reset') || '0') * 1000;
-      this.rateLimited = true; this.retryAfter = reset;
-      throw new Error(`RATE_LIMITED:${Math.ceil((reset - Date.now())/1000)}`);
+      const s = Math.ceil((parseInt(r.headers.get('x-ratelimit-reset')||'0') * 1000 - Date.now()) / 1000);
+      throw new Error('RATE_LIMITED:' + s);
     }
     if (r.status === 404) return null;
-    if (!r.ok) throw new Error(`GitHub ${r.status}: ${r.statusText}`);
-    this.rateLimited = false;
+    if (!r.ok) throw new Error('GitHub ' + r.status + ': ' + r.statusText);
     return r.json();
   }
-  repos()       { return this.f(`/users/${this.u}/repos?per_page=100&sort=updated`); }
-  runs(repo, q) { return this.f(`/repos/${this.u}/${repo}/actions/runs?per_page=30${q||''}`); }
-  jobs(repo,id) { return this.f(`/repos/${this.u}/${repo}/actions/runs/${id}/jobs`); }
-  pending(repo,id) { return this.f(`/repos/${this.u}/${repo}/actions/runs/${id}/pending_deployments`); }
-  actDeploy(repo,id,envIds,state) { return this.f(`/repos/${this.u}/${repo}/actions/runs/${id}/pending_deployments`, { method:'POST', body: JSON.stringify({ environment_ids: envIds, state, comment: `${state} via ForgeOps Dashboard` }) }); }
+  repos()        { return this.f('/users/' + this.u + '/repos?per_page=100&sort=updated'); }
+  runs(repo)     { return this.f('/repos/' + this.u + '/' + repo + '/actions/runs?per_page=30'); }
+  jobs(repo, id) { return this.f('/repos/' + this.u + '/' + repo + '/actions/runs/' + id + '/jobs'); }
+  pending(repo, id) { return this.f('/repos/' + this.u + '/' + repo + '/actions/runs/' + id + '/pending_deployments'); }
+  actDeploy(repo, id, envIds, state) {
+    return this.f('/repos/' + this.u + '/' + repo + '/actions/runs/' + id + '/pending_deployments', {
+      method: 'POST',
+      body: JSON.stringify({ environment_ids: envIds, state: state, comment: state + ' via ForgeOps Dashboard' })
+    });
+  }
   runners() {
-    return this.f(`/orgs/${this.u}/actions/runners`)
-      .then(d => d)
-      .catch(() => this.f(`/repos/${this.u}/ForgeOps/actions/runners`))
+    return this.f('/orgs/' + this.u + '/actions/runners')
+      .catch(() => this.f('/repos/' + this.u + '/ForgeOps/actions/runners'))
       .catch(() => null);
   }
   user() { return this.f('/user'); }
 }
 
-/* ═══════════════════════════════════════════
-   Helpers
-   ═══════════════════════════════════════════ */
-const timeAgo = d => {
+/* ═══ Helpers ═══ */
+const timeAgo = (d) => {
   if (!d) return '';
   const s = Math.floor((Date.now() - new Date(d)) / 1000);
-  if (s < 60) return `${s}s ago`; if (s < 3600) return `${Math.floor(s/60)}m ago`;
-  if (s < 86400) return `${Math.floor(s/3600)}h ago`; return `${Math.floor(s/86400)}d ago`;
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
 };
 const dur = (a, b) => {
   if (!a || !b) return '—';
   const s = Math.round((new Date(b) - new Date(a)) / 1000);
-  if (s < 60) return `${s}s`; if (s < 3600) return `${Math.floor(s/60)}m ${s%60}s`; return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+  return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
 };
-const stEmoji = c => ({ success:'✅', completed:'✅', failure:'❌', cancelled:'🚫', in_progress:'🔄', queued:'⏳', waiting:'⏸️', action_required:'⚠️', skipped:'⏭️', pending:'⏳' }[c] || '⚪');
-const stColor = c => ({ success:'var(--success)', completed:'var(--success)', failure:'var(--danger)', cancelled:'var(--text3)', in_progress:'var(--blue)', queued:'var(--warning)', waiting:'var(--warning)', action_required:'var(--warning)', skipped:'var(--text3)' }[c] || 'var(--text3)');
-const stDot = (c, sz) => h('span', { style: { display:'inline-block', width: sz||8, height: sz||8, borderRadius:'50%', background: stColor(c), flexShrink:0 } });
+const stE = (c) => ({ success:'✅', completed:'✅', failure:'❌', cancelled:'🚫', in_progress:'🔄', queued:'⏳', waiting:'⏸️', action_required:'⚠️', skipped:'⏭️' }[c] || '⚪');
+const stC = (c) => ({ success:'var(--success)', completed:'var(--success)', failure:'var(--danger)', cancelled:'var(--text3)', in_progress:'var(--blue)', queued:'var(--warning)', waiting:'var(--warning)', action_required:'var(--warning)' }[c] || 'var(--text3)');
 
-/* ═══════════════════════════════════════════
-   Connect Screen
-   ═══════════════════════════════════════════ */
-const ConnectScreen = ({ onConnect }) => {
+/* ═══ CSS Bar Chart ═══ */
+function BarChart({ data, maxH }) {
+  const max = Math.max(1, ...data.map(d => d.success + d.failure + d.other));
+  const h = maxH || 140;
+  return (
+    <div className="css-chart" style={{ height: h }}>
+      {data.map((d, i) => (
+        <div key={i} className="css-bar-group">
+          <div style={{ display:'flex', flexDirection:'column-reverse', gap:1, flex:1, width:'100%', maxWidth:36, alignItems:'stretch', justifyContent:'flex-start' }}>
+            {d.success > 0 && <div className="css-bar" style={{ height: (d.success / max * h * 0.85) + 'px', background:'var(--success)' }} title={d.success + ' success'} />}
+            {d.failure > 0 && <div className="css-bar" style={{ height: (d.failure / max * h * 0.85) + 'px', background:'var(--danger)' }} title={d.failure + ' failed'} />}
+            {d.other > 0 && <div className="css-bar" style={{ height: (d.other / max * h * 0.85) + 'px', background:'var(--text3)' }} title={d.other + ' other'} />}
+          </div>
+          <div className="css-bar-label">{d.day}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══ Connect Screen ═══ */
+function ConnectScreen({ onConnect }) {
   const [token, setToken] = useState('');
   const [user, setUser] = useState('askboppana');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
 
   const go = async () => {
-    if (!token.trim() || !user.trim()) { setErr('Both fields required'); return; }
+    if (!token.trim() || !user.trim()) { setErr('Both fields are required'); return; }
     setLoading(true); setErr('');
     try {
       const api = new GH(token.trim(), user.trim());
@@ -184,42 +196,45 @@ const ConnectScreen = ({ onConnect }) => {
       sessionStorage.setItem('fo_t', token.trim());
       sessionStorage.setItem('fo_u', user.trim());
       onConnect(api);
-    } catch (e) { setErr(`Connection failed: ${e.message}`); }
+    } catch (e) { setErr('Connection failed: ' + e.message); }
     setLoading(false);
   };
 
-  return h('div', { className: 'connect-wrap fade-up' },
-    h('div', { className: 'connect-box' },
-      h('div', { className: 'card' },
-        h('div', { style: { textAlign: 'center', marginBottom: 28 } },
-          h('div', { style: { fontSize: 40, marginBottom: 8 } }, '⚡'),
-          h('div', { style: { fontSize: 22, fontWeight: 700, marginBottom: 4 } }, 'ForgeOps'),
-          h('div', { style: { color: 'var(--text2)', fontSize: 13 } }, 'Connect to GitHub to view your pipelines')
-        ),
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } },
-          h('div', null,
-            h('label', { className: 'input-label' }, 'GitHub Username'),
-            h('input', { className: 'input', value: user, onChange: e => setUser(e.target.value), placeholder: 'askboppana' })
-          ),
-          h('div', null,
-            h('label', { className: 'input-label' }, 'Personal Access Token'),
-            h('input', { className: 'input', type: 'password', value: token, onChange: e => setToken(e.target.value), placeholder: 'ghp_...', onKeyDown: e => e.key === 'Enter' && go() })
-          ),
-          h('div', { style: { fontSize: 11, color: 'var(--text3)' } }, 'Needs ', h('code', { style: { background: 'var(--bg)', padding: '1px 5px', borderRadius: 3 } }, 'repo'), ' + ', h('code', { style: { background: 'var(--bg)', padding: '1px 5px', borderRadius: 3 } }, 'actions'), ' scopes. Stored in sessionStorage only.'),
-          err && h('div', { className: 'error-banner' }, '❌ ', err),
-          h('button', { className: 'btn btn-teal', onClick: go, disabled: loading, style: { width: '100%', padding: '11px', fontSize: 14 } }, loading ? '⏳ Connecting...' : 'Connect to GitHub')
-        )
-      )
-    )
+  return (
+    <div className="connect-wrap fade-up">
+      <div className="connect-box">
+        <div className="card" style={{ padding: 36 }}>
+          <div style={{ textAlign:'center', marginBottom:28 }}>
+            <div style={{ fontSize:48, marginBottom:8 }}>⚡</div>
+            <div style={{ fontSize:24, fontWeight:700, marginBottom:4 }}>ForgeOps</div>
+            <div style={{ color:'var(--text2)', fontSize:13 }}>Connect to GitHub to view your pipelines</div>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            <div>
+              <label className="input-label">GitHub Username</label>
+              <input className="input" value={user} onChange={e => setUser(e.target.value)} placeholder="askboppana" />
+            </div>
+            <div>
+              <label className="input-label">Personal Access Token</label>
+              <input className="input" type="password" value={token} onChange={e => setToken(e.target.value)} placeholder="ghp_..." onKeyDown={e => e.key === 'Enter' && go()} />
+            </div>
+            <div style={{ fontSize:11, color:'var(--text3)' }}>
+              Needs <code style={{ background:'var(--bg)', padding:'1px 5px', borderRadius:3 }}>repo</code> + <code style={{ background:'var(--bg)', padding:'1px 5px', borderRadius:3 }}>actions</code> scopes. Stored in sessionStorage only.
+            </div>
+            {err && <div className="error-banner">❌ {err}</div>}
+            <button className="btn btn-teal" onClick={go} disabled={loading} style={{ width:'100%', padding:11, fontSize:14, justifyContent:'center' }}>
+              {loading ? '⏳ Connecting...' : 'Connect to GitHub'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   PAGE: Overview
-   ═══════════════════════════════════════════ */
-const OverviewPage = ({ runs }) => {
-  const today = new Date().toISOString().slice(0,10);
-  const runs24h = runs.filter(r => { const d = new Date(r.created_at); return (Date.now() - d) < 86400000; });
+/* ═══ PAGE: Overview ═══ */
+function OverviewPage({ runs }) {
+  const runs24h = runs.filter(r => (Date.now() - new Date(r.created_at)) < 86400000);
   const completed = runs.filter(r => r.status === 'completed');
   const rate = completed.length ? Math.round(completed.filter(r => r.conclusion === 'success').length / completed.length * 100) : 0;
   const failed = runs.filter(r => r.conclusion === 'failure').length;
@@ -227,59 +242,56 @@ const OverviewPage = ({ runs }) => {
 
   const barData = useMemo(() => {
     const days = {};
-    for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate()-i); const k = d.toISOString().slice(5,10); days[k] = { day: k, success: 0, failure: 0, other: 0 }; }
-    runs.forEach(r => { const k = r.created_at?.slice(5,10); if (days[k]) { if (r.conclusion==='success') days[k].success++; else if (r.conclusion==='failure') days[k].failure++; else days[k].other++; }});
+    for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const k = (d.getMonth()+1) + '/' + d.getDate(); days[k] = { day: k, success:0, failure:0, other:0 }; }
+    runs.forEach(r => { const d = new Date(r.created_at); const k = (d.getMonth()+1) + '/' + d.getDate(); if (days[k]) { if (r.conclusion === 'success') days[k].success++; else if (r.conclusion === 'failure') days[k].failure++; else days[k].other++; }});
     return Object.values(days);
   }, [runs]);
 
-  return h('div', { className: 'fade-up' },
-    h('h2', { style: { fontSize: 18, fontWeight: 600, marginBottom: 20 } }, 'Overview'),
-    h('div', { className: 'stat-grid' },
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '🚀'), h('div', { className: 'stat-label' }, 'Total Runs (24h)'), h('div', { className: 'stat-value', style: { color: 'var(--teal)' } }, runs24h.length)),
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '📊'), h('div', { className: 'stat-label' }, 'Success Rate'), h('div', { className: 'stat-value', style: { color: rate >= 80 ? 'var(--success)' : 'var(--danger)' } }, rate + '%')),
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '❌'), h('div', { className: 'stat-label' }, 'Failed'), h('div', { className: 'stat-value', style: { color: 'var(--danger)' } }, failed)),
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '⏸️'), h('div', { className: 'stat-label' }, 'Pending Approvals'), h('div', { className: 'stat-value', style: { color: 'var(--warning)' } }, pending))
-    ),
-    h('div', { className: 'grid-2', style: { marginBottom: 24 } },
-      h('div', { className: 'card' },
-        h('div', { style: { fontSize: 13, color: 'var(--text2)', marginBottom: 14, fontWeight: 500 } }, '📈 Pipeline Activity (7 days)'),
-        h(ResponsiveContainer, { width: '100%', height: 210 },
-          h(BarChart, { data: barData },
-            h(CartesianGrid, { strokeDasharray: '3 3', stroke: 'var(--border)' }),
-            h(XAxis, { dataKey: 'day', tick: { fill: 'var(--text3)', fontSize: 11 }, axisLine: { stroke: 'var(--border)' } }),
-            h(YAxis, { tick: { fill: 'var(--text3)', fontSize: 11 }, axisLine: { stroke: 'var(--border)' }, allowDecimals: false }),
-            h(Tooltip, { contentStyle: { background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 12 } }),
-            h(Bar, { dataKey: 'success', stackId: 'a', fill: '#4cd964' }),
-            h(Bar, { dataKey: 'failure', stackId: 'a', fill: '#f45b69' }),
-            h(Bar, { dataKey: 'other', stackId: 'a', fill: '#5a6380', radius: [3,3,0,0] })
-          )
-        )
-      ),
-      h('div', { className: 'card' },
-        h('div', { style: { fontSize: 13, color: 'var(--text2)', marginBottom: 14, fontWeight: 500 } }, '🕐 Recent Activity'),
-        h('div', { style: { maxHeight: 210, overflowY: 'auto' } },
-          runs.slice(0, 15).map(r => h('div', { key: r.id, className: 'list-row', style: { padding: '7px 0', gap: 8 } },
-            h('span', { style: { fontSize: 14 } }, stEmoji(r.conclusion || r.status)),
-            h('div', { style: { flex: 1, minWidth: 0 } },
-              h('div', { style: { fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, r._repo),
-              h('div', { style: { fontSize: 11, color: 'var(--text3)' } }, r.head_branch, ' · #', r.run_number)
-            ),
-            h('div', { style: { fontSize: 11, color: 'var(--text3)', textAlign: 'right', flexShrink: 0 } },
-              h('div', null, dur(r.run_started_at, r.updated_at)),
-              h('div', null, timeAgo(r.created_at))
-            )
-          )),
-          runs.length === 0 && h('div', { style: { padding: 20, textAlign: 'center', color: 'var(--text3)', fontSize: 13 } }, 'No runs found')
-        )
-      )
-    )
+  return (
+    <div className="fade-up">
+      <h2 style={{ fontSize:18, fontWeight:600, marginBottom:20 }}>📊 Overview</h2>
+      <div className="stat-grid">
+        <div className="stat-card"><div className="stat-icon">🚀</div><div className="stat-label">Total Runs (24h)</div><div className="stat-value" style={{ color:'var(--teal)' }}>{runs24h.length}</div></div>
+        <div className="stat-card"><div className="stat-icon">📈</div><div className="stat-label">Success Rate</div><div className="stat-value" style={{ color: rate >= 80 ? 'var(--success)' : 'var(--danger)' }}>{rate}%</div></div>
+        <div className="stat-card"><div className="stat-icon">❌</div><div className="stat-label">Failed</div><div className="stat-value" style={{ color:'var(--danger)' }}>{failed}</div></div>
+        <div className="stat-card"><div className="stat-icon">⏸️</div><div className="stat-label">Pending Approvals</div><div className="stat-value" style={{ color:'var(--warning)' }}>{pending}</div></div>
+      </div>
+      <div className="grid-2">
+        <div className="card">
+          <div style={{ fontSize:13, color:'var(--text2)', fontWeight:500, marginBottom:8 }}>📈 Runs per Day (7 days)</div>
+          <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+            <span style={{ fontSize:10, color:'var(--success)' }}>■ Success</span>
+            <span style={{ fontSize:10, color:'var(--danger)' }}>■ Failed</span>
+            <span style={{ fontSize:10, color:'var(--text3)' }}>■ Other</span>
+          </div>
+          <BarChart data={barData} maxH={140} />
+        </div>
+        <div className="card">
+          <div style={{ fontSize:13, color:'var(--text2)', fontWeight:500, marginBottom:8 }}>🕐 Recent Activity</div>
+          <div style={{ maxHeight:220, overflowY:'auto' }}>
+            {runs.slice(0, 15).map(r => (
+              <div key={r.id} className="list-row" style={{ padding:'7px 0', gap:8 }}>
+                <span style={{ fontSize:14 }}>{stE(r.conclusion || r.status)}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:12.5, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r._repo}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>{r.head_branch} · #{r.run_number}</div>
+                </div>
+                <div style={{ fontSize:11, color:'var(--text3)', textAlign:'right', flexShrink:0 }}>
+                  <div>{dur(r.run_started_at, r.updated_at)}</div>
+                  <div>{timeAgo(r.created_at)}</div>
+                </div>
+              </div>
+            ))}
+            {runs.length === 0 && <div style={{ padding:20, textAlign:'center', color:'var(--text3)', fontSize:13 }}>No runs found</div>}
+          </div>
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   PAGE: Pipelines
-   ═══════════════════════════════════════════ */
-const PipelinesPage = ({ api, repos, runs }) => {
+/* ═══ PAGE: Pipelines ═══ */
+function PipelinesPage({ api, repos, runs }) {
   const [expanded, setExpanded] = useState(null);
   const [jobsCache, setJobsCache] = useState({});
   const [selJob, setSelJob] = useState(null);
@@ -291,241 +303,255 @@ const PipelinesPage = ({ api, repos, runs }) => {
   }, [runs]);
 
   const loadJobs = async (repo, runId) => {
-    const k = `${repo}/${runId}`;
+    const k = repo + '/' + runId;
     if (jobsCache[k]) return;
-    try { const d = await api.jobs(repo, runId); setJobsCache(p => ({ ...p, [k]: d?.jobs || [] })); } catch(e) { console.error(e); }
+    try { const d = await api.jobs(repo, runId); setJobsCache(p => ({ ...p, [k]: (d && d.jobs) || [] })); } catch(e) {}
   };
 
   const toggle = (repo, runId) => {
-    const k = `${repo}/${runId}`;
+    const k = repo + '/' + runId;
     if (expanded === k) { setExpanded(null); setSelJob(null); } else { setExpanded(k); setSelJob(null); loadJobs(repo, runId); }
   };
 
-  const stageBoxColor = c => ({ success:'var(--success)', completed:'var(--success)', failure:'var(--danger)', in_progress:'var(--blue)', queued:'var(--warning)', waiting:'var(--warning)' }[c] || 'var(--text3)');
+  return (
+    <div className="fade-up">
+      <h2 style={{ fontSize:18, fontWeight:600, marginBottom:20 }}>🔀 Pipelines</h2>
+      {repos.filter(r => repoLatest[r.name]).map(repo => {
+        const run = repoLatest[repo.name];
+        const k = repo.name + '/' + run.id;
+        const open = expanded === k;
+        const jobs = jobsCache[k] || [];
 
-  return h('div', { className: 'fade-up' },
-    h('h2', { style: { fontSize: 18, fontWeight: 600, marginBottom: 20 } }, 'Pipelines'),
-    repos.filter(r => repoLatest[r.name]).map(repo => {
-      const run = repoLatest[repo.name];
-      const k = `${repo.name}/${run.id}`;
-      const open = expanded === k;
-      const jobs = jobsCache[k] || [];
-
-      return h('div', { key: repo.name, className: 'card', style: { marginBottom: 10 } },
-        h('div', { onClick: () => toggle(repo.name, run.id), style: { display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' } },
-          h('span', { style: { fontSize: 12, color: 'var(--text3)' } }, open ? '▼' : '▶'),
-          stDot(run.conclusion || run.status, 10),
-          h('div', { style: { flex: 1, minWidth: 0 } },
-            h('span', { style: { fontWeight: 600, fontSize: 14 } }, repo.name),
-            h('span', { style: { fontSize: 12, color: 'var(--text3)', marginLeft: 10 } }, run.head_branch, ' · ', run.event)
-          ),
-          h('span', { className: 'badge', style: { background: `${stColor(run.conclusion||run.status)}22`, color: stColor(run.conclusion||run.status) } }, run.conclusion || run.status),
-          h('span', { style: { fontSize: 11, color: 'var(--text3)', marginLeft: 8, flexShrink: 0 } }, dur(run.run_started_at, run.updated_at)),
-          h('span', { style: { fontSize: 11, color: 'var(--text3)', marginLeft: 8, flexShrink: 0 } }, timeAgo(run.created_at))
-        ),
-        open && h('div', { style: { marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border)' } },
-          jobs.length > 0 ? h(React.Fragment, null,
-            // Stage graph
-            h('div', { className: 'stage-graph' },
-              jobs.map((j, i) => h(React.Fragment, { key: j.id },
-                h('div', { className: 'stage-node' },
-                  h('div', { className: 'stage-box', onClick: () => setSelJob(selJob === j.id ? null : j.id), style: { borderColor: stageBoxColor(j.conclusion || j.status), color: stageBoxColor(j.conclusion || j.status), background: selJob === j.id ? `${stageBoxColor(j.conclusion || j.status)}22` : 'transparent' } },
-                    stEmoji(j.conclusion || j.status), ' ', j.name.length > 14 ? j.name.slice(0,12)+'…' : j.name
-                  )
-                ),
-                i < jobs.length - 1 && h('div', { className: 'stage-arrow' })
-              ))
-            ),
-            // Selected job steps
-            selJob && (() => {
-              const job = jobs.find(j => j.id === selJob);
-              if (!job) return null;
-              return h('div', { style: { marginTop: 12, padding: 14, background: 'var(--bg)', borderRadius: 'var(--radius)' } },
-                h('div', { style: { fontSize: 13, fontWeight: 600, marginBottom: 10, color: 'var(--teal)' } }, '📋 ', job.name, ' — Steps'),
-                (job.steps || []).map((s, i) => h('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12 } },
-                  h('span', null, stEmoji(s.conclusion || s.status)),
-                  h('span', { style: { flex: 1, color: 'var(--text2)' } }, s.name),
-                  h('span', { style: { color: 'var(--text3)' } }, dur(s.started_at, s.completed_at))
-                ))
-              );
-            })(),
-            // All jobs list
-            h('div', { style: { marginTop: 12 } },
-              jobs.map(j => h('div', { key: j.id, style: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 12.5, borderBottom: '1px solid var(--border)' } },
-                h('span', null, stEmoji(j.conclusion || j.status)),
-                h('span', { style: { flex: 1, color: 'var(--text2)' } }, j.name),
-                h('span', { style: { color: 'var(--text3)' } }, dur(j.started_at, j.completed_at))
-              ))
-            )
-          ) : h('div', { style: { padding: 12, color: 'var(--text3)', fontSize: 13 } }, '⏳ Loading jobs...')
-        )
-      );
-    }),
-    repos.filter(r => repoLatest[r.name]).length === 0 && h('div', { className: 'card', style: { textAlign: 'center', padding: 40, color: 'var(--text3)' } }, 'No pipeline runs found across your repos')
+        return (
+          <div key={repo.name} className="card" style={{ marginBottom:10 }}>
+            <div onClick={() => toggle(repo.name, run.id)} style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}>
+              <span style={{ fontSize:12, color:'var(--text3)' }}>{open ? '▼' : '▶'}</span>
+              <span style={{ display:'inline-block', width:10, height:10, borderRadius:'50%', background:stC(run.conclusion||run.status), flexShrink:0 }} />
+              <div style={{ flex:1, minWidth:0 }}>
+                <span style={{ fontWeight:600, fontSize:14 }}>{repo.name}</span>
+                <span style={{ fontSize:12, color:'var(--text3)', marginLeft:10 }}>{run.head_branch} · {run.event}</span>
+              </div>
+              <span className="badge" style={{ background:stC(run.conclusion||run.status)+'22', color:stC(run.conclusion||run.status) }}>{run.conclusion || run.status}</span>
+              <span style={{ fontSize:11, color:'var(--text3)', flexShrink:0 }}>{dur(run.run_started_at, run.updated_at)}</span>
+              <span style={{ fontSize:11, color:'var(--text3)', flexShrink:0 }}>{timeAgo(run.created_at)}</span>
+            </div>
+            {open && (
+              <div style={{ marginTop:16, paddingTop:14, borderTop:'1px solid var(--border)' }}>
+                {jobs.length > 0 ? (
+                  <>
+                    <div className="stage-graph">
+                      {jobs.map((j, i) => (
+                        <React.Fragment key={j.id}>
+                          <div className="stage-box"
+                            onClick={() => setSelJob(selJob === j.id ? null : j.id)}
+                            style={{ borderColor:stC(j.conclusion||j.status), color:stC(j.conclusion||j.status), background: selJob === j.id ? stC(j.conclusion||j.status)+'22' : 'transparent' }}>
+                            {stE(j.conclusion||j.status)} {j.name.length > 14 ? j.name.slice(0,12)+'…' : j.name}
+                          </div>
+                          {i < jobs.length - 1 && <div className="stage-arrow" />}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    {selJob && (() => {
+                      const job = jobs.find(j => j.id === selJob);
+                      if (!job) return null;
+                      return (
+                        <div style={{ marginTop:12, padding:14, background:'var(--bg)', borderRadius:'var(--radius)' }}>
+                          <div style={{ fontSize:13, fontWeight:600, marginBottom:10, color:'var(--teal)' }}>📋 {job.name} — Steps</div>
+                          {(job.steps || []).map((s, i) => (
+                            <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'4px 0', fontSize:12 }}>
+                              <span>{stE(s.conclusion||s.status)}</span>
+                              <span style={{ flex:1, color:'var(--text2)' }}>{s.name}</span>
+                              <span style={{ color:'var(--text3)' }}>{dur(s.started_at, s.completed_at)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    <div style={{ marginTop:12 }}>
+                      {jobs.map(j => (
+                        <div key={j.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', fontSize:12.5, borderBottom:'1px solid var(--border)' }}>
+                          <span>{stE(j.conclusion||j.status)}</span>
+                          <span style={{ flex:1, color:'var(--text2)' }}>{j.name}</span>
+                          <span style={{ color:'var(--text3)' }}>{dur(j.started_at, j.completed_at)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : <div style={{ padding:12, color:'var(--text3)', fontSize:13 }}>⏳ Loading jobs...</div>}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {repos.filter(r => repoLatest[r.name]).length === 0 && <div className="card" style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>No pipeline runs found</div>}
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   PAGE: Security
-   ═══════════════════════════════════════════ */
-const SecurityPage = ({ runs }) => {
-  const secRuns = useMemo(() => runs.filter(r => {
+/* ═══ PAGE: Security ═══ */
+function SecurityPage({ runs }) {
+  const sec = useMemo(() => runs.filter(r => {
     const n = (r.name || r.display_title || '').toLowerCase();
     return n.includes('security') || n.includes('sast') || n.includes('sca') || n.includes('scan');
   }), [runs]);
-
-  const passed = secRuns.filter(r => r.conclusion === 'success').length;
-  const failedC = secRuns.filter(r => r.conclusion === 'failure').length;
-  const rate = secRuns.length ? Math.round(passed / secRuns.length * 100) : 0;
+  const passed = sec.filter(r => r.conclusion === 'success').length;
+  const failedC = sec.filter(r => r.conclusion === 'failure').length;
+  const rate = sec.length ? Math.round(passed / sec.length * 100) : 0;
 
   const types = [
-    { name: 'SAST (SonarQube)', key: 'sast', emoji: '🔍' },
-    { name: 'SCA (Black Duck)', key: 'sca', emoji: '🛡️' },
-    { name: 'Secrets (Gitleaks)', key: 'secret', emoji: '🔑' },
-    { name: 'Container (Trivy)', key: 'container', emoji: '📦' },
-    { name: 'SBOM (Syft)', key: 'sbom', emoji: '📋' },
+    { name:'SAST (SonarQube)', key:'sast', emoji:'🔍' },
+    { name:'SCA (Black Duck)', key:'sca', emoji:'🛡️' },
+    { name:'Secrets (Gitleaks)', key:'secret', emoji:'🔑' },
+    { name:'Container (Trivy)', key:'container', emoji:'📦' },
+    { name:'SBOM (Syft)', key:'sbom', emoji:'📋' },
   ];
 
-  return h('div', { className: 'fade-up' },
-    h('h2', { style: { fontSize: 18, fontWeight: 600, marginBottom: 20 } }, '🛡️ Security'),
-    h('div', { className: 'stat-grid' },
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '🔍'), h('div', { className: 'stat-label' }, 'Total Scans'), h('div', { className: 'stat-value', style: { color: 'var(--teal)' } }, secRuns.length)),
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '✅'), h('div', { className: 'stat-label' }, 'Passed'), h('div', { className: 'stat-value', style: { color: 'var(--success)' } }, passed)),
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '❌'), h('div', { className: 'stat-label' }, 'Failed'), h('div', { className: 'stat-value', style: { color: 'var(--danger)' } }, failedC)),
-      h('div', { className: 'stat-card' }, h('div', { className: 'stat-icon' }, '📊'), h('div', { className: 'stat-label' }, 'Pass Rate'), h('div', { className: 'stat-value', style: { color: rate >= 80 ? 'var(--success)' : 'var(--danger)' } }, rate + '%'))
-    ),
-    h('div', { className: 'card', style: { marginBottom: 16 } },
-      h('div', { style: { fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 } }, 'Scan Types Breakdown'),
-      h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 } },
-        types.map(t => {
-          const count = secRuns.filter(r => (r.name||'').toLowerCase().includes(t.key)).length;
-          const p = secRuns.length ? Math.round(count / secRuns.length * 100) : 0;
-          return h('div', { key: t.key, style: { padding: 12, background: 'var(--bg)', borderRadius: 'var(--radius)' } },
-            h('div', { style: { fontSize: 12.5, fontWeight: 500, marginBottom: 6 } }, t.emoji, ' ', t.name),
-            h('div', { style: { height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden', marginBottom: 4 } },
-              h('div', { style: { height: '100%', width: `${p}%`, background: 'var(--teal)', borderRadius: 2, transition: 'width .5s' } })
-            ),
-            h('div', { style: { fontSize: 10, color: 'var(--text3)' } }, count, ' runs')
-          );
-        })
-      )
-    ),
-    h('div', { className: 'card' },
-      h('div', { style: { fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 12 } }, 'Recent Security Results'),
-      secRuns.slice(0, 15).map(r => h('div', { key: r.id, className: 'list-row', style: { gap: 8 } },
-        h('span', { style: { fontSize: 14 } }, stEmoji(r.conclusion || r.status)),
-        h('div', { style: { flex: 1 } },
-          h('span', { style: { fontSize: 12.5, fontWeight: 500 } }, r._repo),
-          h('span', { style: { fontSize: 11, color: 'var(--text3)', marginLeft: 8 } }, r.display_title || r.name)
-        ),
-        h('span', { className: 'badge', style: { background: `${stColor(r.conclusion||r.status)}22`, color: stColor(r.conclusion||r.status), fontSize: 10 } }, r.conclusion || r.status),
-        h('span', { style: { fontSize: 11, color: 'var(--text3)' } }, timeAgo(r.created_at))
-      )),
-      secRuns.length === 0 && h('div', { style: { padding: 20, textAlign: 'center', color: 'var(--text3)', fontSize: 13 } }, 'No security scan runs found')
-    )
+  return (
+    <div className="fade-up">
+      <h2 style={{ fontSize:18, fontWeight:600, marginBottom:20 }}>🛡️ Security</h2>
+      <div className="stat-grid">
+        <div className="stat-card"><div className="stat-icon">🔍</div><div className="stat-label">Total Scans</div><div className="stat-value" style={{ color:'var(--teal)' }}>{sec.length}</div></div>
+        <div className="stat-card"><div className="stat-icon">✅</div><div className="stat-label">Passed</div><div className="stat-value" style={{ color:'var(--success)' }}>{passed}</div></div>
+        <div className="stat-card"><div className="stat-icon">❌</div><div className="stat-label">Failed</div><div className="stat-value" style={{ color:'var(--danger)' }}>{failedC}</div></div>
+        <div className="stat-card"><div className="stat-icon">📊</div><div className="stat-label">Pass Rate</div><div className="stat-value" style={{ color:rate>=80?'var(--success)':'var(--danger)' }}>{rate}%</div></div>
+      </div>
+      <div className="card">
+        <div style={{ fontSize:13, fontWeight:500, color:'var(--text2)', marginBottom:14 }}>Scan Type Breakdown</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:10 }}>
+          {types.map(t => {
+            const c = sec.filter(r => (r.name||'').toLowerCase().includes(t.key)).length;
+            return (
+              <div key={t.key} style={{ padding:12, background:'var(--bg)', borderRadius:'var(--radius)' }}>
+                <div style={{ fontSize:12.5, fontWeight:500, marginBottom:6 }}>{t.emoji} {t.name}</div>
+                <div style={{ height:4, background:'var(--border)', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
+                  <div style={{ height:'100%', width:(sec.length ? (c/sec.length*100) : 0)+'%', background:'var(--teal)', borderRadius:2 }} />
+                </div>
+                <div style={{ fontSize:10, color:'var(--text3)' }}>{c} runs</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="card">
+        <div style={{ fontSize:13, fontWeight:500, color:'var(--text2)', marginBottom:12 }}>Recent Security Results</div>
+        {sec.slice(0,15).map(r => (
+          <div key={r.id} className="list-row" style={{ gap:8 }}>
+            <span style={{ fontSize:14 }}>{stE(r.conclusion||r.status)}</span>
+            <div style={{ flex:1 }}>
+              <span style={{ fontSize:12.5, fontWeight:500 }}>{r._repo}</span>
+              <span style={{ fontSize:11, color:'var(--text3)', marginLeft:8 }}>{r.display_title || r.name}</span>
+            </div>
+            <span className="badge" style={{ background:stC(r.conclusion||r.status)+'22', color:stC(r.conclusion||r.status), fontSize:10 }}>{r.conclusion||r.status}</span>
+            <span style={{ fontSize:11, color:'var(--text3)' }}>{timeAgo(r.created_at)}</span>
+          </div>
+        ))}
+        {sec.length === 0 && <div style={{ padding:20, textAlign:'center', color:'var(--text3)', fontSize:13 }}>No security scans found</div>}
+      </div>
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   PAGE: Environments
-   ═══════════════════════════════════════════ */
+/* ═══ PAGE: Environments ═══ */
 const ENVS = [
-  { name: 'DEV', color: 'var(--blue)' },
-  { name: 'INT', color: 'var(--blue)' },
-  { name: 'QA', color: 'var(--blue)' },
-  { name: 'STAGE', color: 'var(--warning)' },
-  { name: 'PROD', color: 'var(--danger)' },
+  { name:'DEV', color:'var(--blue)' }, { name:'INT', color:'var(--blue)' },
+  { name:'QA', color:'var(--blue)' }, { name:'STAGE', color:'var(--warning)' },
+  { name:'PROD', color:'var(--danger)' }
 ];
 
-const EnvironmentsPage = ({ runs }) => {
-  const envData = useMemo(() => {
-    return ENVS.map(env => {
-      const deploys = runs.filter(r => {
-        const n = (r.name || r.display_title || '').toUpperCase();
-        return (n.includes(env.name) || n.includes(`→ ${env.name}`)) && (n.includes('DEPLOY') || n.includes('→'));
-      });
-      return { ...env, deploys, latest: deploys[0] || null };
+function EnvironmentsPage({ runs }) {
+  const envData = useMemo(() => ENVS.map(env => {
+    const deploys = runs.filter(r => {
+      const n = (r.name || r.display_title || '').toUpperCase();
+      return (n.includes(env.name)) && (n.includes('DEPLOY') || n.includes('→'));
     });
-  }, [runs]);
+    return { ...env, deploys, latest: deploys[0] || null };
+  }), [runs]);
 
-  return h('div', { className: 'fade-up' },
-    h('h2', { style: { fontSize: 18, fontWeight: 600, marginBottom: 20 } }, '🌐 Environments'),
-    h('div', { style: { display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, alignItems: 'flex-start' } },
-      envData.map((env, i) => h(React.Fragment, { key: env.name },
-        h('div', { className: 'env-card', style: { minWidth: 170, flex: '1 1 170px' } },
-          h('div', { className: 'env-header', style: { background: env.color, borderRadius: '6px 6px 0 0' } }),
-          h('div', { className: 'env-body' },
-            h('div', { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 } },
-              h('span', { style: { fontSize: 15, fontWeight: 700 } }, env.name),
-              env.name === 'PROD' && h('span', { className: 'badge', style: { background: 'rgba(244,91,105,.15)', color: 'var(--danger)', fontSize: 9, marginLeft: 4 } }, '🔒 Protected')
-            ),
-            env.latest ? h('div', null,
-              h('div', { style: { display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 } },
-                stDot(env.latest.conclusion || env.latest.status, 7),
-                h('span', { style: { fontSize: 12, fontWeight: 500 } }, env.latest._repo)
-              ),
-              h('div', { style: { fontSize: 11, color: 'var(--text3)', marginBottom: 2 } }, '#', env.latest.run_number, ' · ', env.latest.head_branch),
-              h('div', { style: { fontSize: 11, color: 'var(--text3)' } }, timeAgo(env.latest.created_at)),
-              h('div', { style: { fontSize: 10, color: 'var(--text3)', marginTop: 6, borderTop: '1px solid var(--border)', paddingTop: 6 } }, env.deploys.length, ' total deploys')
-            ) : h('div', { style: { fontSize: 12, color: 'var(--text3)' } }, 'No deployments')
-          )
-        ),
-        i < envData.length - 1 && h('div', { style: { display: 'flex', alignItems: 'center', flexShrink: 0, color: 'var(--teal)', fontSize: 18, alignSelf: 'center', marginTop: 20 } }, '→')
-      ))
-    )
+  return (
+    <div className="fade-up">
+      <h2 style={{ fontSize:18, fontWeight:600, marginBottom:20 }}>🌐 Environments</h2>
+      <div className="env-grid">
+        {envData.map((env, i) => (
+          <React.Fragment key={env.name}>
+            <div className="env-card">
+              <div className="env-header" style={{ background:env.color }} />
+              <div className="env-body">
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10 }}>
+                  <span style={{ fontSize:15, fontWeight:700 }}>{env.name}</span>
+                  {env.name === 'PROD' && <span className="badge" style={{ background:'rgba(244,91,105,.15)', color:'var(--danger)', fontSize:9 }}>🔒 Protected</span>}
+                </div>
+                {env.latest ? (
+                  <div>
+                    <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:6 }}>
+                      <span style={{ display:'inline-block', width:7, height:7, borderRadius:'50%', background:stC(env.latest.conclusion||env.latest.status) }} />
+                      <span style={{ fontSize:12, fontWeight:500 }}>{env.latest._repo}</span>
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--text3)', marginBottom:2 }}>#{env.latest.run_number} · {env.latest.head_branch}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{timeAgo(env.latest.created_at)}</div>
+                    <div style={{ fontSize:10, color:'var(--text3)', marginTop:6, borderTop:'1px solid var(--border)', paddingTop:6 }}>{env.deploys.length} total deploys</div>
+                  </div>
+                ) : <div style={{ fontSize:12, color:'var(--text3)' }}>No deployments</div>}
+              </div>
+            </div>
+            {i < envData.length - 1 && <div style={{ display:'flex', alignItems:'center', flexShrink:0, color:'var(--teal)', fontSize:18, alignSelf:'center', marginTop:20 }}>→</div>}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   PAGE: Approvals
-   ═══════════════════════════════════════════ */
-const ApprovalsPage = ({ api, runs }) => {
+/* ═══ PAGE: Approvals ═══ */
+function ApprovalsPage({ api, runs }) {
   const [acting, setActing] = useState(null);
   const [msg, setMsg] = useState('');
   const waiting = runs.filter(r => r.status === 'waiting' || r.status === 'action_required');
 
   const act = async (run, state) => {
-    setActing(`${run.id}-${state}`); setMsg('');
+    setActing(run.id + '-' + state); setMsg('');
     try {
       const pend = await api.pending(run._repo, run.id);
-      if (!pend || pend.length === 0) { setMsg('No pending deployments found for this run.'); setActing(null); return; }
-      const envIds = pend.map(d => d.environment.id);
-      await api.actDeploy(run._repo, run.id, envIds, state);
-      setMsg(`✅ Run #${run.run_number} ${state} successfully!`);
-    } catch (e) { setMsg(`❌ Action failed: ${e.message}`); }
+      if (!pend || pend.length === 0) { setMsg('No pending deployments found.'); setActing(null); return; }
+      await api.actDeploy(run._repo, run.id, pend.map(d => d.environment.id), state);
+      setMsg('✅ Run #' + run.run_number + ' ' + state + ' successfully!');
+    } catch (e) { setMsg('❌ Failed: ' + e.message); }
     setActing(null);
   };
 
-  return h('div', { className: 'fade-up' },
-    h('h2', { style: { fontSize: 18, fontWeight: 600, marginBottom: 20 } }, '⏸️ Approvals (', waiting.length, ')'),
-    msg && h('div', { style: { padding: '10px 14px', background: msg.startsWith('✅') ? 'rgba(76,217,100,.1)' : 'rgba(244,91,105,.1)', border: `1px solid ${msg.startsWith('✅') ? 'rgba(76,217,100,.3)' : 'rgba(244,91,105,.3)'}`, borderRadius: 'var(--radius)', fontSize: 13, marginBottom: 14 } }, msg),
-    waiting.length === 0 && h('div', { className: 'card', style: { textAlign: 'center', padding: 40 } },
-      h('div', { style: { fontSize: 36, marginBottom: 8 } }, '✅'),
-      h('div', { style: { fontWeight: 600, marginBottom: 4 } }, 'All clear!'),
-      h('div', { style: { color: 'var(--text3)', fontSize: 13 } }, 'No pending approvals right now')
-    ),
-    waiting.map(r => h('div', { key: r.id, className: 'card', style: { marginBottom: 10 } },
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' } },
-        h('span', { style: { fontSize: 20 } }, '⚠️'),
-        h('div', { style: { flex: 1, minWidth: 200 } },
-          h('div', { style: { fontWeight: 600, fontSize: 14 } }, r._repo),
-          h('div', { style: { fontSize: 12, color: 'var(--text3)' } }, r.display_title || r.name, ' · #', r.run_number, ' · ', r.head_branch),
-          h('div', { style: { fontSize: 11, color: 'var(--text3)', marginTop: 2 } }, 'Triggered by ', r.actor?.login || 'unknown', ' · waiting since ', timeAgo(r.created_at))
-        ),
-        h('div', { style: { display: 'flex', gap: 8 } },
-          h('button', { className: 'btn btn-success', onClick: () => act(r, 'approved'), disabled: !!acting }, acting === `${r.id}-approved` ? '⏳...' : '✅ Approve'),
-          h('button', { className: 'btn btn-danger', onClick: () => act(r, 'rejected'), disabled: !!acting }, acting === `${r.id}-rejected` ? '⏳...' : '❌ Reject')
-        ),
-        h('a', { href: r.html_url, target: '_blank', style: { color: 'var(--text3)', fontSize: 12 } }, '🔗')
-      )
-    ))
+  return (
+    <div className="fade-up">
+      <h2 style={{ fontSize:18, fontWeight:600, marginBottom:20 }}>⏸️ Approvals ({waiting.length})</h2>
+      {msg && <div style={{ padding:'10px 14px', background:msg.startsWith('✅')?'rgba(76,217,100,.1)':'rgba(244,91,105,.1)', border:'1px solid '+(msg.startsWith('✅')?'rgba(76,217,100,.3)':'rgba(244,91,105,.3)'), borderRadius:'var(--radius)', fontSize:13, marginBottom:14 }}>{msg}</div>}
+      {waiting.length === 0 && (
+        <div className="card" style={{ textAlign:'center', padding:40 }}>
+          <div style={{ fontSize:36, marginBottom:8 }}>✅</div>
+          <div style={{ fontWeight:600, marginBottom:4 }}>All clear!</div>
+          <div style={{ color:'var(--text3)', fontSize:13 }}>No pending approvals</div>
+        </div>
+      )}
+      {waiting.map(r => (
+        <div key={r.id} className="card" style={{ marginBottom:10 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+            <span style={{ fontSize:20 }}>⚠️</span>
+            <div style={{ flex:1, minWidth:200 }}>
+              <div style={{ fontWeight:600, fontSize:14 }}>{r._repo}</div>
+              <div style={{ fontSize:12, color:'var(--text3)' }}>{r.display_title || r.name} · #{r.run_number} · {r.head_branch}</div>
+              <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>Triggered by {(r.actor && r.actor.login) || 'unknown'} · waiting {timeAgo(r.created_at)}</div>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button className="btn btn-success" onClick={() => act(r,'approved')} disabled={!!acting}>{acting === r.id+'-approved' ? '⏳' : '✅'} Approve</button>
+              <button className="btn btn-danger" onClick={() => act(r,'rejected')} disabled={!!acting}>{acting === r.id+'-rejected' ? '⏳' : '❌'} Reject</button>
+            </div>
+            <a href={r.html_url} target="_blank" rel="noopener" style={{ color:'var(--text3)', fontSize:12 }}>🔗</a>
+          </div>
+        </div>
+      ))}
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   PAGE: Runners
-   ═══════════════════════════════════════════ */
-const RunnersPage = ({ api }) => {
+/* ═══ PAGE: Runners ═══ */
+function RunnersPage({ api }) {
   const [runners, setRunners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -538,106 +564,113 @@ const RunnersPage = ({ api }) => {
     }).catch(e => { setErr(e.message); setLoading(false); });
   }, []);
 
-  return h('div', { className: 'fade-up' },
-    h('h2', { style: { fontSize: 18, fontWeight: 600, marginBottom: 20 } }, '🖥️ Runners'),
-    loading ? h('div', null, [1,2,3].map(i => h('div', { key: i, className: 'skeleton', style: { height: 70, marginBottom: 10 } })))
-    : err ? h('div', { className: 'card', style: { textAlign: 'center', padding: 40 } },
-        h('div', { style: { fontSize: 36, marginBottom: 8 } }, '🖥️'),
-        h('div', { style: { fontWeight: 500, marginBottom: 6 } }, 'No runners accessible'),
-        h('div', { style: { color: 'var(--text3)', fontSize: 13 } }, err)
-      )
-    : runners.length === 0 ? h('div', { className: 'card', style: { textAlign: 'center', padding: 40 } },
-        h('div', { style: { fontSize: 36, marginBottom: 8 } }, '🖥️'),
-        h('div', { style: { fontWeight: 500, marginBottom: 4 } }, 'No self-hosted runners'),
-        h('div', { style: { color: 'var(--text3)', fontSize: 13 } }, 'Self-hosted runners will appear here once configured.')
-      )
-    : h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 } },
-        runners.map(r => h('div', { key: r.id, className: 'card' },
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 } },
-            h('span', { style: { fontSize: 16 } }, r.status === 'online' ? '🟢' : '🔴'),
-            h('div', { style: { flex: 1 } },
-              h('div', { style: { fontWeight: 600, fontSize: 13.5 } }, r.name),
-              h('div', { style: { fontSize: 11, color: 'var(--text3)' } }, r.os, ' · ', r.status)
-            ),
-            h('span', { className: 'badge', style: { background: r.busy ? 'rgba(59,130,246,.15)' : 'rgba(76,217,100,.15)', color: r.busy ? 'var(--blue)' : 'var(--success)', fontSize: 10 } }, r.busy ? '🔄 Busy' : '✅ Idle')
-          ),
-          h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
-            (r.labels || []).map(l => h('span', { key: l.name || l, style: { padding: '2px 8px', background: 'var(--bg)', borderRadius: 4, fontSize: 10, color: 'var(--text3)' } }, l.name || l))
-          )
-        ))
-      )
+  return (
+    <div className="fade-up">
+      <h2 style={{ fontSize:18, fontWeight:600, marginBottom:20 }}>🖥️ Runners</h2>
+      {loading ? [1,2,3].map(i => <div key={i} className="skeleton" style={{ height:70, marginBottom:10 }} />) :
+       err ? (
+        <div className="card" style={{ textAlign:'center', padding:40 }}>
+          <div style={{ fontSize:36, marginBottom:8 }}>🖥️</div>
+          <div style={{ fontWeight:500, marginBottom:6 }}>No runners accessible</div>
+          <div style={{ color:'var(--text3)', fontSize:13 }}>{err}</div>
+        </div>
+      ) : runners.length === 0 ? (
+        <div className="card" style={{ textAlign:'center', padding:40 }}>
+          <div style={{ fontSize:36, marginBottom:8 }}>🖥️</div>
+          <div style={{ fontWeight:500, marginBottom:4 }}>No self-hosted runners</div>
+          <div style={{ color:'var(--text3)', fontSize:13 }}>They will appear here once configured.</div>
+        </div>
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
+          {runners.map(r => (
+            <div key={r.id} className="card">
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+                <span style={{ fontSize:16 }}>{r.status === 'online' ? '🟢' : '🔴'}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:600, fontSize:13.5 }}>{r.name}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>{r.os} · {r.status}</div>
+                </div>
+                <span className="badge" style={{ background:r.busy?'rgba(59,130,246,.15)':'rgba(76,217,100,.15)', color:r.busy?'var(--blue)':'var(--success)', fontSize:10 }}>{r.busy ? '🔄 Busy' : '✅ Idle'}</span>
+              </div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+                {(r.labels || []).map(l => <span key={l.name||l} style={{ padding:'2px 8px', background:'var(--bg)', borderRadius:4, fontSize:10, color:'var(--text3)' }}>{l.name || l}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   PAGE: Settings
-   ═══════════════════════════════════════════ */
-const SettingsPage = ({ onDisconnect, repoCount }) => {
+/* ═══ PAGE: Settings ═══ */
+function SettingsPage({ onDisconnect, repoCount }) {
   const user = sessionStorage.getItem('fo_u') || '';
   const token = sessionStorage.getItem('fo_t') || '';
-  const masked = token ? token.slice(0, 6) + '•'.repeat(Math.max(0, token.length - 10)) + token.slice(-4) : '';
+  const masked = token ? token.slice(0,6) + '••••••••' + token.slice(-4) : '';
 
-  return h('div', { className: 'fade-up' },
-    h('h2', { style: { fontSize: 18, fontWeight: 600, marginBottom: 20 } }, '⚙️ Settings'),
-    h('div', { className: 'card', style: { marginBottom: 16 } },
-      h('div', { style: { fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 } }, 'Connection'),
-      h('table', { style: { width: '100%', fontSize: 13, borderCollapse: 'collapse' } },
-        h('tbody', null,
-          [['Username', user], ['Token', masked], ['Repos', repoCount], ['Storage', 'sessionStorage (clears on tab close)']].map(([k, v]) =>
-            h('tr', { key: k },
-              h('td', { style: { padding: '8px 0', color: 'var(--text3)', width: 120, borderBottom: '1px solid var(--border)' } }, k),
-              h('td', { style: { padding: '8px 0', borderBottom: '1px solid var(--border)', fontFamily: k === 'Token' ? 'monospace' : 'inherit', fontSize: k === 'Token' ? 12 : 13 } }, v)
-            )
-          )
-        )
-      ),
-      h('div', { style: { marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' } },
-        h('button', { className: 'btn btn-danger', onClick: onDisconnect }, '🔌 Disconnect'),
-        h('a', { href: 'https://github.com/settings/tokens', target: '_blank', className: 'btn btn-ghost', style: { display: 'inline-block' } }, '🔑 Manage Tokens'),
-        h('a', { href: 'https://github.com/askboppana/ForgeOps', target: '_blank', className: 'btn btn-ghost', style: { display: 'inline-block' } }, '📖 Docs')
-      )
-    ),
-    h('div', { className: 'card' },
-      h('div', { style: { fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginBottom: 14 } }, 'Integrations'),
-      h('div', null,
-        [
-          { n: 'SonarQube', d: 'SAST scanning', s: 'SONAR_HOST_URL + SONAR_TOKEN' },
-          { n: 'Black Duck', d: 'SCA scanning', s: 'BLACKDUCK_URL + BLACKDUCK_TOKEN' },
-          { n: 'Gitleaks', d: 'Secret scanning', s: 'Always active ✅' },
-          { n: 'Trivy', d: 'Container scanning', s: 'Active when image provided' },
-          { n: 'Syft', d: 'SBOM generation', s: 'Always active ✅' },
-          { n: 'Jira', d: 'Issue tracking', s: 'JIRA_URL + JIRA_TOKEN' },
-          { n: 'Cherwell/ServiceNow', d: 'Change management', s: 'CHERWELL_URL or SERVICENOW_URL' },
-          { n: 'Splunk', d: 'Centralized logging', s: 'SPLUNK_HEC_URL + SPLUNK_HEC_TOKEN' },
-          { n: 'Slack', d: 'Notifications', s: 'SLACK_WEBHOOK_URL' },
-        ].map(i => h('div', { key: i.n, className: 'list-row', style: { gap: 10 } },
-          h('div', { style: { flex: 1 } },
-            h('div', { style: { fontSize: 13, fontWeight: 500 } }, i.n),
-            h('div', { style: { fontSize: 11, color: 'var(--text3)' } }, i.d)
-          ),
-          h('div', { style: { fontSize: 11, color: i.s.includes('✅') ? 'var(--success)' : 'var(--text3)' } }, i.s)
-        ))
-      )
-    )
+  return (
+    <div className="fade-up">
+      <h2 style={{ fontSize:18, fontWeight:600, marginBottom:20 }}>⚙️ Settings</h2>
+      <div className="card">
+        <div style={{ fontSize:13, fontWeight:500, color:'var(--text2)', marginBottom:14 }}>Connection</div>
+        <table style={{ width:'100%', fontSize:13, borderCollapse:'collapse' }}>
+          <tbody>
+            {[['Username', user], ['Token', masked], ['Connected Repos', repoCount], ['Storage', 'sessionStorage (clears on tab close)']].map(([k, v]) => (
+              <tr key={k}>
+                <td style={{ padding:'8px 0', color:'var(--text3)', width:140, borderBottom:'1px solid var(--border)' }}>{k}</td>
+                <td style={{ padding:'8px 0', borderBottom:'1px solid var(--border)', fontFamily:k==='Token'?'monospace':'inherit', fontSize:k==='Token'?12:13 }}>{v}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div style={{ marginTop:16, display:'flex', gap:10, flexWrap:'wrap' }}>
+          <button className="btn btn-danger" onClick={onDisconnect}>🔌 Disconnect</button>
+          <a href="https://github.com/settings/tokens" target="_blank" rel="noopener" className="btn btn-ghost">🔑 Manage Tokens</a>
+          <a href="https://github.com/askboppana/ForgeOps" target="_blank" rel="noopener" className="btn btn-ghost">📖 Docs</a>
+        </div>
+      </div>
+      <div className="card">
+        <div style={{ fontSize:13, fontWeight:500, color:'var(--text2)', marginBottom:14 }}>Integrations</div>
+        {[
+          { n:'SonarQube', d:'SAST scanning', s:'SONAR_HOST_URL + SONAR_TOKEN' },
+          { n:'Black Duck', d:'SCA scanning', s:'BLACKDUCK_URL + BLACKDUCK_TOKEN' },
+          { n:'Gitleaks', d:'Secret scanning', s:'Always active ✅' },
+          { n:'Trivy', d:'Container scanning', s:'Active when image provided' },
+          { n:'Syft', d:'SBOM generation', s:'Always active ✅' },
+          { n:'Jira', d:'Issue tracking', s:'JIRA_URL + JIRA_TOKEN' },
+          { n:'Cherwell/ServiceNow', d:'Change management', s:'CHERWELL_URL or SERVICENOW_URL' },
+          { n:'Splunk', d:'Centralized logging', s:'SPLUNK_HEC_URL + SPLUNK_HEC_TOKEN' },
+          { n:'Slack', d:'Notifications', s:'SLACK_WEBHOOK_URL' },
+        ].map(i => (
+          <div key={i.n} className="list-row" style={{ gap:10 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:500 }}>{i.n}</div>
+              <div style={{ fontSize:11, color:'var(--text3)' }}>{i.d}</div>
+            </div>
+            <div style={{ fontSize:11, color: i.s.includes('✅') ? 'var(--success)' : 'var(--text3)' }}>{i.s}</div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
-};
+}
 
-/* ═══════════════════════════════════════════
-   MAIN APP
-   ═══════════════════════════════════════════ */
+/* ═══ NAV CONFIG ═══ */
 const NAV = [
   { section: 'Delivery' },
-  { key: 'overview',     label: 'Overview',      icon: '📊' },
-  { key: 'pipelines',    label: 'Pipelines',     icon: '🔀' },
-  { key: 'security',     label: 'Security',      icon: '🛡️' },
-  { key: 'environments', label: 'Environments',  icon: '🌐' },
-  { key: 'approvals',    label: 'Approvals',     icon: '⏸️' },
+  { key:'overview',     label:'Overview',     icon:'📊' },
+  { key:'pipelines',    label:'Pipelines',    icon:'🔀' },
+  { key:'security',     label:'Security',     icon:'🛡️' },
+  { key:'environments', label:'Environments', icon:'🌐' },
+  { key:'approvals',    label:'Approvals',    icon:'⏸️' },
   { section: 'Operations' },
-  { key: 'runners',      label: 'Runners',       icon: '🖥️' },
-  { key: 'settings',     label: 'Settings',      icon: '⚙️' },
+  { key:'runners',      label:'Runners',      icon:'🖥️' },
+  { key:'settings',     label:'Settings',     icon:'⚙️' },
 ];
 
-const App = () => {
+/* ═══ MAIN APP ═══ */
+function App() {
   const [api, setApi] = useState(null);
   const [page, setPage] = useState('overview');
   const [repos, setRepos] = useState([]);
@@ -649,9 +682,9 @@ const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const timerRef = useRef(null);
 
-  // Auto-connect
   useEffect(() => {
-    const t = sessionStorage.getItem('fo_t'), u = sessionStorage.getItem('fo_u');
+    const t = sessionStorage.getItem('fo_t');
+    const u = sessionStorage.getItem('fo_u');
     if (t && u) setApi(new GH(t, u));
   }, []);
 
@@ -664,19 +697,15 @@ const App = () => {
       setRepos(repoList);
       const batches = await Promise.all(
         repoList.slice(0, 20).map(r =>
-          api.runs(r.name).then(d => (d?.workflow_runs || []).map(run => ({ ...run, _repo: r.name }))).catch(() => [])
+          api.runs(r.name).then(d => ((d && d.workflow_runs) || []).map(run => ({ ...run, _repo: r.name }))).catch(() => [])
         )
       );
-      const all = batches.flat().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      setAllRuns(all);
+      setAllRuns(batches.flat().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
       setLastRefresh(new Date());
     } catch (e) {
-      if (e.message.startsWith('RATE_LIMITED:')) {
-        const secs = e.message.split(':')[1];
-        setRateLimited(`Rate limited by GitHub. Retrying in ${secs}s...`);
-      } else {
-        setError(e.message);
-      }
+      if (e.message && e.message.startsWith('RATE_LIMITED:')) {
+        setRateLimited('Rate limited by GitHub. Retrying in ' + e.message.split(':')[1] + 's...');
+      } else { setError(e.message); }
     }
     setLoading(false);
   }, [api]);
@@ -687,74 +716,88 @@ const App = () => {
   }, [api, fetchData]);
 
   const disconnect = () => {
-    sessionStorage.removeItem('fo_t'); sessionStorage.removeItem('fo_u');
+    sessionStorage.removeItem('fo_t');
+    sessionStorage.removeItem('fo_u');
     setApi(null); setRepos([]); setAllRuns([]);
   };
 
-  if (!api) return h(ConnectScreen, { onConnect: setApi });
+  if (!api) return <ConnectScreen onConnect={setApi} />;
 
   const pendingCount = allRuns.filter(r => r.status === 'waiting' || r.status === 'action_required').length;
+  const isMobile = window.innerWidth <= 768;
 
   const renderPage = () => {
-    if (loading && allRuns.length === 0) return h('div', null,
-      h('div', { className: 'stat-grid' }, [1,2,3,4].map(i => h('div', { key: i, className: 'skeleton', style: { height: 90 } }))),
-      h('div', { className: 'skeleton', style: { height: 250, marginTop: 16 } }),
-      h('div', { className: 'skeleton', style: { height: 200, marginTop: 16 } })
+    if (loading && allRuns.length === 0) return (
+      <div>
+        <div className="stat-grid">{[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height:90 }} />)}</div>
+        <div className="skeleton" style={{ height:250, marginTop:16 }} />
+      </div>
     );
     switch(page) {
-      case 'overview': return h(OverviewPage, { runs: allRuns });
-      case 'pipelines': return h(PipelinesPage, { api, repos, runs: allRuns });
-      case 'security': return h(SecurityPage, { runs: allRuns });
-      case 'environments': return h(EnvironmentsPage, { runs: allRuns });
-      case 'approvals': return h(ApprovalsPage, { api, runs: allRuns });
-      case 'runners': return h(RunnersPage, { api });
-      case 'settings': return h(SettingsPage, { onDisconnect: disconnect, repoCount: repos.length });
+      case 'overview': return <OverviewPage runs={allRuns} />;
+      case 'pipelines': return <PipelinesPage api={api} repos={repos} runs={allRuns} />;
+      case 'security': return <SecurityPage runs={allRuns} />;
+      case 'environments': return <EnvironmentsPage runs={allRuns} />;
+      case 'approvals': return <ApprovalsPage api={api} runs={allRuns} />;
+      case 'runners': return <RunnersPage api={api} />;
+      case 'settings': return <SettingsPage onDisconnect={disconnect} repoCount={repos.length} />;
+      default: return null;
     }
   };
 
-  return h('div', { className: 'app' },
-    // Sidebar overlay (mobile)
-    h('div', { className: `sidebar-overlay${sidebarOpen && window.innerWidth <= 768 ? ' show' : ''}`, onClick: () => setSidebarOpen(false) }),
-    // Sidebar
-    h('aside', { className: `sidebar${sidebarOpen ? '' : ' closed'}` },
-      h('div', { className: 'logo' },
-        h('span', { className: 'logo-icon' }, '⚡'),
-        h('span', { className: 'logo-text' }, 'ForgeOps')
-      ),
-      h('nav', { style: { flex: 1, padding: '4px 0' } },
-        NAV.map((n, i) => {
-          if (n.section) return h('div', { key: `s-${i}`, className: 'nav-section' }, n.section);
-          return h('div', { key: n.key, className: `nav-item${page === n.key ? ' active' : ''}`, onClick: () => { setPage(n.key); if (window.innerWidth <= 768) setSidebarOpen(false); } },
-            h('span', { className: 'icon' }, n.icon),
-            n.label,
-            n.key === 'approvals' && pendingCount > 0 && h('span', { className: 'nav-badge' }, pendingCount)
-          );
-        })
-      ),
-      h('div', { className: 'sidebar-footer' },
-        h('div', null, h('span', { className: 'status-dot', style: { background: error ? 'var(--danger)' : 'var(--success)' } }), error ? 'Error' : 'Connected'),
-        h('div', { style: { marginTop: 2 } }, sessionStorage.getItem('fo_u')),
-        lastRefresh && h('div', { style: { marginTop: 2 } }, 'Updated ', lastRefresh.toLocaleTimeString())
-      )
-    ),
-    // Main
-    h('div', { className: 'main' },
-      h('header', { className: 'topbar' },
-        h('button', { className: 'hamburger', onClick: () => setSidebarOpen(!sidebarOpen) }, '☰'),
-        h('div', { style: { flex: 1, fontSize: 15, fontWeight: 600 } }, NAV.find(n => n.key === page)?.label || ''),
-        loading && h('span', { style: { fontSize: 14, animation: 'spin 1s linear infinite', display: 'inline-block' } }, '⟳'),
-        h('button', { className: 'btn btn-ghost', onClick: fetchData, style: { fontSize: 12, padding: '5px 12px' } }, '🔄 Refresh')
-      ),
-      h('div', { className: 'content' },
-        error && h('div', { className: 'error-banner' }, '⚠️ ', error),
-        rateLimited && h('div', { className: 'rate-banner' }, '⏳ ', rateLimited),
-        renderPage()
-      )
-    )
+  return (
+    <div className="app">
+      {sidebarOpen && isMobile && <div className="sidebar-overlay show" onClick={() => setSidebarOpen(false)} />}
+      <aside className={'sidebar' + (sidebarOpen ? '' : ' closed')}>
+        <div className="logo">
+          <span style={{ fontSize:22 }}>⚡</span>
+          <span style={{ fontSize:17, fontWeight:700 }}>ForgeOps</span>
+        </div>
+        <nav style={{ flex:1, padding:'4px 0' }}>
+          {NAV.map((n, i) => {
+            if (n.section) return <div key={'s-'+i} className="nav-section">{n.section}</div>;
+            return (
+              <div key={n.key} className={'nav-item' + (page === n.key ? ' active' : '')} onClick={() => { setPage(n.key); if (isMobile) setSidebarOpen(false); }}>
+                <span className="nav-icon">{n.icon}</span>
+                {n.label}
+                {n.key === 'approvals' && pendingCount > 0 && <span className="nav-badge">{pendingCount}</span>}
+              </div>
+            );
+          })}
+        </nav>
+        <div className="sidebar-footer">
+          <div><span className="status-dot" style={{ background: error ? 'var(--danger)' : 'var(--success)' }} />{error ? 'Error' : 'Connected'}</div>
+          <div style={{ marginTop:2 }}>{sessionStorage.getItem('fo_u')}</div>
+          {lastRefresh && <div style={{ marginTop:2 }}>Updated {lastRefresh.toLocaleTimeString()}</div>}
+        </div>
+      </aside>
+      <div className="main">
+        <header className="topbar">
+          <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+          <div style={{ flex:1, fontSize:15, fontWeight:600 }}>{(NAV.find(n => n.key === page) || {}).label || ''}</div>
+          {loading && <span style={{ color:'var(--teal)' }}>⟳</span>}
+          <button className="btn btn-ghost" onClick={fetchData} style={{ fontSize:12, padding:'5px 12px' }}>🔄 Refresh</button>
+        </header>
+        <div className="content">
+          {error && <div className="error-banner">⚠️ {error}</div>}
+          {rateLimited && <div className="rate-banner">⏳ {rateLimited}</div>}
+          {renderPage()}
+        </div>
+      </div>
+    </div>
   );
-};
+}
 
-createRoot(document.getElementById('root')).render(h(App));
+/* ═══ RENDER ═══ */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+} catch (err) {
+  document.getElementById('root').innerHTML =
+    '<div id="fatal-error"><h2>⚡ ForgeOps — Failed to Load</h2><p style="margin-top:10px">' +
+    err.message + '</p><pre style="margin-top:10px;font-size:12px;color:#8b93a8;overflow:auto">' +
+    err.stack + '</pre><p style="margin-top:12px;color:#8b93a8;font-size:13px">Try refreshing the page. If the issue persists, check your browser console.</p></div>';
+}
 </script>
 </body>
 </html>
