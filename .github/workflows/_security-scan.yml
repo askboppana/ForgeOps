@@ -46,7 +46,7 @@ jobs:
       result: ${{ steps.sast-result.outputs.status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -84,7 +84,7 @@ jobs:
       result: ${{ steps.sca-result.outputs.status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Make scripts executable
         run: chmod +x scripts/*.sh scripts/*.py 2>/dev/null || true
@@ -133,7 +133,7 @@ jobs:
       result: ${{ steps.secrets-result.outputs.status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -164,7 +164,7 @@ jobs:
       result: ${{ steps.container-result.outputs.status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Make scripts executable
         run: chmod +x scripts/*.sh scripts/*.py 2>/dev/null || true
@@ -190,7 +190,7 @@ jobs:
       result: ${{ steps.sbom-result.outputs.status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Make scripts executable
         run: chmod +x scripts/*.sh scripts/*.py 2>/dev/null || true
