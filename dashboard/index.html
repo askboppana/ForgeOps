@@ -5,53 +5,62 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ForgeOps - DevSecOps Command Center</title>
 <meta name="referrer" content="no-referrer">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://esm.sh 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.github.com https://raw.githubusercontent.com; img-src 'self' data: https://avatars.githubusercontent.com">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' rx='10' fill='url(%23g)'/%3E%3Cpath d='M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f8f9fb;--pn:#fff;--cd:#fff;--sf:#f1f5f9;--bd:#e2e8f0;--tx:#0f172a;--ts:#475569;--td:#94a3b8;--pr:#4f46e5;--pl:rgba(79,70,229,.08);--ok:#059669;--er:#dc2626;--wa:#d97706;--in:#0284c7;--r:12px;--sh:0 1px 3px rgba(0,0,0,.06)}
-html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:14px}
 code,.mono{font-family:'JetBrains Mono',monospace}
 a{color:var(--pr);text-decoration:none}button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit;background:var(--pn);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:10px 14px;font-size:13px;outline:none;width:100%}
 input:focus,select:focus,textarea:focus{border-color:var(--pr);box-shadow:0 0 0 3px var(--pl)}
 textarea{resize:vertical;min-height:60px}
-select{-webkit-appearance:none;appearance:none}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes boltPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.1)}}
 @keyframes sparkGlow{0%,100%{filter:drop-shadow(0 0 2px currentColor)}50%{filter:drop-shadow(0 0 8px currentColor)}}
-.fu{animation:fadeUp .3s ease-out}.sk{background:linear-gradient(90deg,var(--sf) 25%,var(--bd) 50%,var(--sf) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r);height:20px;margin:8px 0}
-.app{display:flex;height:100vh;overflow:hidden}.sb{width:200px;background:var(--pn);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}.mn{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}.hd{padding:10px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;background:var(--pn)}.ct{flex:1;overflow-y:auto;padding:20px}
-.c{background:var(--cd);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}.g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:16px}
-.bt{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:all .15s}.bp{background:var(--pr);color:#fff}.bp:hover{opacity:.9}.bs{background:var(--sf);color:var(--ts);border:1px solid var(--bd)}.bs:hover{border-color:var(--pr)}.bd{background:none;color:var(--er);border:1px solid rgba(220,38,38,.3)}.bok{background:var(--ok);color:#fff}
-.lr{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)}.lr:last-child{border-bottom:none}.badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.fu{animation:fadeUp .3s ease-out}
+.sk{background:linear-gradient(90deg,var(--sf) 25%,var(--bd) 50%,var(--sf) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r);height:20px;margin:8px 0}
+.app{display:flex;height:100vh;overflow:hidden}
+.sb{width:200px;background:var(--pn);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.mn{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.hd{padding:10px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;background:var(--pn)}
+.ct{flex:1;overflow-y:auto;padding:20px}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:16px}
+.bt{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
+.bp{background:var(--pr);color:#fff}.bp:hover{opacity:.9}
+.bs{background:var(--sf);color:var(--ts);border:1px solid var(--bd)}.bs:hover{border-color:var(--pr)}
+.bd{background:none;color:var(--er);border:1px solid rgba(220,38,38,.3)}
+.bok{background:var(--ok);color:#fff}
+.lr{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)}.lr:last-child{border-bottom:none}
+.badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.ni{display:flex;align-items:center;gap:7px;padding:6px 12px;margin:1px 4px;border-radius:8px;font-size:12px;color:var(--ts);cursor:pointer;border-left:3px solid transparent}
+.ni:hover{background:var(--sf)}.ni.ac{background:var(--pl);color:var(--pr);font-weight:600;border-left-color:var(--pr)}
+.ns{padding:12px 10px 3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--td)}
+.fl{display:flex;flex-direction:column;gap:10px}
+.lb{font-size:10px;color:var(--ts);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .tabs{display:flex;border-bottom:1px solid var(--bd);margin-bottom:14px}.tab{padding:8px 14px;font-size:13px;font-weight:500;color:var(--ts);cursor:pointer;border-bottom:2px solid transparent}.tab.ac{color:var(--pr);border-color:var(--pr)}
-.ni{display:flex;align-items:center;gap:7px;padding:6px 12px;margin:1px 4px;border-radius:8px;font-size:12px;color:var(--ts);cursor:pointer;border-left:3px solid transparent}.ni:hover{background:var(--sf)}.ni.ac{background:var(--pl);color:var(--pr);font-weight:600;border-left-color:var(--pr)}.ns{padding:12px 10px 3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--td)}
-.fl{display:flex;flex-direction:column;gap:10px}.lb{font-size:10px;color:var(--ts);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}.modal{background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto}
 .toast{position:fixed;top:16px;right:16px;z-index:9999;padding:10px 18px;border-radius:8px;font-size:13px;background:var(--pn);border-left:4px solid var(--ok);box-shadow:0 4px 12px rgba(0,0,0,.1);animation:fadeUp .3s}
-.toast-err{border-left-color:var(--er)}
-.spark-btn{position:absolute;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:var(--pn);border:1.5px solid var(--in);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.1);transition:transform .15s;z-index:50}.spark-btn:hover{transform:scale(1.08)}
-.spark-panel{position:absolute;bottom:76px;right:20px;width:320px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;max-height:480px;overflow-y:auto;padding:16px}
-.log-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:90;transition:opacity .2s}
+.toast-err{border-left-color:var(--er)}.toast-warn{border-left-color:var(--wa)}
+.log-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:90}
 .log-panel{position:fixed;top:0;right:0;width:50%;height:100vh;background:var(--pn);border-left:1px solid var(--bd);z-index:100;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;box-shadow:-4px 0 24px rgba(0,0,0,.1)}
 .log-panel.open{transform:translateX(0)}
-.log-header{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .log-tabs{display:flex;gap:0;border-bottom:1px solid var(--bd);overflow-x:auto;flex-shrink:0}
-.log-tab{padding:8px 16px;font-size:12px;font-weight:500;color:var(--ts);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
-.log-tab.ac{color:var(--pr);border-color:var(--pr);font-weight:600}
-.log-body{flex:1;overflow-y:auto;padding:12px}
-.log-step{border:1px solid var(--bd);border-radius:8px;margin-bottom:8px;overflow:hidden}
-.log-step-header{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:12px}
-.log-step-header:hover{background:var(--sf)}
-.log-code{background:#1e1e2e;color:#cdd6f4;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;padding:12px;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre;margin:0}
+.log-tab{padding:8px 14px;font-size:11px;font-weight:500;color:var(--ts);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}.log-tab.ac{color:var(--pr);border-color:var(--pr)}
+.log-code{background:#1e1e2e;color:#cdd6f4;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;padding:12px;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre;margin:0;border-radius:0 0 8px 8px}
 .log-line-err{background:rgba(220,38,38,.15)}.log-line-warn{background:rgba(217,119,6,.12)}.log-line-ok{color:#a6e3a1}
-.log-linenum{color:#585b70;min-width:40px;display:inline-block;text-align:right;padding-right:10px;user-select:none}
-@media(max-width:900px){.sb{display:none}.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.spark-panel{width:calc(100vw - 40px);right:10px}.log-panel{width:100%}}
+.spark-btn{position:absolute;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:var(--pn);border:1.5px solid var(--in);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.1);transition:transform .15s;z-index:50}.spark-btn:hover{transform:scale(1.08)}
+.spark-panel{position:absolute;bottom:76px;right:20px;width:320px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;max-height:480px;overflow-y:auto;padding:16px}
+.hb{display:none}
+@media(max-width:900px){.sb{position:fixed;z-index:80;height:100%;transform:translateX(-100%);transition:transform .2s}.sb.open{transform:translateX(0)}.hb{display:block;font-size:18px;padding:4px 8px;cursor:pointer;color:var(--ts);background:none;border:none}.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.spark-panel{width:calc(100vw - 40px);right:10px}.log-panel{width:100%}}
 </style>
 </head>
 <body>
@@ -61,402 +70,166 @@ import{h,render,Fragment}from'https://esm.sh/preact@10.22.0';
 import{useState,useEffect,useRef,useCallback}from'https://esm.sh/preact@10.22.0/hooks';
 import htm from'https://esm.sh/htm@3.1.1';
 var html=htm.bind(h);
-var ORG='askboppana';var cache={};var toastEl=null;
-
+var ORG='askboppana';
+var cache={};
 function getToken(){return localStorage.getItem('fg_pat')||''}
-function api(path,opts){
-  var token=getToken();var url='https://api.github.com'+path;
-  var key=url+JSON.stringify(opts||'');var method=(opts&&opts.method)||'GET';
-  if(method==='GET'&&cache[key]&&Date.now()-cache[key].t<60000)return Promise.resolve(cache[key].d);
-  var headers={Accept:'application/vnd.github.v3+json'};
-  if(token)headers.Authorization='token '+token;
-  if(opts&&opts.body)headers['Content-Type']='application/json';
-  return fetch(url,{method:method,headers:headers,body:opts&&opts.body?JSON.stringify(opts.body):undefined}).then(function(r){
-    if(!r.ok)return r.json().then(function(e){throw new Error(e.message||r.statusText)}).catch(function(){throw new Error('API error '+r.status)});
-    if(r.status===204)return null;return r.json();
-  }).then(function(d){if(method==='GET')cache[key]={d:d,t:Date.now()};return d});
-}
+function apiGet(url){var k=url;if(cache[k]&&Date.now()-cache[k].t<120000)return Promise.resolve(cache[k].d);var h={Accept:'application/vnd.github.v3+json'};var tk=getToken();if(tk)h.Authorization='token '+tk;return fetch(url,{headers:h}).then(function(r){if(r.status===403)throw new Error('RATE_LIMITED');if(!r.ok)throw new Error(r.status+'');return r.json()}).then(function(d){cache[k]={d:d,t:Date.now()};return d})}
+function api(path,opts){var url='https://api.github.com'+path;if(!opts)return apiGet(url);var tk=getToken();var h={Accept:'application/vnd.github.v3+json'};if(tk)h.Authorization='token '+tk;if(opts.body)h['Content-Type']='application/json';return fetch(url,{method:opts.method||'POST',headers:h,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){if(!r.ok)return r.json().then(function(e){throw new Error(e.message||r.status)});if(r.status===204)return null;return r.json()})}
 function clearCache(){Object.keys(cache).forEach(function(k){delete cache[k]})}
-function toast(msg,err){
-  var d=document.createElement('div');d.className='toast'+(err?' toast-err':'');d.textContent=msg;
-  document.body.appendChild(d);setTimeout(function(){d.remove()},4000);
-}
+function fetchCmdData(){return fetch('https://raw.githubusercontent.com/'+ORG+'/ForgeOps/main/dashboard-data.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
+function fetchConfig(){return fetch('https://raw.githubusercontent.com/'+ORG+'/ForgeOps/main/forgeops-config.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
+function toast(msg,type){var d=document.createElement('div');d.className='toast'+(type==='err'?' toast-err':type==='warn'?' toast-warn':'');d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},4000)}
 function ago(d){if(!d)return'';var s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
 function sCol(s){return{success:'var(--ok)',completed:'var(--ok)',failure:'var(--er)',in_progress:'var(--in)',queued:'var(--wa)',waiting:'var(--wa)'}[s]||'var(--td)'}
 function Logo(p){return html`<svg width=${(p&&p.s)||28} height=${(p&&p.s)||28} viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#lg)"/><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="white" style="animation:boltPulse 3s infinite"/></svg>`}
 function Skel(){return html`<div class="sk"></div>`}
-function Modal(p){if(!p.open)return null;return html`<div class="modal-bg" onClick=${p.onClose}><div class="modal" onClick=${function(e){e.stopPropagation()}}><div style="display:flex;align-items:center;margin-bottom:14px"><span style="flex:1;font-size:16px;font-weight:600">${p.title}</span><button onClick=${p.onClose} style="font-size:18px;color:var(--td)">x</button></div>${p.children}</div></div>`}
+function Skels(){return html`<div><${Skel}/><${Skel}/><${Skel}/></div>`}
+function Empty(p){return html`<div class="c" style="text-align:center;padding:24px;color:var(--td)">${p.msg||'No data'}</div>`}
 
 var SPARK=[
-{p:['overview'],q:'What do the stat cards show?',a:'Active pipelines (in_progress), success rate from last 50 runs, open PRs across repos, and pending deployment approvals.'},
-{p:['overview'],q:'I see failures - what should I do?',a:'Go to Pipelines page, find the failing run, expand it to see which job failed, then click View Logs for details.'},
-{p:['pipelines'],q:'How do I run a pipeline?',a:'Click Run Pipeline, select the repo, workflow, and branch, then click Run. It dispatches a workflow_dispatch event.'},
-{p:['pipelines'],q:'Why is my pipeline stuck in queued?',a:'GitHub free tier allows 20 concurrent jobs. Wait for running jobs to finish or upgrade your plan.'},
-{p:['pipelines'],q:'What is the Security Gate?',a:'A job that aggregates all 5 security scan results. If any CRITICAL or HIGH findings exist, it blocks the pipeline.'},
-{p:['prs'],q:'How do I create a PR to INT?',a:'Go to Create tab, select repo, pick your feature branch as source, INT as target, add title and Jira ticket, click Create.'},
-{p:['prs'],q:'Why is the Merge button disabled?',a:'CI checks must pass first. Wait for all checks to turn green, then merge will be enabled.'},
-{p:['environments'],q:'What does Ready for SIT mean?',a:'It means the build is deployed to QA and the QA team should begin System Integration Testing.'},
-{p:['environments'],q:'How do I promote from INT to QA?',a:'Go to Pull Requests, Create tab, select source=int target=qa, create the PR. After review, merge it.'},
-{p:['security'],q:'What is the difference between SAST and SCA?',a:'SAST scans your source code for bugs. SCA scans your third-party dependencies for known vulnerabilities.'},
-{p:['deploy'],q:'How does Deploy All work?',a:'It triggers the workflow_dispatch on each repo in the project. Select repo, workflow, branch, and click Deploy.'},
-{p:['all'],q:'What is ForgeOps?',a:'An enterprise DevSecOps platform built on GitHub Actions that replaces Jenkins with automated, secure CI/CD pipelines.'},
-{p:['all'],q:'How do I get help?',a:'Click Create Ticket below, or go to the Knowledge Base for step-by-step guides.'},
-{p:['all'],q:'What integrations are available?',a:'Jira, SonarQube, OWASP DC, Gitleaks, Trivy, Syft, Email (SMTP), Teams, Splunk, Cherwell. All optional.'},
-{p:['all'],q:'How does Jira sync work?',a:'Pipelines auto-transition Jira tickets found in commit messages. INT=Ready for Unit Testing, QA=Ready for SIT, Stage=Ready for UAT, Prod=Deployed.'}
+{p:['overview'],q:'What do stat cards show?',a:'Total repos, passing, failing, running counts from the command center data file.'},
+{p:['pipelines'],q:'How to run a pipeline?',a:'Click Run Pipeline, select repo/workflow/branch, click Run. It dispatches a workflow.'},
+{p:['prs'],q:'How to create a PR?',a:'Select repo, pick source and target branches, add Jira ticket and title, click Create. Opens GitHub compare.'},
+{p:['environments'],q:'What is Ready for SIT?',a:'Jira status meaning the build is in QA and ready for System Integration Testing.'},
+{p:['security'],q:'SAST vs SCA?',a:'SAST scans source code. SCA scans dependencies for known vulnerabilities.'},
+{p:['deploy'],q:'How does bulk deploy work?',a:'Select project and environment, click Deploy. It triggers workflows for all repos in that project.'},
+{p:['all'],q:'What is ForgeOps?',a:'Enterprise DevSecOps platform on GitHub Actions replacing Jenkins.'},
+{p:['all'],q:'How to get help?',a:'Click Create Ticket or check the Knowledge Base for guides.'},
+{p:['all'],q:'What integrations are available?',a:'Jira, SonarQube, OWASP DC, Gitleaks, Trivy, Syft, Email, Teams, Splunk, Cherwell. All optional.'}
 ];
+function SparkPanel(p){var s=useState('');var search=s[0];var setS=s[1];var c=useState('');var chat=c[0];var setChat=c[1];var r=useState('');var reply=r[0];var setReply=r[1];
+var qa=SPARK.filter(function(i){return i.p.indexOf(p.pg)>=0||i.p.indexOf('all')>=0});
+var filtered=search?qa.filter(function(i){return(i.q+' '+i.a).toLowerCase().indexOf(search.toLowerCase())>=0}).slice(0,5):qa.slice(0,4);
+function ask(){if(!chat.trim())return;var q=chat.toLowerCase();var best=null;var bs=0;SPARK.forEach(function(i){var sc=0;i.q.toLowerCase().split(' ').forEach(function(w){if(w.length>3&&q.indexOf(w)>=0)sc++});if(sc>bs){bs=sc;best=i}});setTimeout(function(){if(best&&bs>=2)setReply(best.a);else if(q.indexOf('deploy')>=0)setReply('Go to Deploy page to trigger workflows across projects.');else if(q.indexOf('fail')>=0||q.indexOf('error')>=0)setReply('Check Pipelines page, click Logs on the failing run to see details.');else if(q.indexOf('pr')>=0||q.indexOf('pull')>=0)setReply('Go to Pull Requests page, Create tab. Select repo and branches.');else setReply('Try the Knowledge Base for detailed guides.')},300)}
+return html`<div class="spark-panel"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="width:26px;height:26px;border-radius:50%;background:rgba(2,132,199,.1);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 40 40"><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="var(--in)" style="animation:sparkGlow 3s infinite"/></svg></div><div style="flex:1"><div style="font-size:13px;font-weight:600">Spark AI</div></div><button onClick=${p.close} style="color:var(--td)">x</button></div>
+<div style="display:flex;gap:4px;margin-bottom:8px"><input value=${chat} onInput=${function(e){setChat(e.target.value)}} onKeyDown=${function(e){if(e.key==='Enter')ask()}} placeholder="Ask a question..." style="flex:1;font-size:11px;padding:8px 10px"/><button class="bt bp" style="padding:5px 10px;font-size:10px" onClick=${ask}>Ask</button></div>
+${reply&&html`<div style="background:rgba(2,132,199,.06);border:1px solid rgba(2,132,199,.15);border-radius:8px;padding:8px;margin-bottom:8px;font-size:11px;color:var(--ts);line-height:1.4">${reply}</div>`}
+<input value=${search} onInput=${function(e){setS(e.target.value)}} placeholder="Filter..." style="margin-bottom:6px;font-size:10px;padding:6px 8px"/>
+${filtered.map(function(i){return html`<div key=${i.q} style="background:var(--sf);border-radius:6px;padding:6px;margin-bottom:4px;cursor:pointer;font-size:10px" onClick=${function(){setReply(i.a)}}><div style="font-weight:600;margin-bottom:1px">${i.q}</div><div style="color:var(--ts);line-height:1.3">${i.a}</div></div>`})}</div>`}
 
-function SparkPanel(p){
-  var s=useState('');var search=s[0];var setSearch=s[1];
-  var c=useState('');var chat=c[0];var setChat=c[1];
-  var r=useState('');var reply=r[0];var setReply=r[1];
-  var qa=SPARK.filter(function(i){return i.p.indexOf(p.pg)>=0||i.p.indexOf('all')>=0});
-  var filtered=search?qa.filter(function(i){return(i.q+' '+i.a).toLowerCase().indexOf(search.toLowerCase())>=0}).slice(0,5):qa.slice(0,4);
-
-  function ask(){
-    if(!chat.trim())return;
-    var q=chat.toLowerCase();setReply('Thinking...');
-    // Pattern match against all Q&A
-    var best=null;var bestScore=0;
-    SPARK.forEach(function(item){
-      var words=item.q.toLowerCase().split(' ');
-      var score=0;
-      words.forEach(function(w){if(w.length>3&&q.indexOf(w)>=0)score++});
-      if(score>bestScore){bestScore=score;best=item}
-    });
-    setTimeout(function(){
-      if(best&&bestScore>=2){setReply(best.a)}
-      else if(q.indexOf('create')>=0&&q.indexOf('pr')>=0){setReply('Go to Pull Requests page, Create tab. Select repo, source branch, target branch, add title, click Create PR.')}
-      else if(q.indexOf('deploy')>=0||q.indexOf('promote')>=0){setReply('Go to Deploy page to trigger workflows, or Pull Requests to create promotion PRs between environments.')}
-      else if(q.indexOf('fail')>=0||q.indexOf('error')>=0||q.indexOf('fix')>=0){setReply('Check Pipelines page, expand the failing run, click View Logs to see the error details. Fix the code and push again.')}
-      else if(q.indexOf('approve')>=0){setReply('Go to Approvals page. Pending deployments show there. Click Approve or Reject.')}
-      else if(q.indexOf('rollback')>=0){setReply('Go to Deploy page and use the Rollback section. Select environment and trigger the rollback workflow.')}
-      else if(q.indexOf('security')>=0||q.indexOf('scan')>=0){setReply('Security page shows scan results. 5 scans run: SAST, SCA, Secrets, Container, SBOM. Failed scans block deployment.')}
-      else if(q.indexOf('jira')>=0){setReply('Jira integration syncs automatically in pipelines. Tickets in commit messages get transitioned: INT=Ready for Unit Testing, QA=Ready for SIT, Stage=Ready for UAT, Prod=Deployed.')}
-      else{setReply('I could not find a specific answer. Try the Knowledge Base for detailed guides, or create a support ticket.')}
-    },500);
-  }
-
-  return html`<div class="spark-panel">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div style="width:26px;height:26px;border-radius:50%;background:rgba(2,132,199,.1);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 40 40"><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="var(--in)" style="animation:sparkGlow 3s infinite"/></svg></div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600">Spark AI</div><div style="font-size:9px;color:var(--td)">Ask anything about ForgeOps</div></div>
-      <button onClick=${p.close} style="color:var(--td)">x</button>
-    </div>
-    <div style="display:flex;gap:4px;margin-bottom:10px">
-      <input value=${chat} onInput=${function(e){setChat(e.target.value)}} onKeyDown=${function(e){if(e.key==='Enter')ask()}} placeholder="Ask a question..." style="flex:1;font-size:11px;padding:8px 10px"/>
-      <button class="bt bp" style="padding:6px 12px;font-size:11px" onClick=${ask}>Ask</button>
-    </div>
-    ${reply&&html`<div style="background:rgba(2,132,199,.06);border:1px solid rgba(2,132,199,.15);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--ts);line-height:1.5"><strong style="color:var(--in)">Spark:</strong> ${reply}</div>`}
-    <div style="font-size:9px;font-weight:600;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Suggested</div>
-    <input value=${search} onInput=${function(e){setSearch(e.target.value)}} placeholder="Filter questions..." style="margin-bottom:8px;font-size:10px;padding:6px 10px"/>
-    ${filtered.map(function(item){return html`<div key=${item.q} style="background:var(--sf);border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer" onClick=${function(){setChat(item.q);setReply(item.a)}}>
-      <div style="font-size:11px;font-weight:600;margin-bottom:2px">${item.q}</div>
-      <div style="font-size:10px;color:var(--ts);line-height:1.4">${item.a}</div>
-    </div>`})}
-    ${filtered.length===0&&html`<div style="text-align:center;padding:8px;color:var(--td);font-size:10px">No matches.</div>`}
-  </div>`;
-}
-
-function LogPanel(p){
-  var jb=useState([]);var jobs=jb[0];var setJobs=jb[1];
-  var at=useState(0);var activeTab=at[0];var setActiveTab=at[1];
-  var ex=useState(null);var expandedStep=ex[0];var setExpStep=ex[1];
-  var lg=useState({});var logs=lg[0];var setLogs=lg[1];
-  var ld=useState(true);var loading=ld[0];var setLoading=ld[1];
-
-  useEffect(function(){
-    if(!p.run)return;
-    setLoading(true);setJobs([]);setActiveTab(0);setExpStep(null);setLogs({});
-    var repo=p.run.repository?p.run.repository.full_name:'';
-    api('/repos/'+repo+'/actions/runs/'+p.run.id+'/jobs').then(function(d){
-      setJobs((d&&d.jobs)||[]);setLoading(false);
-    }).catch(function(){setLoading(false)});
-  },[p.run&&p.run.id]);
-
-  function fetchLog(jobId){
-    if(logs[jobId])return;
-    setLogs(function(prev){var n={};Object.keys(prev).forEach(function(k){n[k]=prev[k]});n[jobId]='loading';return n});
-    var repo=p.run.repository?p.run.repository.full_name:'';
-    api('/repos/'+repo+'/actions/jobs/'+jobId+'/logs').then(function(text){
-      setLogs(function(prev){var n={};Object.keys(prev).forEach(function(k){n[k]=prev[k]});n[jobId]=typeof text==='string'?text:'Log loaded';return n});
-    }).catch(function(){
-      setLogs(function(prev){var n={};Object.keys(prev).forEach(function(k){n[k]=prev[k]});n[jobId]='cors_blocked';return n});
-    });
-  }
-
-  function toggleStep(jobId,stepIdx){
-    var key=jobId+'-'+stepIdx;
-    if(expandedStep===key){setExpStep(null)}
-    else{setExpStep(key);fetchLog(jobId)}
-  }
-
-  function formatLog(text){
-    if(!text||text==='loading'||text==='cors_blocked')return '';
-    var lines=(text+'').split('\n');
-    return lines.map(function(line,i){
-      var cls='';
-      var upper=line.toUpperCase();
-      if(upper.indexOf('ERROR')>=0||upper.indexOf('FAIL')>=0||upper.indexOf('FATAL')>=0)cls=' log-line-err';
-      else if(upper.indexOf('WARNING')>=0||upper.indexOf('WARN')>=0)cls=' log-line-warn';
-      else if(upper.indexOf('SUCCESS')>=0||upper.indexOf('PASS')>=0||upper.indexOf('PASSED')>=0)cls=' log-line-ok';
-      return html`<div key=${i} class=${cls}><span class="log-linenum">${i+1}</span>${line}</div>`;
-    });
-  }
-
-  var job=jobs[activeTab];
-  var steps=(job&&job.steps)||[];
-  var repo=p.run&&p.run.repository?p.run.repository.full_name:'';
-
-  return html`<${Fragment}>
-    ${p.run&&html`<div class="log-backdrop" onClick=${p.onClose}></div>`}
-    <div class=${'log-panel'+(p.run?' open':'')}>
-      <div class="log-header">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${repo}</div>
-          <div style="font-size:11px;color:var(--td)">Run #${p.run&&p.run.run_number||''} -- ${p.run&&(p.run.head_branch||'')} -- ${p.run&&(p.run.conclusion||p.run.status||'')}</div>
-        </div>
-        <span class="badge" style=${'background:'+sCol(p.run&&(p.run.conclusion||p.run.status)).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(p.run&&(p.run.conclusion||p.run.status))}>${p.run&&(p.run.conclusion||p.run.status||'')}</span>
-        <button onClick=${p.onClose} style="font-size:20px;color:var(--td);padding:4px">x</button>
-      </div>
-      <div class="log-tabs">
-        ${jobs.map(function(j,i){return html`<div key=${j.id} class=${'log-tab'+(activeTab===i?' ac':'')} onClick=${function(){setActiveTab(i);setExpStep(null)}}>${j.name}</div>`})}
-      </div>
-      <div class="log-body">
-        ${loading&&html`<${Skel}/><${Skel}/><${Skel}/>`}
-        ${!loading&&jobs.length===0&&html`<div style="text-align:center;padding:20px;color:var(--td)">No jobs found</div>`}
-        ${!loading&&steps.map(function(s,i){
-          var key=(job&&job.id||0)+'-'+i;
-          var isExp=expandedStep===key;
-          var dur='';
-          if(s.started_at&&s.completed_at){var secs=Math.round((new Date(s.completed_at)-new Date(s.started_at))/1000);dur=secs<60?secs+'s':Math.floor(secs/60)+'m '+secs%60+'s'}
-          var dotCol=s.conclusion==='success'?'var(--ok)':s.conclusion==='failure'?'var(--er)':s.conclusion==='skipped'?'var(--td)':'var(--in)';
-          var logContent=logs[job&&job.id];
-          return html`<div key=${i} class="log-step">
-            <div class="log-step-header" onClick=${function(){toggleStep(job&&job.id,i)}}>
-              <span style=${'display:inline-block;width:8px;height:8px;border-radius:50%;background:'+dotCol+';flex-shrink:0'}></span>
-              <span style="flex:1;font-weight:500">${s.name}</span>
-              <span class="mono" style="font-size:10px;color:var(--td)">${dur}</span>
-              <span style="font-size:10px;color:var(--td)">${isExp?'v':'>'}</span>
-            </div>
-            ${isExp&&html`<div>
-              ${logContent==='loading'&&html`<div style="padding:12px;color:var(--td);font-size:11px">Loading logs...</div>`}
-              ${logContent==='cors_blocked'&&html`<div style="padding:12px"><div style="font-size:11px;color:var(--ts);margin-bottom:8px">Full log preview unavailable (CORS). Step details shown above.</div><a href=${(p.run&&p.run.html_url||'#')+'/jobs/'+(job&&job.id||'')} target="_blank" rel="noopener" class="bt bs" style="font-size:10px">View full log on GitHub</a></div>`}
-              ${logContent&&logContent!=='loading'&&logContent!=='cors_blocked'&&html`<pre class="log-code">${formatLog(logContent)}</pre>`}
-              ${!logContent&&html`<div style="padding:12px;color:var(--td);font-size:11px">Click to load log...</div>`}
-            </div>`}
-          </div>`;
-        })}
-        ${!loading&&job&&html`<div style="padding:8px 0;text-align:center"><a href=${(p.run&&p.run.html_url||'#')} target="_blank" rel="noopener" style="font-size:11px;color:var(--td)">Open full run on GitHub</a></div>`}
-      </div>
-    </div>
-  <//>`;
-}
+function LogPanel(p){var jb=useState([]);var jobs=jb[0];var setJobs=jb[1];var at=useState(0);var ld=useState(true);
+useEffect(function(){if(!p.run)return;setJobs([]);at[1](0);ld[1](true);var repo=p.run.repository&&p.run.repository.full_name||'';apiGet('https://api.github.com/repos/'+repo+'/actions/runs/'+p.run.id+'/jobs').then(function(d){setJobs((d&&d.jobs)||[]);ld[1](false)}).catch(function(){ld[1](false)})},[p.run&&p.run.id]);
+var job=jobs[at[0]];var steps=(job&&job.steps)||[];
+return html`<${Fragment}>${p.run&&html`<div class="log-backdrop" onClick=${p.onClose}></div>`}<div class=${'log-panel'+(p.run?' open':'')}>
+<div style="padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;flex-shrink:0"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.run&&p.run.repository&&p.run.repository.full_name||''}</div><div style="font-size:10px;color:var(--td)">Run #${p.run&&p.run.run_number||''} -- ${p.run&&(p.run.head_branch||'')}</div></div><button onClick=${p.onClose} style="font-size:18px;color:var(--td)">x</button></div>
+<div class="log-tabs">${jobs.map(function(j,i){return html`<div key=${j.id} class=${'log-tab'+(at[0]===i?' ac':'')} onClick=${function(){at[1](i)}}>${j.name}</div>`})}</div>
+<div style="flex:1;overflow-y:auto;padding:12px">${ld[0]&&html`<${Skels}/>`}${!ld[0]&&steps.map(function(s,i){var dur='';if(s.started_at&&s.completed_at){var sec=Math.round((new Date(s.completed_at)-new Date(s.started_at))/1000);dur=sec<60?sec+'s':Math.floor(sec/60)+'m'}var dotCol=s.conclusion==='success'?'var(--ok)':s.conclusion==='failure'?'var(--er)':'var(--td)';return html`<div key=${i} style="border:1px solid var(--bd);border-radius:8px;margin-bottom:6px;padding:10px 12px;display:flex;align-items:center;gap:8px;font-size:12px"><span style=${'display:inline-block;width:8px;height:8px;border-radius:50%;background:'+dotCol+';flex-shrink:0'}></span><span style="flex:1;font-weight:500">${s.name}</span><span class="mono" style="font-size:10px;color:var(--td)">${dur}</span><span class="badge" style=${'background:'+sCol(s.conclusion||s.status).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(s.conclusion||s.status)+';font-size:9px'}>${s.conclusion||s.status||''}</span></div>`})}
+${!ld[0]&&jobs.length===0&&html`<${Empty} msg="No jobs found"/>`}
+${!ld[0]&&p.run&&html`<div style="text-align:center;padding:8px"><a href=${(p.run&&p.run.html_url)||'#'} target="_blank" rel="noopener" style="font-size:11px;color:var(--td)">Open full run on GitHub</a></div>`}
+</div></div><//>`}
 
 function App(){
-  var us=useState(null);var user=us[0];var setUser=us[1];
-  var pg=useState('overview');var page=pg[0];var setPage=pg[1];
-  var rs=useState([]);var repos=rs[0];var setRepos=rs[1];
-  var rn=useState([]);var runs=rn[0];var setRuns=rn[1];
-  var pr=useState([]);var prs=pr[0];var setPrs=pr[1];
-  var ld=useState(true);var loading=ld[0];var setLoading=ld[1];
-  var sk=useState(false);var sparkOpen=sk[0];var setSpark=sk[1];
-  var lr=useState(null);var logRun=lr[0];var setLogRun=lr[1];
-  // PR create state
-  var prc=useState({repo:'',src:'',tgt:'',title:'',desc:'',jira:''});var prForm=prc[0];var setPrForm=prc[1];
-  var brs=useState([]);var branches=brs[0];var setBranches=brs[1];
-  var prTab=useState('open');
-  // Pipeline run state
-  var runModal=useState(null);var showRunModal=runModal[0];var setRunModal=runModal[1];
-  var wfs=useState([]);var workflows=wfs[0];var setWorkflows=wfs[1];
-  var runBrs=useState([]);var runBranches=runBrs[0];var setRunBranches=runBrs[1];
-  // Expanded pipeline
-  var exp=useState(null);var expanded=exp[0];var setExpanded=exp[1];
-  var jc=useState({});var jobsCache=jc[0];var setJobsCache=jc[1];
-  // Deploy state
-  var depRepo=useState('');var depWf=useState('');var depBr=useState('');var depEnv=useState('int');
-  var depWfs=useState([]);var depBrs=useState([]);
-  var timer=useRef(null);
-  var acting=useState('');
+var us=useState(null);var user=us[0];var setUser=us[1];
+var pg=useState('overview');var page=pg[0];var setPage=pg[1];
+var dd=useState(null);var cmdData=dd[0];var setCmdData=dd[1];
+var cf=useState(null);var config=cf[0];var setConfig=cf[1];
+var ld=useState(true);var loading=ld[0];var setLoading=ld[1];
+var sk=useState(false);var sparkOpen=sk[0];var setSpark=sk[1];
+var lr=useState(null);var logRun=lr[0];var setLogRun=lr[1];
+var sb=useState(false);var sideOpen=sb[0];var setSideOpen=sb[1];
+var lastRef=useState(null);
+var pageSize=20;var ps=useState({});var pageNums=ps[0];var setPageNums=ps[1];
+var srch=useState('');var searchTxt=srch[0];var setSearch=srch[1];var debounceRef=useRef(null);
+var prTab=useState('create');
+var prForm=useState({repo:'',src:'',tgt:'int',title:'',jira:''});
+var branches=useState([]);
 
-  // Auto-connect
-  useEffect(function(){
-    var token=getToken();
-    if(!token){setLoading(false);return}
-    api('/user').then(function(u){setUser(u)}).catch(function(){localStorage.removeItem('fg_pat');setLoading(false)});
-  },[]);
+// Load data: 2 fetches only
+useEffect(function(){
+  var tk=getToken();
+  if(tk){api('/user').then(function(u){setUser(u)}).catch(function(){})}
+  Promise.all([fetchCmdData(),fetchConfig()]).then(function(res){
+    setCmdData(res[0]);setConfig(res[1]);setLoading(false);lastRef[1](new Date())
+  }).catch(function(){setLoading(false)})
+},[]);
 
-  // Fetch data
-  useEffect(function(){
-    if(!user)return;
-    function fetchAll(){
-      api('/user/repos?per_page=100&sort=updated').then(function(r){
-        setRepos(r||[]);
-        return Promise.all((r||[]).slice(0,12).map(function(repo){return api('/repos/'+repo.full_name+'/actions/runs?per_page=15').catch(function(){return{workflow_runs:[]}})}));
-      }).then(function(results){
-        var all=[];results.forEach(function(r){if(r&&r.workflow_runs)all=all.concat(r.workflow_runs)});
-        all.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});
-        setRuns(all);
-        return Promise.all((repos.length?repos:setRepos).slice(0,12).map(function(repo){
-          return api('/repos/'+(repo.full_name||ORG+'/'+repo.name)+'/pulls?state=all&per_page=10&sort=updated&direction=desc').then(function(p){return(p||[]).map(function(x){x._repo=repo.name;x._full=repo.full_name;return x})}).catch(function(){return[]});
-        }));
-      }).then(function(results){
-        var all=[];results.forEach(function(r){all=all.concat(r)});
-        all.sort(function(a,b){return new Date(b.updated_at)-new Date(a.updated_at)});
-        setPrs(all);setLoading(false);
-      }).catch(function(){setLoading(false)});
-    }
-    fetchAll();
-    timer.current=setInterval(function(){clearCache();fetchAll()},30000);
-    return function(){clearInterval(timer.current)};
-  },[user]);
+function refresh(){clearCache();setLoading(true);Promise.all([fetchCmdData(),fetchConfig()]).then(function(res){setCmdData(res[0]);setConfig(res[1]);setLoading(false);lastRef[1](new Date());toast('Refreshed')}).catch(function(){setLoading(false)})}
+function onSearch(e){var v=e.target.value;setSearch(v);clearTimeout(debounceRef.current);debounceRef.current=setTimeout(function(){setPageNums({})},300)}
+function getPage(key){return pageNums[key]||1}
+function nextPage(key){setPageNums(function(p){var n={};Object.keys(p).forEach(function(k){n[k]=p[k]});n[key]=(p[key]||1)+1;return n})}
+function paginate(arr,key){var pg=getPage(key);return arr.slice(0,pg*pageSize)}
+function nav(p){setPage(p);setSideOpen(false);setPageNums({})}
 
-  // Token entry
-  if(!user&&!loading)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:20px">
-    <div style="text-align:center;max-width:360px"><${Logo} s=${40}/><h1 style="font-size:20px;margin:12px 0 4px">ForgeOps</h1>
-    <p style="color:var(--ts);font-size:12px;margin-bottom:16px">Enter your GitHub token once. It stays saved in this browser.</p>
-    <form onSubmit=${function(e){e.preventDefault();var v=e.target.elements.tok.value.trim();if(!v)return;localStorage.setItem('fg_pat',v);api('/user').then(function(u){setUser(u);toast('Connected as '+u.login)}).catch(function(err){localStorage.removeItem('fg_pat');toast('Invalid token: '+err.message,true)})}} style="display:flex;gap:6px">
-      <input name="tok" type="password" placeholder="ghp_..." style="flex:1;font-family:'JetBrains Mono',monospace"/>
-      <button type="submit" class="bt bp">Go</button>
-    </form></div></div>`;
-  if(!user)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:var(--ts)">Connecting...</div>`;
+var projects=(cmdData&&cmdData.projects)||((config&&config.projects)||{});
+var projNames=Object.keys(projects);
+var allRepos=[];var totalRepos=0;var passing=0;var failing=0;var running=0;var allRuns=[];
+projNames.forEach(function(pn){var proj=projects[pn];(proj.repos||[]).forEach(function(r){totalRepos++;allRepos.push({name:typeof r==='string'?r:r.name,project:pn,runs:(r&&r.runs)||[]});var latest=(r&&r.runs&&r.runs[0]);if(!latest)return;if(latest.conclusion==='success')passing++;else if(latest.conclusion==='failure')failing++;else if(latest.status==='in_progress')running++;allRuns.push({id:latest.id||Math.random(),conclusion:latest.conclusion,status:latest.status,branch:latest.branch,created:latest.created,repo:typeof r==='string'?r:r.name,project:pn,html_url:'https://github.com/'+ORG+'/'+(typeof r==='string'?r:r.name)+'/actions',repository:{full_name:ORG+'/'+(typeof r==='string'?r:r.name),name:typeof r==='string'?r:r.name},head_branch:latest.branch,run_number:latest.id,created_at:latest.created})})});
+allRuns.sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0)});
 
-  // Helpers
-  function pickRepo(name){
-    setPrForm(function(p){return{repo:name,src:'',tgt:p.tgt||'int',title:p.title,desc:p.desc,jira:p.jira}});
-    if(!name){setBranches([]);return}
-    api('/repos/'+user.login+'/'+name+'/branches?per_page=100').then(function(b){var names=(b||[]).map(function(x){return x.name});setBranches(names);setPrForm(function(p){return{repo:p.repo,src:p.src,tgt:names.indexOf('int')>=0?'int':names.indexOf('main')>=0?'main':names[0]||'',title:p.title,desc:p.desc,jira:p.jira}})}).catch(function(){});
-  }
-  function createPR(){
-    if(!prForm.repo||!prForm.src||!prForm.title){toast('Fill repo, source, title',true);return}
-    acting[1]('creating');
-    var title=(prForm.jira?prForm.jira+' ':'')+prForm.title;
-    var body=(prForm.jira?'Jira: '+prForm.jira+'\n\n':'')+prForm.desc;
-    api('/repos/'+user.login+'/'+prForm.repo+'/pulls',{method:'POST',body:{title:title,body:body,head:prForm.src,base:prForm.tgt||'int'}}).then(function(d){toast('PR #'+d.number+' created!');setPrForm({repo:prForm.repo,src:'',tgt:prForm.tgt,title:'',desc:'',jira:''});clearCache()}).catch(function(e){toast('Failed: '+e.message,true)}).finally(function(){acting[1]('')});
-  }
-  function approvePR(repo,num){acting[1]('approve'+num);api('/repos/'+user.login+'/'+repo+'/pulls/'+num+'/reviews',{method:'POST',body:{event:'APPROVE'}}).then(function(){toast('Approved PR #'+num);clearCache()}).catch(function(e){toast(e.message,true)}).finally(function(){acting[1]('')})}
-  function mergePR(repo,num){acting[1]('merge'+num);api('/repos/'+user.login+'/'+repo+'/pulls/'+num+'/merge',{method:'PUT',body:{merge_method:'squash'}}).then(function(){toast('Merged PR #'+num+'!');clearCache()}).catch(function(e){toast(e.message,true)}).finally(function(){acting[1]('')})}
-  function openRunModal(repo){
-    setRunModal(repo);
-    api('/repos/'+user.login+'/'+repo+'/actions/workflows').then(function(d){setWorkflows((d&&d.workflows)||[])}).catch(function(){});
-    api('/repos/'+user.login+'/'+repo+'/branches?per_page=100').then(function(b){setRunBranches((b||[]).map(function(x){return x.name}))}).catch(function(){});
-  }
-  function triggerRun(wfId,branch){
-    if(!wfId){toast('Select workflow',true);return}
-    acting[1]('run');
-    api('/repos/'+user.login+'/'+showRunModal+'/actions/workflows/'+wfId+'/dispatches',{method:'POST',body:{ref:branch||'main'}}).then(function(){toast('Pipeline triggered on '+branch+'!');setRunModal(null);clearCache()}).catch(function(e){toast(e.message,true)}).finally(function(){acting[1]('')});
-  }
-  function loadJobs(repo,runId){
-    var k=repo+'/'+runId;if(jobsCache[k])return;
-    api('/repos/'+repo+'/actions/runs/'+runId+'/jobs').then(function(d){setJobsCache(function(c){var n={};Object.keys(c).forEach(function(x){n[x]=c[x]});n[k]=(d&&d.jobs)||[];return n})}).catch(function(){});
-  }
-  function toggleExpand(repo,runId){var k=repo+'/'+runId;if(expanded===k){setExpanded(null)}else{setExpanded(k);loadJobs(repo,runId)}}
-  function approveDeployment(repo,runId){
-    acting[1]('dep'+runId);
-    api('/repos/'+repo+'/actions/runs/'+runId+'/pending_deployments').then(function(pend){
-      if(!pend||!pend.length){toast('No pending deployments',true);acting[1]('');return}
-      return api('/repos/'+repo+'/actions/runs/'+runId+'/pending_deployments',{method:'POST',body:{environment_ids:pend.map(function(d){return d.environment.id}),state:'approved',comment:'Approved via ForgeOps'}});
-    }).then(function(){toast('Deployment approved!');clearCache()}).catch(function(e){toast(e.message,true)}).finally(function(){acting[1]('')});
-  }
-  function pickDepRepo(name){
-    depRepo[1](name);depWf[1]('');depBr[1]('');
-    if(!name)return;
-    api('/repos/'+user.login+'/'+name+'/actions/workflows').then(function(d){depWfs[1]((d&&d.workflows)||[])}).catch(function(){});
-    api('/repos/'+user.login+'/'+name+'/branches?per_page=100').then(function(b){var n=(b||[]).map(function(x){return x.name});depBrs[1](n);depBr[1](n.indexOf('main')>=0?'main':n[0]||'')}).catch(function(){});
-  }
-  function deployNow(){
-    if(!depRepo[0]||!depWf[0]){toast('Select repo and workflow',true);return}
-    acting[1]('deploy');
-    api('/repos/'+user.login+'/'+depRepo[0]+'/actions/workflows/'+depWf[0]+'/dispatches',{method:'POST',body:{ref:depBr[0]||'main'}}).then(function(){toast('Deploying to '+depEnv[0]+'!');clearCache()}).catch(function(e){toast(e.message,true)}).finally(function(){acting[1]('')});
-  }
+var filteredRepos=searchTxt?allRepos.filter(function(r){return r.name.toLowerCase().indexOf(searchTxt.toLowerCase())>=0}):allRepos;
 
-  var sections={DELIVERY:['overview','pipelines','prs','deploy','environments'],QUALITY:['security'],OPERATIONS:['approvals','settings']};
-  var labels={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',deploy:'Deploy',environments:'Environments',security:'Security',approvals:'Approvals',settings:'Settings'};
-  var openPrs=prs.filter(function(x){return x.state==='open'});
-  var waitingRuns=runs.filter(function(r){return r.status==='waiting'||r.status==='action_required'});
-  var active=runs.filter(function(r){return r.status==='in_progress'}).length;
-  var comp=runs.filter(function(r){return r.status==='completed'});
-  var rate=comp.length?Math.round(comp.filter(function(r){return r.conclusion==='success'}).length/comp.length*100):0;
+// Token entry
+if(!user&&!getToken()&&!loading)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:20px"><div style="text-align:center;max-width:360px"><${Logo} s=${40}/><h1 style="font-size:20px;margin:12px 0 4px">ForgeOps</h1><p style="color:var(--ts);font-size:12px;margin-bottom:16px">Enter your GitHub token once. Saved in this browser forever.</p><form onSubmit=${function(e){e.preventDefault();var v=e.target.elements.tok.value.trim();if(!v)return;localStorage.setItem('fg_pat',v);api('/user').then(function(u){setUser(u);toast('Connected as '+u.login)}).catch(function(err){localStorage.removeItem('fg_pat');toast('Invalid token','err')})}} style="display:flex;gap:6px"><input name="tok" type="password" placeholder="ghp_..." style="flex:1;font-family:'JetBrains Mono',monospace"/><button type="submit" class="bt bp">Go</button></form></div></div>`;
 
-  function renderPage(){
-    if(loading)return html`<${Skel}/><${Skel}/><${Skel}/>`;
+var sections={DELIVERY:['overview','pipelines','prs','deploy','environments'],QUALITY:['security'],OPERATIONS:['settings']};
+var labels={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',deploy:'Deploy',environments:'Environments',security:'Security',settings:'Settings'};
 
-    if(page==='overview')return html`<div class="fu">
-      <div class="g4">
-        <div class="c" style="border-left:4px solid var(--in);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Active</div><div style="font-size:24px;font-weight:700;color:var(--in)">${active}</div></div>
-        <div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Success</div><div style="font-size:24px;font-weight:700;color:var(--ok)">${rate}%</div></div>
-        <div class="c" style="border-left:4px solid var(--pr);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Open PRs</div><div style="font-size:24px;font-weight:700;color:var(--pr)">${openPrs.length}</div></div>
-        <div class="c" style="border-left:4px solid var(--wa);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Approvals</div><div style="font-size:24px;font-weight:700;color:var(--wa)">${waitingRuns.length}</div></div>
-      </div>
-      <div class="c"><div style="font-size:11px;font-weight:600;color:var(--ts);margin-bottom:6px">Recent Activity</div>${runs.slice(0,12).map(function(r){return html`<div class="lr" key=${r.id} style="cursor:pointer" onClick=${function(){setLogRun(r)}}><span class="badge" style=${'background:'+sCol(r.conclusion||r.status).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(r.conclusion||r.status)}>${r.conclusion||r.status||'pending'}</span><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.repository?r.repository.full_name:''}</div><div class="mono" style="font-size:9px;color:var(--td)">${r.head_branch||''}</div></div><span style="font-size:9px;color:var(--td)">${ago(r.created_at)}</span></div>`})}</div>
-    </div>`;
+function renderPage(){
+  if(loading)return html`<${Skels}/>`;
+  if(!cmdData&&!config)return html`<${Empty} msg="Command center data not generated yet. The generate-dashboard-data workflow runs every 15 minutes."/>`;
 
-    if(page==='pipelines')return html`<div class="fu">
-      <div class="c">${runs.slice(0,25).map(function(r){var repo=r.repository?r.repository.full_name:'';var k=repo+'/'+r.id;var isExp=expanded===k;var jobs=jobsCache[k]||[];
-        return html`<div key=${r.id}>
-          <div class="lr" style=${'border-left:3px solid '+sCol(r.conclusion||r.status)+';padding-left:8px'}>
-            <span style="cursor:pointer;font-size:10px;color:var(--td)" onClick=${function(){toggleExpand(repo,r.id)}}>${isExp?'v':'>'}</span>
-            <span class="badge" style=${'background:'+sCol(r.conclusion||r.status).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(r.conclusion||r.status)}>${r.conclusion||r.status||'?'}</span>
-            <div style="flex:1;min-width:0;cursor:pointer" onClick=${function(){toggleExpand(repo,r.id)}}><div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${repo}</div><div style="font-size:9px;color:var(--td)">${r.name||''} -- ${r.head_branch||''}</div></div>
-            <span class="mono" style="font-size:9px;color:var(--td)">${ago(r.created_at)}</span>
-            <button class="bt bs" style="font-size:9px;padding:3px 7px" onClick=${function(){openRunModal(r.repository?r.repository.name:'')}}>Run</button>
-            <button class="bt bs" style="font-size:9px;padding:3px 7px" onClick=${function(){setLogRun(r)}}>Logs</button>
-          </div>
-          ${isExp&&html`<div style="padding:8px 0 8px 20px;border-bottom:1px solid var(--bd)">${jobs.length>0?jobs.map(function(j){return html`<div key=${j.id} style="display:flex;gap:6px;padding:3px 0;font-size:10px"><span class="badge" style=${'background:'+sCol(j.conclusion||j.status).replace('var(','rgba(').replace(/\)/,',.08)')+';color:'+sCol(j.conclusion||j.status)+';font-size:9px'}>${j.conclusion||j.status}</span><span style="flex:1;color:var(--ts)">${j.name}</span><a href=${j.html_url||'#'} target="_blank" rel="noopener" style="font-size:9px;color:var(--pr)">Log</a></div>`}):html`<div style="color:var(--td);font-size:10px">Loading jobs...</div>`}</div>`}
-        </div>`})}</div>
-      <${Modal} open=${!!showRunModal} onClose=${function(){setRunModal(null)}} title=${'Run Pipeline -- '+showRunModal}>
-        <div class="fl"><div><div class="lb">Workflow</div><select id="run-wf">${workflows.map(function(w){return html`<option key=${w.id} value=${w.id}>${w.name}</option>`})}</select></div><div><div class="lb">Branch</div><select id="run-br">${runBranches.map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div>
-        <button class="bt bp" disabled=${acting[0]==='run'} onClick=${function(){var wf=document.getElementById('run-wf');var br=document.getElementById('run-br');triggerRun(wf&&wf.value,br&&br.value)}}>${acting[0]==='run'?'Running...':'Run Pipeline'}</button></div>
-      <//>
-    </div>`;
-
-    if(page==='prs')return html`<div class="fu">
-      <div class="tabs"><div class=${'tab'+(prTab[0]==='create'?' ac':'')} onClick=${function(){prTab[1]('create')}}>Create PR</div><div class=${'tab'+(prTab[0]==='open'?' ac':'')} onClick=${function(){prTab[1]('open')}}>Open (${openPrs.length})</div><div class=${'tab'+(prTab[0]==='merged'?' ac':'')} onClick=${function(){prTab[1]('merged')}}>Merged</div></div>
-      ${prTab[0]==='create'&&html`<div class="c"><div class="fl">
-        <div><div class="lb">Repository</div><select value=${prForm.repo} onChange=${function(e){pickRepo(e.target.value)}}><option value="">Select repo...</option>${repos.map(function(r){return html`<option key=${r.name} value=${r.name}>${r.name}</option>`})}</select></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Source Branch</div><select value=${prForm.src} onChange=${function(e){setPrForm(function(p){return{repo:p.repo,src:e.target.value,tgt:p.tgt,title:p.title,desc:p.desc,jira:p.jira}})}}><option value="">Select...</option>${branches.map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div><div><div class="lb">Target Branch</div><select value=${prForm.tgt} onChange=${function(e){setPrForm(function(p){return{repo:p.repo,src:p.src,tgt:e.target.value,title:p.title,desc:p.desc,jira:p.jira}})}}>${['int','qa','stage','main'].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div></div>
-        <div><div class="lb">Jira Ticket</div><input value=${prForm.jira} onInput=${function(e){setPrForm(function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,desc:p.desc,jira:e.target.value}})}} placeholder="PROJ-123"/></div>
-        <div><div class="lb">Title</div><input value=${prForm.title} onInput=${function(e){setPrForm(function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:e.target.value,desc:p.desc,jira:p.jira}})}} placeholder="Add feature X"/></div>
-        <div><div class="lb">Description</div><textarea value=${prForm.desc} onInput=${function(e){setPrForm(function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,desc:e.target.value,jira:p.jira}})}}/></div>
-        <button class="bt bp" onClick=${createPR} disabled=${acting[0]==='creating'}>${acting[0]==='creating'?'Creating...':'Create Pull Request'}</button>
-      </div></div>`}
-      ${prTab[0]==='open'&&html`<div>${openPrs.length===0?html`<div class="c" style="text-align:center;padding:16px;color:var(--td)">No open PRs</div>`:openPrs.map(function(p){return html`<div key=${p.id} class="c"><div style="display:flex;gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><div style="font-weight:600;font-size:12px">${p.title}</div><div style="font-size:10px;color:var(--td);margin-top:2px">${p._repo||''} -- ${(p.head&&p.head.ref)||''} > ${(p.base&&p.base.ref)||''} -- ${ago(p.created_at)}</div></div><div style="display:flex;gap:4px"><button class="bt bok" style="font-size:10px;padding:4px 8px" onClick=${function(){approvePR(p._repo,p.number)}} disabled=${!!acting[0]}>Approve</button><button class="bt bp" style="font-size:10px;padding:4px 8px" onClick=${function(){mergePR(p._repo,p.number)}} disabled=${!!acting[0]}>Merge</button></div></div></div>`})}</div>`}
-      ${prTab[0]==='merged'&&html`<div class="c">${prs.filter(function(x){return x.merged_at}).slice(0,15).map(function(p){return html`<div key=${p.id} class="lr"><div style="flex:1"><div style="font-size:11px;font-weight:500">${p._repo||''}: ${p.title}</div><div style="font-size:9px;color:var(--td)">merged ${ago(p.merged_at)}</div></div></div>`})}</div>`}
-    </div>`;
-
-    if(page==='deploy')return html`<div class="fu">
-      <div class="c"><div style="font-weight:600;margin-bottom:8px">Deploy Artifact</div><div class="fl">
-        <div><div class="lb">Repository</div><select value=${depRepo[0]} onChange=${function(e){pickDepRepo(e.target.value)}}><option value="">Select...</option>${repos.map(function(r){return html`<option key=${r.name} value=${r.name}>${r.name}</option>`})}</select></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Workflow</div><select value=${depWf[0]} onChange=${function(e){depWf[1](e.target.value)}}><option value="">Select...</option>${depWfs[0].map(function(w){return html`<option key=${w.id} value=${w.id}>${w.name}</option>`})}</select></div><div><div class="lb">Branch</div><select value=${depBr[0]} onChange=${function(e){depBr[1](e.target.value)}}>${depBrs[0].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div></div>
-        <div><div class="lb">Environment</div><select value=${depEnv[0]} onChange=${function(e){depEnv[1](e.target.value)}}>${['int','qa','stage','prod'].map(function(e){return html`<option key=${e} value=${e}>${e.toUpperCase()}</option>`})}</select></div>
-        <button class="bt bp" onClick=${deployNow} disabled=${acting[0]==='deploy'}>${acting[0]==='deploy'?'Deploying...':'Deploy Now'}</button>
-      </div></div>
-    </div>`;
-
-    if(page==='environments'){var envs=['INT','QA','STAGE','PROD'];var cols=['var(--in)','var(--wa)','var(--wa)','var(--er)'];return html`<div class="fu"><div style="display:flex;gap:6px;overflow-x:auto">${envs.map(function(e,i){var dep=runs.filter(function(r){var n=(r.name||'').toUpperCase();return n.indexOf(e)>=0&&(n.indexOf('DEPLOY')>=0||n.indexOf('>')>=0)});return html`<div key=${e} style="flex:1;min-width:140px"><div class="c" style=${'border-top:4px solid '+cols[i]}><div style="font-weight:700;font-size:13px;margin-bottom:6px">${e}</div>${dep.slice(0,3).map(function(r){return html`<div key=${r.id} style="font-size:9px;color:var(--ts);margin-bottom:2px"><span style=${'display:inline-block;width:5px;height:5px;border-radius:50%;background:'+sCol(r.conclusion||r.status)+';margin-right:3px'}></span>${r.repository?r.repository.full_name.split('/')[1]:''} ${ago(r.created_at)}</div>`})}${dep.length===0&&html`<div style="font-size:9px;color:var(--td)">No deploys</div>`}</div></div>`})}</div></div>`}
-
-    if(page==='security'){var sec=runs.filter(function(r){var n=(r.name||'').toLowerCase();return n.indexOf('security')>=0||n.indexOf('scan')>=0});var ok=sec.filter(function(r){return r.conclusion==='success'}).length;var fail=sec.filter(function(r){return r.conclusion==='failure'}).length;return html`<div class="fu"><div class="g4"><div class="c" style="border-left:4px solid var(--in);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Scans</div><div style="font-size:24px;font-weight:700">${sec.length}</div></div><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Passed</div><div style="font-size:24px;font-weight:700;color:var(--ok)">${ok}</div></div><div class="c" style="border-left:4px solid var(--er);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Failed</div><div style="font-size:24px;font-weight:700;color:var(--er)">${fail}</div></div></div></div>`}
-
-    if(page==='approvals')return html`<div class="fu">${waitingRuns.length===0?html`<div class="c" style="text-align:center;padding:20px;color:var(--td)">No pending approvals</div>`:waitingRuns.map(function(r){return html`<div key=${r.id} class="c"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div style="flex:1"><div style="font-weight:600;font-size:12px">${r.repository?r.repository.full_name:''}</div><div style="font-size:10px;color:var(--td)">${r.display_title||r.name} -- #${r.run_number} -- ${r.head_branch} -- ${ago(r.created_at)}</div></div><button class="bt bok" style="font-size:10px;padding:5px 12px" onClick=${function(){approveDeployment(r.repository?r.repository.full_name:'',r.id)}} disabled=${acting[0]==='dep'+r.id}>Approve</button></div></div>`})}</div>`;
-
-    if(page==='settings')return html`<div class="fu"><div class="c"><div style="font-weight:600;margin-bottom:4px">Connected as ${user.login}</div><div style="font-size:11px;color:var(--ts);margin-bottom:8px">${repos.length} repos</div><button class="bt bd" onClick=${function(){localStorage.removeItem('fg_pat');setUser(null);clearCache()}}>Disconnect</button></div></div>`;
-
-    return html`<div class="c" style="text-align:center;padding:16px;color:var(--td)">Coming soon</div>`;
-  }
-
-  return html`<div class="app">
-    <div class="sb">
-      <div style="padding:10px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--bd)"><${Logo} s=${20}/><div style="font-weight:700;font-size:12px">ForgeOps</div></div>
-      ${Object.keys(sections).map(function(sec){return html`<${Fragment} key=${sec}><div class="ns">${sec}</div>${sections[sec].map(function(k){return html`<div key=${k} class=${'ni'+(page===k?' ac':'')} onClick=${function(){setPage(k)}}>${labels[k]}${k==='approvals'&&waitingRuns.length>0?html`<span style="margin-left:auto;background:var(--wa);color:#fff;font-size:8px;padding:1px 5px;border-radius:8px">${waitingRuns.length}</span>`:null}${k==='prs'&&openPrs.length>0?html`<span style="margin-left:auto;background:var(--pr);color:#fff;font-size:8px;padding:1px 5px;border-radius:8px">${openPrs.length}</span>`:null}</div>`})}<//>`})}
-      <div style="margin-top:auto;padding:8px 10px;border-top:1px solid var(--bd);font-size:9px;color:var(--td)"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ok);margin-right:3px"></span>Connected -- ${user.login}</div>
+  if(page==='overview')return html`<div class="fu">
+    <div class="g4">
+      <div class="c" style="border-left:4px solid var(--pr);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Repos</div><div style="font-size:24px;font-weight:700">${totalRepos}</div></div>
+      <div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Passing</div><div style="font-size:24px;font-weight:700;color:var(--ok)">${passing}</div></div>
+      <div class="c" style="border-left:4px solid var(--er);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Failing</div><div style="font-size:24px;font-weight:700;color:var(--er)">${failing}</div></div>
+      <div class="c" style="border-left:4px solid var(--in);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Running</div><div style="font-size:24px;font-weight:700;color:var(--in)">${running}</div></div>
     </div>
-    <div class="mn">
-      <div class="hd"><span style="font-size:15px;font-weight:700;flex:1">${labels[page]||''}</span><button class="bt bs" style="font-size:10px" onClick=${function(){clearCache();toast('Refreshed')}}>Refresh</button></div>
-      <div class="ct">${renderPage()}</div>
-      <div class="spark-btn" onClick=${function(){setSpark(!sparkOpen)}}><svg width="20" height="20" viewBox="0 0 40 40"><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="var(--in)" style="animation:sparkGlow 3s infinite"/></svg></div>
-      ${sparkOpen&&html`<${SparkPanel} pg=${page} close=${function(){setSpark(false)}}/>`}
-      <${LogPanel} run=${logRun} onClose=${function(){setLogRun(null)}}/>
-    </div>
+    <div class="g2">${projNames.map(function(pn){var proj=projects[pn];var repos=proj.repos||[];var ok=repos.filter(function(r){var l=r&&r.runs&&r.runs[0];return l&&l.conclusion==='success'}).length;return html`<div key=${pn} class="c"><div style="font-weight:600;font-size:13px;margin-bottom:2px">${pn}</div><div style="font-size:10px;color:var(--ts);margin-bottom:6px">${proj.team||proj.description||''} -- ${repos.length} repos</div><div style="height:5px;background:var(--sf);border-radius:3px;overflow:hidden"><div style=${'height:100%;width:'+(repos.length?Math.round(ok/repos.length*100):0)+'%;background:var(--ok);border-radius:3px'}></div></div></div>`})}</div>
+    <div class="c"><div style="font-size:11px;font-weight:600;color:var(--ts);margin-bottom:6px">Recent Activity</div>${allRuns.slice(0,15).map(function(r){return html`<div class="lr" key=${r.id||r.repo} style="cursor:pointer" onClick=${function(){setLogRun(r)}}><span class="badge" style=${'background:'+sCol(r.conclusion||r.status).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(r.conclusion||r.status)}>${r.conclusion||r.status||'?'}</span><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.repo||''}</div><div class="mono" style="font-size:9px;color:var(--td)">${r.branch||r.head_branch||''}</div></div><span style="font-size:9px;color:var(--td)">${ago(r.created||r.created_at)}</span></div>`})}${allRuns.length===0&&html`<div style="color:var(--td);font-size:11px;text-align:center;padding:12px">No pipeline data yet. Push code to a registered repo.</div>`}</div>
   </div>`;
+
+  if(page==='pipelines'){var paged=paginate(filteredRepos,'pipes');return html`<div class="fu">
+    <input value=${searchTxt} onInput=${onSearch} placeholder="Search repos..." style="margin-bottom:12px;font-size:12px;padding:8px 12px"/>
+    <div class="c">${paged.map(function(r){var latest=r.runs&&r.runs[0];return html`<div key=${r.name} class="lr" style=${'border-left:3px solid '+sCol(latest&&(latest.conclusion||latest.status))+';padding-left:8px;cursor:pointer'} onClick=${function(){if(latest)setLogRun({id:latest.id,repository:{full_name:ORG+'/'+r.name,name:r.name},html_url:'https://github.com/'+ORG+'/'+r.name+'/actions',run_number:latest.id,head_branch:latest.branch,conclusion:latest.conclusion,status:latest.status,created_at:latest.created})}}>
+      <span class="badge" style=${'background:'+sCol(latest&&(latest.conclusion||latest.status)).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(latest&&(latest.conclusion||latest.status))}>${latest&&(latest.conclusion||latest.status)||'none'}</span>
+      <div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500">${r.name}</div><div style="font-size:9px;color:var(--td)">${r.project} ${latest&&latest.branch?'-- '+latest.branch:''}</div></div>
+      <span style="font-size:9px;color:var(--td)">${latest&&ago(latest.created)||''}</span>
+      <a href=${'https://github.com/'+ORG+'/'+r.name+'/actions'} target="_blank" rel="noopener" class="bt bs" style="font-size:9px;padding:3px 6px" onClick=${function(e){e.stopPropagation()}}>GitHub</a>
+    </div>`})}${paged.length===0&&html`<div style="text-align:center;padding:16px;color:var(--td);font-size:11px">No repos found.</div>`}</div>
+    ${paged.length<filteredRepos.length&&html`<button class="bt bs" style="width:100%" onClick=${function(){nextPage('pipes')}}>Show more (${filteredRepos.length-paged.length} remaining)</button>`}
+  </div>`}
+
+  if(page==='prs')return html`<div class="fu">
+    <div class="tabs"><div class=${'tab'+(prTab[0]==='create'?' ac':'')} onClick=${function(){prTab[1]('create')}}>Create PR</div></div>
+    <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Create Pull Request</div><div class="fl">
+      <div><div class="lb">Repository</div><select value=${prForm[0].repo} onChange=${function(e){var v=e.target.value;prForm[1](function(p){return{repo:v,src:'',tgt:p.tgt,title:p.title,jira:p.jira}});if(v)api('/repos/'+ORG+'/'+v+'/branches?per_page=100').then(function(b){branches[1]((b||[]).map(function(x){return x.name}))}).catch(function(){branches[1]([])})}}><option value="">Select repo...</option>${filteredRepos.slice(0,50).map(function(r){return html`<option key=${r.name} value=${r.name}>${r.name}</option>`})}</select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Source Branch</div><select value=${prForm[0].src} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:e.target.value,tgt:p.tgt,title:p.title,jira:p.jira}})}}><option value="">Select...</option>${branches[0].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div><div><div class="lb">Target Branch</div><select value=${prForm[0].tgt} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:e.target.value,title:p.title,jira:p.jira}})}}>${['int','qa','stage','main'].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div></div>
+      <div><div class="lb">Jira Ticket</div><input value=${prForm[0].jira} onInput=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,jira:e.target.value}})}} placeholder="PROJ-123"/></div>
+      <div><div class="lb">Title</div><input value=${prForm[0].title} onInput=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:e.target.value,jira:p.jira}})}} placeholder="Add feature X"/></div>
+      <button class="bt bp" onClick=${function(){var f=prForm[0];if(!f.repo||!f.src||!f.title){toast('Fill repo, source, title','err');return}var t=encodeURIComponent((f.jira?f.jira+' ':'')+f.title);var url='https://github.com/'+ORG+'/'+f.repo+'/compare/'+f.tgt+'...'+f.src+'?expand=1&title='+t;window.open(url,'_blank');toast('Opening GitHub...')}}>Create on GitHub</button>
+    </div></div>
+  </div>`;
+
+  if(page==='deploy')return html`<div class="fu">
+    <div class="c"><div style="font-weight:600;margin-bottom:6px">Bulk Operations</div><div style="font-size:11px;color:var(--ts);margin-bottom:10px;line-height:1.5">Select a project to trigger deployments across all its repos via GitHub dispatch.</div>
+    ${projNames.map(function(pn){var proj=projects[pn];return html`<div key=${pn} class="c"><div style="font-weight:600;font-size:13px;margin-bottom:3px">${pn}</div><div style="font-size:10px;color:var(--ts);margin-bottom:6px">${(proj.repos||[]).length} repos -- ${proj.team||proj.description||''}</div><div style="display:flex;gap:4px;flex-wrap:wrap">${['qa','stage','prod'].map(function(env){return html`<a key=${env} href=${'https://github.com/'+ORG+'/ForgeOps/issues/new?title=%5BFORGEOPS%5D+deploy+'+pn+'+'+env+'&labels=forgeops-dispatch'} target="_blank" rel="noopener" class="bt bs" style="font-size:10px;padding:4px 8px">Deploy ${env.toUpperCase()}</a>`})}</div></div>`})}</div>
+  </div>`;
+
+  if(page==='environments'){var envs=['INT','QA','STAGE','PROD'];var cols=['var(--in)','var(--wa)','var(--wa)','var(--er)'];return html`<div class="fu"><div style="display:flex;gap:6px;overflow-x:auto">${envs.map(function(e,i){return html`<div key=${e} style="flex:1;min-width:140px"><div class="c" style=${'border-top:4px solid '+cols[i]}><div style="font-weight:700;font-size:13px;margin-bottom:6px">${e}</div><div style="font-size:10px;color:var(--ts)">${totalRepos} repos registered</div><div style="font-size:9px;color:var(--td);margin-top:4px">Push to ${e.toLowerCase()} branch to deploy</div></div></div>`})}</div></div>`}
+
+  if(page==='security')return html`<div class="fu"><div class="g4"><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Gitleaks</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">OWASP DC</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Syft SBOM</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--td);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">SonarQube</div><div style="font-size:18px;font-weight:700;color:var(--td)">Add secret</div></div></div><div class="c"><div style="font-size:11px;color:var(--ts);line-height:1.6">Free tools (Gitleaks, OWASP Dependency-Check, Syft) run automatically on every pipeline. Add SONAR_HOST_URL + SONAR_TOKEN for SAST.</div></div></div>`;
+
+  if(page==='settings')return html`<div class="fu"><div class="c"><div style="font-weight:600;margin-bottom:4px">ForgeOps v6.0</div><div style="font-size:11px;color:var(--ts);margin-bottom:6px">${totalRepos} repos across ${projNames.length} projects</div>${user&&html`<div style="font-size:11px;margin-bottom:8px">Connected as: ${user.login}</div>`}<div style="display:flex;gap:6px"><button class="bt bd" onClick=${function(){localStorage.removeItem('fg_pat');setUser(null);toast('Disconnected')}}>Disconnect</button><a href=${'https://github.com/'+ORG+'/ForgeOps'} target="_blank" rel="noopener" class="bt bs" style="font-size:11px">GitHub Repo</a></div></div></div>`;
+
+  return html`<${Empty} msg="Coming soon"/>`;
+}
+
+return html`<div class="app">
+  ${sideOpen&&html`<div style="position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:70" onClick=${function(){setSideOpen(false)}}></div>`}
+  <div class=${'sb'+(sideOpen?' open':'')}>
+    <div style="padding:10px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--bd)"><${Logo} s=${20}/><div style="font-weight:700;font-size:12px">ForgeOps</div></div>
+    ${Object.keys(sections).map(function(sec){return html`<${Fragment} key=${sec}><div class="ns">${sec}</div>${sections[sec].map(function(k){return html`<div key=${k} class=${'ni'+(page===k?' ac':'')} onClick=${function(){nav(k)}}>${labels[k]}</div>`})}<//>`})}
+    <div style="margin-top:auto;padding:8px 10px;border-top:1px solid var(--bd);font-size:9px;color:var(--td)"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ok);margin-right:3px"></span>ForgeOps v6.0${lastRef[0]?' -- '+lastRef[0].toLocaleTimeString():''}</div>
+  </div>
+  <div class="mn">
+    <div class="hd"><button class="hb" onClick=${function(){setSideOpen(!sideOpen)}}>Menu</button><span style="font-size:15px;font-weight:700;flex:1">${labels[page]||''}</span><button class="bt bs" style="font-size:10px" onClick=${refresh}>${loading?'...':'Refresh'}</button></div>
+    <div class="ct">${renderPage()}</div>
+    <div class="spark-btn" onClick=${function(){setSpark(!sparkOpen)}}><svg width="20" height="20" viewBox="0 0 40 40"><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="var(--in)" style="animation:sparkGlow 3s infinite"/></svg></div>
+    ${sparkOpen&&html`<${SparkPanel} pg=${page} close=${function(){setSpark(false)}}/>`}
+    <${LogPanel} run=${logRun} onClose=${function(){setLogRun(null)}}/>
+  </div>
+</div>`;
 }
 render(html`<${App}/>`,document.getElementById('root'));
 </script>
