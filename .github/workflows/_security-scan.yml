@@ -1,0 +1,371 @@
+name: Security Scan (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        required: true
+        type: string
+      language:
+        required: true
+        type: string
+        description: "java, javascript, or python"
+      scan_docker_image:
+        required: false
+        type: string
+        default: ""
+    outputs:
+      passed:
+        description: "Whether all security gates passed"
+        value: ${{ jobs.security-gate.outputs.passed }}
+    secrets:
+      SONAR_HOST_URL:
+        required: true
+      SONAR_TOKEN:
+        required: true
+      BLACKDUCK_URL:
+        required: true
+      BLACKDUCK_API_TOKEN:
+        required: true
+      SPLUNK_HEC_URL:
+        required: false
+      SPLUNK_HEC_TOKEN:
+        required: false
+      SPLUNK_INDEX:
+        required: false
+      JIRA_URL:
+        required: false
+      JIRA_TOKEN:
+        required: false
+      JIRA_PROJECT:
+        required: false
+
+jobs:
+  sast-sonarqube:
+    name: "SAST - SonarQube"
+    runs-on: [self-hosted, linux, security]
+    outputs:
+      status: ${{ steps.scan.outputs.status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run SonarQube Scan
+        id: scan
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          echo "Running SonarQube SAST scan for ${{ inputs.project_name }}..."
+
+          SONAR_ARGS="-Dsonar.projectKey=${{ inputs.project_name }} \
+            -Dsonar.host.url=${SONAR_HOST_URL} \
+            -Dsonar.token=${SONAR_TOKEN}"
+
+          case "${{ inputs.language }}" in
+            java)
+              SONAR_ARGS="${SONAR_ARGS} -Dsonar.java.binaries=build/classes"
+              ;;
+            javascript)
+              SONAR_ARGS="${SONAR_ARGS} -Dsonar.sources=src"
+              ;;
+            python)
+              SONAR_ARGS="${SONAR_ARGS} -Dsonar.sources=."
+              ;;
+          esac
+
+          sonar-scanner ${SONAR_ARGS}
+
+          # Check quality gate
+          GATE_STATUS=$(curl -s -u "${SONAR_TOKEN}:" \
+            "${SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${{ inputs.project_name }}" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['projectStatus']['status'])")
+
+          if [ "${GATE_STATUS}" = "ERROR" ]; then
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            echo "::error::SonarQube quality gate FAILED"
+            exit 1
+          else
+            echo "status=passed" >> "$GITHUB_OUTPUT"
+            echo "SonarQube quality gate PASSED"
+          fi
+
+      - name: Log to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "sast_scan" \
+            "{\"project\":\"${{ inputs.project_name }}\",\"tool\":\"sonarqube\",\"status\":\"${{ steps.scan.outputs.status }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+  sca-blackduck:
+    name: "SCA - Black Duck Synopsys Detect"
+    runs-on: [self-hosted, linux, security]
+    outputs:
+      status: ${{ steps.scan.outputs.status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Black Duck Synopsys Detect
+        id: scan
+        env:
+          BLACKDUCK_URL: ${{ secrets.BLACKDUCK_URL }}
+          BLACKDUCK_API_TOKEN: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        run: |
+          echo "Running Black Duck SCA scan for ${{ inputs.project_name }}..."
+
+          curl -sL https://detect.synopsys.com/detect9.sh | bash -s -- \
+            --blackduck.url="${BLACKDUCK_URL}" \
+            --blackduck.api.token="${BLACKDUCK_API_TOKEN}" \
+            --detect.project.name="${{ inputs.project_name }}" \
+            --detect.project.version.name="${{ github.ref_name }}" \
+            --detect.risk.report.pdf=true \
+            --detect.policy.check.fail.on.severities=CRITICAL,MAJOR
+
+          DETECT_EXIT=$?
+          if [ ${DETECT_EXIT} -ne 0 ]; then
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            echo "::error::Black Duck policy violations detected"
+          else
+            echo "status=passed" >> "$GITHUB_OUTPUT"
+            echo "Black Duck scan PASSED"
+          fi
+
+      - name: Create Jira Ticket on Failure
+        if: failure()
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_PROJECT: ${{ secrets.JIRA_PROJECT }}
+        run: |
+          python3 scripts/jira-integration.py create-ticket \
+            --url "${JIRA_URL}" \
+            --token "${JIRA_TOKEN}" \
+            --project "${JIRA_PROJECT}" \
+            --type "Bug" \
+            --summary "SCA Vulnerability: ${{ inputs.project_name }} - Build #${{ github.run_number }}" \
+            --description "Black Duck Synopsys Detect found policy violations in ${{ inputs.project_name }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --priority "High" \
+            --labels "security,sca,automated"
+
+      - name: Log to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "sca_scan" \
+            "{\"project\":\"${{ inputs.project_name }}\",\"tool\":\"blackduck\",\"status\":\"${{ steps.scan.outputs.status }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+  secret-scanning:
+    name: "Secret Scanning - Gitleaks"
+    runs-on: [self-hosted, linux, security]
+    outputs:
+      status: ${{ steps.scan.outputs.status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        id: scan
+        run: |
+          echo "Running Gitleaks secret scan for ${{ inputs.project_name }}..."
+
+          gitleaks detect --source=. --report-format=json --report-path=gitleaks-report.json --verbose
+
+          GITLEAKS_EXIT=$?
+          if [ ${GITLEAKS_EXIT} -ne 0 ]; then
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            echo "::error::Gitleaks found exposed secrets"
+            exit 1
+          else
+            echo "status=passed" >> "$GITHUB_OUTPUT"
+            echo "No secrets detected"
+          fi
+
+      - name: Upload Gitleaks Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+          retention-days: 30
+
+      - name: Log to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "secret_scan" \
+            "{\"project\":\"${{ inputs.project_name }}\",\"tool\":\"gitleaks\",\"status\":\"${{ steps.scan.outputs.status }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+  container-scanning:
+    name: "Container Scan - Trivy"
+    runs-on: [self-hosted, linux, security]
+    if: inputs.scan_docker_image != ''
+    outputs:
+      status: ${{ steps.scan.outputs.status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Container Scan
+        id: scan
+        run: |
+          echo "Running Trivy container scan on ${{ inputs.scan_docker_image }}..."
+
+          trivy image \
+            --severity CRITICAL,HIGH \
+            --exit-code 1 \
+            --format json \
+            --output trivy-report.json \
+            "${{ inputs.scan_docker_image }}"
+
+          TRIVY_EXIT=$?
+          if [ ${TRIVY_EXIT} -ne 0 ]; then
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            echo "::error::Trivy found CRITICAL/HIGH vulnerabilities"
+            exit 1
+          else
+            echo "status=passed" >> "$GITHUB_OUTPUT"
+            echo "Trivy container scan PASSED"
+          fi
+
+      - name: Upload Trivy Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          retention-days: 30
+
+      - name: Log to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "container_scan" \
+            "{\"project\":\"${{ inputs.project_name }}\",\"tool\":\"trivy\",\"image\":\"${{ inputs.scan_docker_image }}\",\"status\":\"${{ steps.scan.outputs.status }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+  sbom-generation:
+    name: "SBOM Generation - Syft"
+    runs-on: [self-hosted, linux, security]
+    outputs:
+      status: ${{ steps.generate.outputs.status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM with Syft
+        id: generate
+        run: |
+          echo "Generating SBOM for ${{ inputs.project_name }}..."
+
+          syft dir:. -o spdx-json=sbom-spdx.json -o cyclonedx-json=sbom-cyclonedx.json
+
+          if [ -f sbom-spdx.json ] && [ -f sbom-cyclonedx.json ]; then
+            echo "status=passed" >> "$GITHUB_OUTPUT"
+            echo "SBOM generated successfully"
+          else
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            echo "::error::SBOM generation failed"
+            exit 1
+          fi
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: |
+            sbom-spdx.json
+            sbom-cyclonedx.json
+          retention-days: 90
+
+      - name: Log to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "sbom_generation" \
+            "{\"project\":\"${{ inputs.project_name }}\",\"tool\":\"syft\",\"status\":\"${{ steps.generate.outputs.status }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+  security-gate:
+    name: "Security Gate"
+    runs-on: [self-hosted, linux, security]
+    needs: [sast-sonarqube, sca-blackduck, secret-scanning, container-scanning, sbom-generation]
+    if: always()
+    outputs:
+      passed: ${{ steps.gate.outputs.passed }}
+    steps:
+      - name: Evaluate Security Gate
+        id: gate
+        run: |
+          echo "========================================="
+          echo "       SECURITY GATE RESULTS"
+          echo "========================================="
+          echo "SAST (SonarQube):    ${{ needs.sast-sonarqube.outputs.status }}"
+          echo "SCA (Black Duck):    ${{ needs.sca-blackduck.outputs.status }}"
+          echo "Secrets (Gitleaks):  ${{ needs.secret-scanning.outputs.status }}"
+          echo "Container (Trivy):   ${{ needs.container-scanning.outputs.status || 'skipped' }}"
+          echo "SBOM (Syft):         ${{ needs.sbom-generation.outputs.status }}"
+          echo "========================================="
+
+          FAILED=false
+
+          if [ "${{ needs.sast-sonarqube.outputs.status }}" = "failed" ]; then
+            FAILED=true
+            echo "::error::SAST scan failed"
+          fi
+
+          if [ "${{ needs.sca-blackduck.outputs.status }}" = "failed" ]; then
+            FAILED=true
+            echo "::error::SCA scan failed"
+          fi
+
+          if [ "${{ needs.secret-scanning.outputs.status }}" = "failed" ]; then
+            FAILED=true
+            echo "::error::Secret scanning failed"
+          fi
+
+          if [ "${{ needs.container-scanning.outputs.status }}" = "failed" ]; then
+            FAILED=true
+            echo "::error::Container scan failed"
+          fi
+
+          if [ "${{ needs.sbom-generation.outputs.status }}" = "failed" ]; then
+            FAILED=true
+            echo "::error::SBOM generation failed"
+          fi
+
+          if [ "${FAILED}" = "true" ]; then
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Security gate FAILED - CRITICAL/HIGH findings detected"
+            exit 1
+          else
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+            echo "Security gate PASSED"
+          fi
+
+      - name: Log to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "security_gate" \
+            "{\"project\":\"${{ inputs.project_name }}\",\"passed\":\"${{ steps.gate.outputs.passed }}\",\"run_id\":\"${{ github.run_id }}\"}"

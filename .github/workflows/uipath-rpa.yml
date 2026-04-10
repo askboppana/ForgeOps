@@ -1,0 +1,216 @@
+name: UiPath RPA Pipeline
+
+on:
+  push:
+    branches: [develop, "release/*", "hotfix/*"]
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  # ══════════════════════════════════════════════
+  #  BUILD & TEST
+  # ══════════════════════════════════════════════
+  build:
+    name: "Build & Test"
+    runs-on: [self-hosted, windows, uipath]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version
+        id: version
+        shell: pwsh
+        run: |
+          $ref = "${{ github.ref }}"
+          if ($ref -match "^refs/heads/release/(.+)$") {
+            $version = $Matches[1]
+          } elseif ($ref -match "^refs/heads/hotfix/(.+)$") {
+            $version = $Matches[1]
+          } else {
+            $version = "0.0.0-SNAPSHOT-${{ github.run_number }}"
+          }
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Building version: $version"
+
+      - name: Pack UiPath Project
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $projectJson = Get-Content "project.json" | ConvertFrom-Json
+          $projectName = $projectJson.name
+
+          & "C:\Program Files\UiPath\Studio\UiPath.Studio.CommandLine.exe" `
+            pack `
+            --project-path "." `
+            --output-path ".\output" `
+            --version "$version" `
+            --auto-version
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "UiPath pack failed with exit code $LASTEXITCODE"
+            exit 1
+          }
+
+          Write-Host "Package built successfully"
+
+      - name: Run UiPath Tests
+        shell: pwsh
+        env:
+          UIPATH_ORCHESTRATOR_URL: ${{ secrets.UIPATH_ORCHESTRATOR_URL }}
+          UIPATH_CLIENT_ID: ${{ secrets.UIPATH_CLIENT_ID }}
+          UIPATH_CLIENT_SECRET: ${{ secrets.UIPATH_CLIENT_SECRET }}
+        run: |
+          $testSet = "${{ vars.UIPATH_TEST_SET || github.event.repository.name }}_Tests"
+
+          uipcli test run `
+            "$env:UIPATH_ORCHESTRATOR_URL" `
+            --testset "$testSet" `
+            --accountName "${{ vars.UIPATH_ORG }}" `
+            --tenant "${{ vars.UIPATH_TENANT }}" `
+            --applicationId "$env:UIPATH_CLIENT_ID" `
+            --applicationSecret "$env:UIPATH_CLIENT_SECRET" `
+            --applicationScope "OR.Assets OR.BackgroundTasks OR.Execution OR.Folders OR.Jobs OR.Machines OR.Monitoring OR.Robots OR.Settings OR.TestSetExecutions OR.TestSets OR.Users" `
+            --result-path ".\test-results.json" `
+            --timeout 600
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "UiPath test run failed"
+            exit 1
+          }
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.json
+          retention-days: 14
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: output/*.nupkg
+          retention-days: 7
+
+  # ══════════════════════════════════════════════
+  #  SECURITY SCAN
+  # ══════════════════════════════════════════════
+  security:
+    name: "Security Scan"
+    needs: build
+    uses: ./.github/workflows/_security-scan.yml
+    with:
+      project_name: ${{ github.event.repository.name }}
+      language: javascript
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - DEV
+  # ══════════════════════════════════════════════
+  deploy-dev:
+    name: "Deploy → DEV"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: dev
+      deploy_method: uipath-orchestrator
+      rollback_on_failure: false
+      uipath_org: ${{ vars.UIPATH_ORG }}
+      uipath_tenant: ${{ vars.UIPATH_TENANT }}
+      uipath_folder: ${{ vars.UIPATH_FOLDER_DEV }}
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - QA
+  # ══════════════════════════════════════════════
+  deploy-qa:
+    name: "Deploy → QA"
+    needs: [build, deploy-dev]
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: qa
+      deploy_method: uipath-orchestrator
+      rollback_on_failure: false
+      uipath_org: ${{ vars.UIPATH_ORG }}
+      uipath_tenant: ${{ vars.UIPATH_TENANT }}
+      uipath_folder: ${{ vars.UIPATH_FOLDER_QA }}
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - STAGE
+  # ══════════════════════════════════════════════
+  deploy-stage:
+    name: "Deploy → STAGE"
+    needs: [build, security]
+    if: startsWith(github.ref, 'refs/heads/release/')
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: stage
+      deploy_method: uipath-orchestrator
+      rollback_on_failure: false
+      uipath_org: ${{ vars.UIPATH_ORG }}
+      uipath_tenant: ${{ vars.UIPATH_TENANT }}
+      uipath_folder: ${{ vars.UIPATH_FOLDER_STAGE }}
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - PROD
+  # ══════════════════════════════════════════════
+  deploy-prod:
+    name: "Deploy → PROD"
+    needs: [build, deploy-stage]
+    if: startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: prod
+      deploy_method: uipath-orchestrator
+      rollback_on_failure: false
+      uipath_org: ${{ vars.UIPATH_ORG }}
+      uipath_tenant: ${{ vars.UIPATH_TENANT }}
+      uipath_folder: ${{ vars.UIPATH_FOLDER_PROD }}
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  RELEASE TAG
+  # ══════════════════════════════════════════════
+  release-tag:
+    name: "Create Release Tag"
+    needs: [build, deploy-prod]
+    if: success() && (startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/'))
+    runs-on: [self-hosted, windows, uipath]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Git Tag
+        shell: pwsh
+        run: |
+          $version = "${{ needs.build.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$version" -m "Release $version - deployed to production"
+          git push origin "v$version"
+          Write-Host "Tagged release: v$version"

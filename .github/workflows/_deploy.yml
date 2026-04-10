@@ -1,0 +1,366 @@
+name: Deploy (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+        description: "dev, int, qa, stage, or prod"
+      deploy_method:
+        required: true
+        type: string
+        description: "ssh, argocd, or uipath-orchestrator"
+      health_url:
+        required: false
+        type: string
+        default: ""
+      rollback_on_failure:
+        required: false
+        type: boolean
+        default: true
+      ssh_host:
+        required: false
+        type: string
+        default: ""
+      ssh_deploy_path:
+        required: false
+        type: string
+        default: "/opt/apps"
+      argocd_app_name:
+        required: false
+        type: string
+        default: ""
+      uipath_org:
+        required: false
+        type: string
+        default: ""
+      uipath_tenant:
+        required: false
+        type: string
+        default: ""
+      uipath_folder:
+        required: false
+        type: string
+        default: ""
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: false
+      SSH_USER:
+        required: false
+      ARGOCD_SERVER:
+        required: false
+      ARGOCD_AUTH_TOKEN:
+        required: false
+      UIPATH_ORCHESTRATOR_URL:
+        required: false
+      UIPATH_CLIENT_ID:
+        required: false
+      UIPATH_CLIENT_SECRET:
+        required: false
+      SPLUNK_HEC_URL:
+        required: false
+      SPLUNK_HEC_TOKEN:
+        required: false
+      SPLUNK_INDEX:
+        required: false
+      JIRA_URL:
+        required: false
+      JIRA_TOKEN:
+        required: false
+      CHERWELL_URL:
+        required: false
+      CHERWELL_CLIENT_ID:
+        required: false
+      CHERWELL_CLIENT_SECRET:
+        required: false
+      SLACK_WEBHOOK_URL:
+        required: false
+
+jobs:
+  deploy:
+    name: "Deploy to ${{ inputs.environment }}"
+    runs-on: [self-hosted, linux, deploy]
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: ./artifact
+
+      - name: Log Deploy Start to Splunk
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "deploy_start" \
+            "{\"app\":\"${{ inputs.app_name }}\",\"version\":\"${{ inputs.version }}\",\"environment\":\"${{ inputs.environment }}\",\"method\":\"${{ inputs.deploy_method }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+      - name: Transition Jira Issues - Deploying
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          COMMIT_RANGE="${{ github.event.before || 'HEAD~1' }}..${{ github.sha }}"
+          python3 scripts/jira-integration.py transition \
+            --url "${JIRA_URL}" \
+            --token "${JIRA_TOKEN}" \
+            --commit-range "${COMMIT_RANGE}" \
+            --status "Deploying to ${{ inputs.environment }}" \
+            --comment "Deployment to ${{ inputs.environment }} started. Version: ${{ inputs.version }} | Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Create Cherwell Change Request
+        id: cherwell
+        if: inputs.environment == 'stage' || inputs.environment == 'prod'
+        env:
+          CHERWELL_URL: ${{ secrets.CHERWELL_URL }}
+          CHERWELL_CLIENT_ID: ${{ secrets.CHERWELL_CLIENT_ID }}
+          CHERWELL_CLIENT_SECRET: ${{ secrets.CHERWELL_CLIENT_SECRET }}
+        run: |
+          CR_ID=$(python3 scripts/cherwell-integration.py create-cr \
+            --url "${CHERWELL_URL}" \
+            --client-id "${CHERWELL_CLIENT_ID}" \
+            --client-secret "${CHERWELL_CLIENT_SECRET}" \
+            --app "${{ inputs.app_name }}" \
+            --version "${{ inputs.version }}" \
+            --environment "${{ inputs.environment }}" \
+            --approver "${{ github.actor }}")
+          echo "cr_id=${CR_ID}" >> "$GITHUB_OUTPUT"
+          echo "Cherwell CR created: ${CR_ID}"
+
+      # ── Deploy via SSH ──
+      - name: Deploy via SSH
+        if: inputs.deploy_method == 'ssh'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          echo "Deploying ${{ inputs.app_name }} v${{ inputs.version }} to ${{ inputs.environment }} via SSH..."
+
+          mkdir -p ~/.ssh
+          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          DEPLOY_PATH="${{ inputs.ssh_deploy_path }}/${{ inputs.app_name }}"
+
+          # Backup current version
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "${SSH_USER}@${{ inputs.ssh_host }}" \
+            "if [ -d ${DEPLOY_PATH} ]; then cp -r ${DEPLOY_PATH} ${DEPLOY_PATH}.rollback; fi"
+
+          # Deploy new version
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            -r ./artifact/* \
+            "${SSH_USER}@${{ inputs.ssh_host }}:${DEPLOY_PATH}/"
+
+          # Restart service
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "${SSH_USER}@${{ inputs.ssh_host }}" \
+            "sudo systemctl restart ${{ inputs.app_name }} || true"
+
+          rm -f ~/.ssh/deploy_key
+
+      # ── Deploy via ArgoCD ──
+      - name: Deploy via ArgoCD
+        if: inputs.deploy_method == 'argocd'
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          echo "Deploying ${{ inputs.app_name }} v${{ inputs.version }} to ${{ inputs.environment }} via ArgoCD..."
+
+          ARGO_APP="${{ inputs.argocd_app_name || inputs.app_name }}-${{ inputs.environment }}"
+
+          argocd app set "${ARGO_APP}" \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --grpc-web \
+            -p image.tag=${{ inputs.version }}
+
+          argocd app sync "${ARGO_APP}" \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --grpc-web \
+            --force \
+            --prune
+
+          argocd app wait "${ARGO_APP}" \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --grpc-web \
+            --timeout 300
+
+      # ── Deploy via UiPath Orchestrator ──
+      - name: Deploy via UiPath Orchestrator
+        if: inputs.deploy_method == 'uipath-orchestrator'
+        env:
+          UIPATH_ORCHESTRATOR_URL: ${{ secrets.UIPATH_ORCHESTRATOR_URL }}
+          UIPATH_CLIENT_ID: ${{ secrets.UIPATH_CLIENT_ID }}
+          UIPATH_CLIENT_SECRET: ${{ secrets.UIPATH_CLIENT_SECRET }}
+        run: |
+          echo "Deploying ${{ inputs.app_name }} v${{ inputs.version }} to ${{ inputs.environment }} via UiPath Orchestrator..."
+
+          NUPKG_FILE=$(find ./artifact -name "*.nupkg" | head -1)
+
+          uipcli package deploy "${UIPATH_ORCHESTRATOR_URL}" \
+            "${NUPKG_FILE}" \
+            --organizationUnit "${{ inputs.uipath_folder }}" \
+            --tenant "${{ inputs.uipath_tenant }}" \
+            --accountName "${{ inputs.uipath_org }}" \
+            --applicationId "${UIPATH_CLIENT_ID}" \
+            --applicationSecret "${UIPATH_CLIENT_SECRET}" \
+            --applicationScope "OR.Assets OR.BackgroundTasks OR.Execution OR.Folders OR.Jobs OR.Machines OR.Monitoring OR.Robots OR.Settings OR.Users"
+
+      # ── Health Check ──
+      - name: Health Check
+        id: healthcheck
+        if: inputs.health_url != ''
+        run: |
+          echo "Running health check against ${{ inputs.health_url }}..."
+          HEALTHY=false
+
+          for i in $(seq 1 10); do
+            echo "Attempt ${i}/10..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ inputs.health_url }}" --max-time 10 || echo "000")
+
+            if [ "${HTTP_STATUS}" = "200" ]; then
+              echo "Health check PASSED (HTTP ${HTTP_STATUS})"
+              HEALTHY=true
+              break
+            fi
+
+            echo "Health check returned HTTP ${HTTP_STATUS}, retrying in 15s..."
+            sleep 15
+          done
+
+          if [ "${HEALTHY}" = "false" ]; then
+            echo "healthy=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Health check FAILED after 10 attempts"
+            exit 1
+          else
+            echo "healthy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Auto-Rollback ──
+      - name: Auto-Rollback on Failure
+        if: failure() && inputs.rollback_on_failure && inputs.deploy_method == 'ssh'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          echo "::warning::Deployment failed! Initiating rollback..."
+
+          mkdir -p ~/.ssh
+          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          DEPLOY_PATH="${{ inputs.ssh_deploy_path }}/${{ inputs.app_name }}"
+
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "${SSH_USER}@${{ inputs.ssh_host }}" \
+            "if [ -d ${DEPLOY_PATH}.rollback ]; then rm -rf ${DEPLOY_PATH} && mv ${DEPLOY_PATH}.rollback ${DEPLOY_PATH} && sudo systemctl restart ${{ inputs.app_name }}; fi"
+
+          rm -f ~/.ssh/deploy_key
+          echo "Rollback completed"
+
+      - name: Auto-Rollback ArgoCD
+        if: failure() && inputs.rollback_on_failure && inputs.deploy_method == 'argocd'
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          echo "::warning::Deployment failed! Rolling back ArgoCD app..."
+          ARGO_APP="${{ inputs.argocd_app_name || inputs.app_name }}-${{ inputs.environment }}"
+
+          argocd app rollback "${ARGO_APP}" \
+            --server "${ARGOCD_SERVER}" \
+            --auth-token "${ARGOCD_AUTH_TOKEN}" \
+            --grpc-web
+
+      # ── Post-Deploy ──
+      - name: Transition Jira Issues - Done
+        if: success()
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          COMMIT_RANGE="${{ github.event.before || 'HEAD~1' }}..${{ github.sha }}"
+          python3 scripts/jira-integration.py transition \
+            --url "${JIRA_URL}" \
+            --token "${JIRA_TOKEN}" \
+            --commit-range "${COMMIT_RANGE}" \
+            --status "Deployed to ${{ inputs.environment }}" \
+            --comment "Successfully deployed to ${{ inputs.environment }}. Version: ${{ inputs.version }}"
+
+      - name: Update Cherwell CR
+        if: always() && (inputs.environment == 'stage' || inputs.environment == 'prod') && steps.cherwell.outputs.cr_id != ''
+        env:
+          CHERWELL_URL: ${{ secrets.CHERWELL_URL }}
+          CHERWELL_CLIENT_ID: ${{ secrets.CHERWELL_CLIENT_ID }}
+          CHERWELL_CLIENT_SECRET: ${{ secrets.CHERWELL_CLIENT_SECRET }}
+        run: |
+          STATUS=${{ job.status == 'success' && '"Implemented"' || '"Failed"' }}
+          python3 scripts/cherwell-integration.py update-cr \
+            --url "${CHERWELL_URL}" \
+            --client-id "${CHERWELL_CLIENT_ID}" \
+            --client-secret "${CHERWELL_CLIENT_SECRET}" \
+            --cr-id "${{ steps.cherwell.outputs.cr_id }}" \
+            --status "${STATUS}"
+
+      - name: Log Deploy End to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "deploy_end" \
+            "{\"app\":\"${{ inputs.app_name }}\",\"version\":\"${{ inputs.version }}\",\"environment\":\"${{ inputs.environment }}\",\"status\":\"${{ job.status }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+      - name: Slack Notification
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "${SLACK_WEBHOOK_URL}" ]; then
+            echo "Slack webhook not configured, skipping notification"
+            exit 0
+          fi
+
+          if [ "${{ job.status }}" = "success" ]; then
+            COLOR="#36a64f"
+            EMOJI=":white_check_mark:"
+            TEXT="Deployment succeeded"
+          else
+            COLOR="#ff0000"
+            EMOJI=":x:"
+            TEXT="Deployment failed"
+          fi
+
+          curl -s -X POST "${SLACK_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"attachments\": [{
+                \"color\": \"${COLOR}\",
+                \"blocks\": [{
+                  \"type\": \"section\",
+                  \"text\": {
+                    \"type\": \"mrkdwn\",
+                    \"text\": \"${EMOJI} *${TEXT}*\n*App:* ${{ inputs.app_name }}\n*Version:* ${{ inputs.version }}\n*Environment:* ${{ inputs.environment }}\n*Method:* ${{ inputs.deploy_method }}\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>\"
+                  }
+                }]
+              }]
+            }"

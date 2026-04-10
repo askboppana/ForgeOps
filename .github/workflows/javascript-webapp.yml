@@ -1,0 +1,257 @@
+name: JavaScript Web App Pipeline
+
+on:
+  push:
+    branches: [develop, "release/*", "hotfix/*"]
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  # ══════════════════════════════════════════════
+  #  BUILD
+  # ══════════════════════════════════════════════
+  build:
+    name: "Build & Test"
+    runs-on: [self-hosted, linux, build]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Determine Version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#release/}"
+          elif [[ "${{ github.ref }}" == refs/heads/hotfix/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#hotfix/}"
+          else
+            VERSION="0.0.0-SNAPSHOT-${{ github.run_number }}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building version: ${VERSION}"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run Tests with Coverage
+        run: |
+          npm run test -- --coverage --ci --reporters=default
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: coverage/
+          retention-days: 14
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: |
+            dist/
+            build/
+          retention-days: 7
+
+  # ══════════════════════════════════════════════
+  #  SECURITY SCAN
+  # ══════════════════════════════════════════════
+  security:
+    name: "Security Scan"
+    needs: build
+    uses: ./.github/workflows/_security-scan.yml
+    with:
+      project_name: ${{ github.event.repository.name }}
+      language: javascript
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - DEV
+  # ══════════════════════════════════════════════
+  deploy-dev:
+    name: "Deploy → DEV"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: dev
+      deploy_method: ssh
+      health_url: ""
+      rollback_on_failure: true
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - INT
+  # ══════════════════════════════════════════════
+  deploy-int:
+    name: "Deploy → INT"
+    needs: [build, deploy-dev]
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: int
+      deploy_method: ssh
+      health_url: ""
+      rollback_on_failure: true
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - QA
+  # ══════════════════════════════════════════════
+  deploy-qa:
+    name: "Deploy → QA"
+    needs: [build, deploy-int]
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: qa
+      deploy_method: ssh
+      health_url: ""
+      rollback_on_failure: true
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - STAGE
+  # ══════════════════════════════════════════════
+  deploy-stage:
+    name: "Deploy → STAGE"
+    needs: [build, security]
+    if: startsWith(github.ref, 'refs/heads/release/')
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: stage
+      deploy_method: ssh
+      health_url: ""
+      rollback_on_failure: true
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  DAST - OWASP ZAP
+  # ══════════════════════════════════════════════
+  dast:
+    name: "DAST - OWASP ZAP"
+    needs: deploy-stage
+    if: startsWith(github.ref, 'refs/heads/release/')
+    runs-on: [self-hosted, linux, security]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP Scan
+        run: |
+          echo "Running OWASP ZAP DAST scan against staging..."
+
+          STAGE_URL="${{ vars.STAGE_APP_URL || format('https://{0}.stage.internal', github.event.repository.name) }}"
+
+          zap-cli quick-scan \
+            --self-contained \
+            --start-options "-config api.disablekey=true" \
+            -l Informational \
+            -s xss,sqli \
+            "${STAGE_URL}" || true
+
+          zap-cli report -o zap-report.html -f html
+          zap-cli alerts -l High --exit-code
+
+      - name: Upload ZAP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
+          retention-days: 30
+
+      - name: Log to Splunk
+        if: always()
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          SPLUNK_HEC_TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          bash scripts/splunk-log.sh "dast_scan" \
+            "{\"app\":\"${{ github.event.repository.name }}\",\"tool\":\"owasp-zap\",\"status\":\"${{ job.status }}\",\"run_id\":\"${{ github.run_id }}\"}"
+
+  # ══════════════════════════════════════════════
+  #  DEPLOY - PROD
+  # ══════════════════════════════════════════════
+  deploy-prod:
+    name: "Deploy → PROD"
+    needs: [build, dast]
+    if: startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      app_name: ${{ github.event.repository.name }}
+      version: ${{ needs.build.outputs.version }}
+      environment: prod
+      deploy_method: ssh
+      health_url: ""
+      rollback_on_failure: true
+    secrets: inherit
+
+  # ══════════════════════════════════════════════
+  #  RELEASE TAG
+  # ══════════════════════════════════════════════
+  release-tag:
+    name: "Create Release Tag"
+    needs: [build, deploy-prod]
+    if: success() && (startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/'))
+    runs-on: [self-hosted, linux, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Git Tag
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release ${VERSION} - deployed to production"
+          git push origin "v${VERSION}"
+          echo "Tagged release: v${VERSION}"
+
+      - name: Set Jira Fix Version
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          COMMIT_RANGE="origin/main..HEAD"
+          python3 scripts/jira-integration.py set-fix-version \
+            --url "${JIRA_URL}" \
+            --token "${JIRA_TOKEN}" \
+            --commit-range "${COMMIT_RANGE}" \
+            --version "${{ needs.build.outputs.version }}"
