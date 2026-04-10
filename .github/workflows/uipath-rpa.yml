@@ -1,0 +1,396 @@
+# =============================================================================
+# UiPath RPA CI/CD Pipeline
+# =============================================================================
+# Technology: UiPath CLI (pack + test)
+# Environments: QA -> Stage -> Prod (NO INT)
+# =============================================================================
+
+name: "UiPath RPA CI/CD"
+
+on:
+  push:
+    branches: [qa, stage, main, 'feature/*', 'hotfix/*']
+  pull_request:
+    branches: [int, qa, stage, main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: false
+        default: 'int'
+        type: choice
+        options: [int, qa, stage, prod]
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: "uipath-rpa"  # CHANGE THIS PER REPO
+
+# =============================================================================
+# JOBS
+# =============================================================================
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Validate Secrets
+  # ---------------------------------------------------------------------------
+  validate-secrets:
+    uses: ./.github/workflows/_validate-secrets.yml
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Build & Test
+  # ---------------------------------------------------------------------------
+  build:
+    name: "Build & Test"
+    needs: [validate-secrets]
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact_name: ${{ steps.version.outputs.artifact_name }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          $branch = "${{ github.ref }}".Replace("refs/heads/", "")
+          if ("${{ github.ref }}" -eq "refs/heads/main") {
+            $projectJson = Get-Content "project.json" -ErrorAction SilentlyContinue | ConvertFrom-Json
+            $version = if ($projectJson.projectVersion) { $projectJson.projectVersion } else { "1.0.0" }
+          } elseif ("${{ github.ref }}" -match "refs/heads/(feature|hotfix)/") {
+            $safeBranch = $branch -replace "/", "-"
+            $version = "dev.${{ github.run_number }}-$safeBranch"
+          } else {
+            $version = "$branch.${{ github.run_number }}"
+          }
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "artifact_name=${{ env.APP_NAME }}-$version" >> $env:GITHUB_OUTPUT
+          echo "### Version: ``$version``" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Setup UiPath CLI
+        shell: pwsh
+        run: |
+          $cliUrl = "https://uipath.pkgs.visualstudio.com/Public.Feeds/_packaging/UiPath-Official/nuget/v3/index.json"
+          dotnet tool install UiPath.CLI --global --add-source $cliUrl 2>$null
+          if (-not $?) {
+            dotnet tool update UiPath.CLI --global --add-source $cliUrl
+          }
+
+      - name: UiPath Pack
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $outputDir = "output"
+          New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+          uipcli package pack . `
+            --output $outputDir `
+            --version $version `
+            --autoVersion
+          echo "## UiPath Pack" >> $env:GITHUB_STEP_SUMMARY
+          echo "Package built successfully: v$version" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: UiPath Test
+        if: env.UIPATH_ORCH_URL != ''
+        shell: pwsh
+        env:
+          UIPATH_ORCH_URL: ${{ secrets.UIPATH_ORCH_URL }}
+          UIPATH_ORCH_TENANT: ${{ secrets.UIPATH_ORCH_TENANT }}
+          UIPATH_ORCH_CLIENT_ID: ${{ secrets.UIPATH_ORCH_CLIENT_ID }}
+          UIPATH_ORCH_USER_KEY: ${{ secrets.UIPATH_ORCH_USER_KEY }}
+        run: |
+          uipcli test run . `
+            --orchestratorUrl "$env:UIPATH_ORCH_URL" `
+            --orchestratorTenant "$env:UIPATH_ORCH_TENANT" `
+            --accountForApp "$env:UIPATH_ORCH_CLIENT_ID" `
+            --applicationId "$env:UIPATH_ORCH_USER_KEY" `
+            --out "uipath" `
+            --result_path "test-results/"
+        continue-on-error: true
+
+      - name: Skip test notification
+        if: env.UIPATH_ORCH_URL == ''
+        shell: pwsh
+        env:
+          UIPATH_ORCH_URL: ${{ secrets.UIPATH_ORCH_URL }}
+        run: |
+          echo "::warning::UIPATH_ORCH_URL not set - skipping UiPath test execution"
+          echo "## UiPath Test Skipped" >> $env:GITHUB_STEP_SUMMARY
+          echo "Orchestrator URL not configured. Tests were skipped." >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Build summary
+        if: always()
+        shell: pwsh
+        run: |
+          echo "## Build Summary" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| App | ${{ env.APP_NAME }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ steps.version.outputs.version }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Commit | $("${{ github.sha }}".Substring(0,8)) |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Runner | windows-latest |" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: output/*.nupkg
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Security Scan
+  # ---------------------------------------------------------------------------
+  security:
+    name: "Security Scan"
+    needs: [build]
+    uses: ./.github/workflows/_security-scan.yml
+    with:
+      project_name: ${{ github.event.repository.name }}
+      language: javascript
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Deploy to QA
+  # ---------------------------------------------------------------------------
+  deploy-qa:
+    name: "Deploy to QA"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/qa'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: qa
+      version: ${{ needs.build.outputs.version }}
+      app_name: "uipath-rpa"
+    secrets: inherit
+
+  notify-qa:
+    needs: [deploy-qa, build]
+    if: always() && needs.deploy-qa.result != 'skipped'
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Deploy to QA"
+      status: ${{ needs.deploy-qa.result == 'success' && 'success' || 'failure' }}
+      app_name: ${{ github.event.repository.name }}
+      environment: "qa"
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Stage
+  # ---------------------------------------------------------------------------
+  deploy-stage:
+    name: "Deploy to Stage"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/stage'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: stage
+      version: ${{ needs.build.outputs.version }}
+      app_name: "uipath-rpa"
+    secrets: inherit
+
+  notify-stage:
+    needs: [deploy-stage, build]
+    if: always() && needs.deploy-stage.result != 'skipped'
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Deploy to Stage"
+      status: ${{ needs.deploy-stage.result == 'success' && 'success' || 'failure' }}
+      app_name: ${{ github.event.repository.name }}
+      environment: "stage"
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Prod
+  # ---------------------------------------------------------------------------
+  deploy-prod:
+    name: "Deploy to Prod"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: prod
+      version: ${{ needs.build.outputs.version }}
+      app_name: "uipath-rpa"
+      rollback_on_failure: true
+    secrets: inherit
+
+  notify-prod:
+    needs: [deploy-prod, build]
+    if: always() && needs.deploy-prod.result != 'skipped'
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Deploy to Prod"
+      status: ${{ needs.deploy-prod.result == 'success' && 'success' || 'failure' }}
+      app_name: ${{ github.event.repository.name }}
+      environment: "prod"
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Notify Build Failure
+  # ---------------------------------------------------------------------------
+  notify-build-failure:
+    needs: [build]
+    if: failure()
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Build"
+      status: "failure"
+      app_name: ${{ github.event.repository.name }}
+      environment: "build"
+      version: "unknown"
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # DAST (Dynamic Application Security Testing) - Stage only
+  # ---------------------------------------------------------------------------
+  dast:
+    name: "DAST Security Scan"
+    needs: [deploy-stage]
+    if: github.ref == 'refs/heads/stage'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Check ZAP availability
+        id: zap-check
+        run: |
+          if command -v zap-cli &>/dev/null || docker image inspect ghcr.io/zaproxy/zaproxy:stable &>/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ZAP is not available - skipping DAST scan"
+            echo "## DAST Scan Skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "ZAP proxy is not available in this environment. DAST scan was gracefully skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Run ZAP baseline scan
+        if: steps.zap-check.outputs.available == 'true'
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ vars.STAGE_URL || 'https://stage.example.com' }}
+          rules_file_name: '.zap/rules.tsv'
+          allow_issue_writing: false
+        continue-on-error: true
+
+      - name: Upload DAST results
+        if: steps.zap-check.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-results
+          path: report_html.html
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Release Tag (main branch only)
+  # ---------------------------------------------------------------------------
+  release-tag:
+    name: "Create Release"
+    needs: [build, deploy-prod]
+    if: success() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Git tag
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-creatordate | head -2 | tail -1 || echo "")
+          if [ -n "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log "${PREVIOUS_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+          echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ needs.build.outputs.version }}"
+          name: "Release v${{ needs.build.outputs.version }}"
+          body: |
+            ## Release v${{ needs.build.outputs.version }}
+
+            ### Changes
+            ${{ steps.changelog.outputs.changelog }}
+
+            ### Deployment
+            - **App:** ${{ env.APP_NAME }}
+            - **Environment:** Production
+            - **Commit:** ${{ github.sha }}
+          generate_release_notes: true
+
+  # ---------------------------------------------------------------------------
+  # Pipeline Summary (always runs)
+  # ---------------------------------------------------------------------------
+  pipeline-summary:
+    name: "Pipeline Summary"
+    needs: [validate-secrets, build, security, deploy-qa, deploy-stage, deploy-prod, notify-qa, notify-stage, notify-prod, notify-build-failure, dast, release-tag]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download all audit trails
+        uses: actions/download-artifact@v4
+        with:
+          path: audit-trails
+        continue-on-error: true
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh 2>/dev/null || true
+
+      - name: Generate pipeline summary
+        run: |
+          if [ -f scripts/forgeops-summary.sh ]; then
+            bash scripts/forgeops-summary.sh \
+              --app "${{ env.APP_NAME }}" \
+              --version "${{ needs.build.outputs.version }}" \
+              --ref "${{ github.ref }}" \
+              --sha "${{ github.sha }}" \
+              --run "${{ github.run_id }}"
+          else
+            echo "## Pipeline Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Stage | Status |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Validate Secrets | ${{ needs.validate-secrets.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Build | ${{ needs.build.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Security | ${{ needs.security.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Deploy QA | ${{ needs.deploy-qa.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Deploy Stage | ${{ needs.deploy-stage.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Deploy Prod | ${{ needs.deploy-prod.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| DAST | ${{ needs.dast.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Release | ${{ needs.release-tag.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          fi

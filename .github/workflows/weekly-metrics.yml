@@ -1,0 +1,279 @@
+###############################################################################
+# weekly-metrics.yml - Weekly DORA metrics calculation
+# Runs Monday at 9am UTC, calculates metrics, and creates a GitHub issue
+###############################################################################
+name: Weekly DORA Metrics
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+  actions: read
+
+jobs:
+  dora-metrics:
+    name: Calculate DORA Metrics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh scripts/*.py 2>/dev/null || true
+
+      - name: Calculate DORA metrics
+        id: metrics
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Date range: last 7 days
+          START_DATE=$(date -u -d '7 days ago' '+%Y-%m-%dT00:00:00Z' 2>/dev/null || date -u -v-7d '+%Y-%m-%dT00:00:00Z')
+          END_DATE=$(date -u '+%Y-%m-%dT23:59:59Z')
+
+          echo "Calculating DORA metrics from ${START_DATE} to ${END_DATE}"
+
+          # ----------------------------------------------------------
+          # 1. Deployment Frequency
+          # ----------------------------------------------------------
+          DEPLOY_RUNS=$(gh api \
+            "repos/${{ github.repository }}/actions/runs?created=>=${START_DATE}&status=success&per_page=100" \
+            --jq '[.workflow_runs[] | select(.name | test("deploy|Deploy"; "i"))] | length' \
+            2>/dev/null || echo "0")
+
+          echo "deploy_frequency=${DEPLOY_RUNS}" >> "$GITHUB_OUTPUT"
+
+          # Classify deployment frequency
+          if [ "$DEPLOY_RUNS" -ge 7 ]; then
+            DEPLOY_CLASS="Elite (On-demand / Daily)"
+          elif [ "$DEPLOY_RUNS" -ge 1 ]; then
+            DEPLOY_CLASS="High (Weekly)"
+          else
+            DEPLOY_CLASS="Low (Less than weekly)"
+          fi
+          echo "deploy_class=${DEPLOY_CLASS}" >> "$GITHUB_OUTPUT"
+
+          # ----------------------------------------------------------
+          # 2. Lead Time for Changes
+          # ----------------------------------------------------------
+          # Average time from commit to deploy (using merged PRs)
+          LEAD_TIMES=""
+          PR_DATA=$(gh api \
+            "repos/${{ github.repository }}/pulls?state=closed&sort=updated&direction=desc&per_page=20" \
+            --jq '.[] | select(.merged_at != null) | {created: .created_at, merged: .merged_at}' \
+            2>/dev/null || true)
+
+          TOTAL_LEAD_TIME=0
+          LEAD_COUNT=0
+
+          if [ -n "$PR_DATA" ]; then
+            echo "$PR_DATA" | python3 -c "
+          import json, sys
+          from datetime import datetime
+
+          total_hours = 0
+          count = 0
+          for line in sys.stdin:
+              line = line.strip()
+              if not line:
+                  continue
+              try:
+                  data = json.loads(line)
+                  created = datetime.fromisoformat(data['created'].replace('Z', '+00:00'))
+                  merged = datetime.fromisoformat(data['merged'].replace('Z', '+00:00'))
+                  hours = (merged - created).total_seconds() / 3600
+                  total_hours += hours
+                  count += 1
+              except:
+                  pass
+
+          avg = total_hours / count if count > 0 else 0
+          print(f'{avg:.1f}')
+          print(count)
+          " > /tmp/lead_time.txt 2>/dev/null || echo -e "0\n0" > /tmp/lead_time.txt
+
+            AVG_LEAD_TIME=$(head -1 /tmp/lead_time.txt)
+            LEAD_COUNT=$(tail -1 /tmp/lead_time.txt)
+          else
+            AVG_LEAD_TIME="0"
+            LEAD_COUNT="0"
+          fi
+
+          echo "lead_time_hours=${AVG_LEAD_TIME}" >> "$GITHUB_OUTPUT"
+          echo "lead_time_prs=${LEAD_COUNT}" >> "$GITHUB_OUTPUT"
+
+          # Classify lead time
+          LT_FLOAT=$(echo "$AVG_LEAD_TIME" | cut -d. -f1)
+          LT_FLOAT=${LT_FLOAT:-0}
+          if [ "$LT_FLOAT" -le 24 ]; then
+            LT_CLASS="Elite (Less than one day)"
+          elif [ "$LT_FLOAT" -le 168 ]; then
+            LT_CLASS="High (Less than one week)"
+          else
+            LT_CLASS="Low (More than one week)"
+          fi
+          echo "lead_time_class=${LT_CLASS}" >> "$GITHUB_OUTPUT"
+
+          # ----------------------------------------------------------
+          # 3. Change Failure Rate
+          # ----------------------------------------------------------
+          TOTAL_DEPLOYS=$(gh api \
+            "repos/${{ github.repository }}/actions/runs?created=>=${START_DATE}&per_page=100" \
+            --jq '[.workflow_runs[] | select(.name | test("deploy|Deploy"; "i"))] | length' \
+            2>/dev/null || echo "0")
+
+          FAILED_DEPLOYS=$(gh api \
+            "repos/${{ github.repository }}/actions/runs?created=>=${START_DATE}&status=failure&per_page=100" \
+            --jq '[.workflow_runs[] | select(.name | test("deploy|Deploy"; "i"))] | length' \
+            2>/dev/null || echo "0")
+
+          if [ "$TOTAL_DEPLOYS" -gt 0 ]; then
+            CFR=$(python3 -c "print(f'{($FAILED_DEPLOYS / $TOTAL_DEPLOYS) * 100:.1f}')" 2>/dev/null || echo "0")
+          else
+            CFR="0"
+          fi
+
+          echo "cfr=${CFR}" >> "$GITHUB_OUTPUT"
+          echo "total_deploys=${TOTAL_DEPLOYS}" >> "$GITHUB_OUTPUT"
+          echo "failed_deploys=${FAILED_DEPLOYS}" >> "$GITHUB_OUTPUT"
+
+          # Classify CFR
+          CFR_INT=$(echo "$CFR" | cut -d. -f1)
+          CFR_INT=${CFR_INT:-0}
+          if [ "$CFR_INT" -le 5 ]; then
+            CFR_CLASS="Elite (0-5%)"
+          elif [ "$CFR_INT" -le 15 ]; then
+            CFR_CLASS="High (5-15%)"
+          else
+            CFR_CLASS="Low (>15%)"
+          fi
+          echo "cfr_class=${CFR_CLASS}" >> "$GITHUB_OUTPUT"
+
+          # ----------------------------------------------------------
+          # 4. Mean Time to Recovery (MTTR)
+          # ----------------------------------------------------------
+          # Look at how quickly failed runs were followed by successful ones
+          MTTR="N/A"
+          if [ "$FAILED_DEPLOYS" -gt 0 ]; then
+            MTTR=$(gh api \
+              "repos/${{ github.repository }}/actions/runs?per_page=100" \
+              --jq '[.workflow_runs[] | select(.name | test("deploy|Deploy"; "i"))] | sort_by(.created_at) | .[] | {status: .conclusion, time: .created_at}' \
+              2>/dev/null | python3 -c "
+          import json, sys
+          from datetime import datetime
+
+          runs = []
+          for line in sys.stdin:
+              line = line.strip()
+              if not line: continue
+              try:
+                  runs.append(json.loads(line))
+              except: pass
+
+          recovery_times = []
+          i = 0
+          while i < len(runs) - 1:
+              if runs[i].get('status') == 'failure':
+                  for j in range(i+1, len(runs)):
+                      if runs[j].get('status') == 'success':
+                          t1 = datetime.fromisoformat(runs[i]['time'].replace('Z','+00:00'))
+                          t2 = datetime.fromisoformat(runs[j]['time'].replace('Z','+00:00'))
+                          recovery_times.append((t2-t1).total_seconds()/3600)
+                          break
+              i += 1
+
+          if recovery_times:
+              print(f'{sum(recovery_times)/len(recovery_times):.1f}')
+          else:
+              print('N/A')
+          " 2>/dev/null || echo "N/A")
+          fi
+
+          echo "mttr=${MTTR}" >> "$GITHUB_OUTPUT"
+
+          # Classify MTTR
+          if [ "$MTTR" = "N/A" ]; then
+            MTTR_CLASS="N/A (no failures)"
+          else
+            MTTR_INT=$(echo "$MTTR" | cut -d. -f1)
+            MTTR_INT=${MTTR_INT:-0}
+            if [ "$MTTR_INT" -le 1 ]; then
+              MTTR_CLASS="Elite (Less than 1 hour)"
+            elif [ "$MTTR_INT" -le 24 ]; then
+              MTTR_CLASS="High (Less than 1 day)"
+            else
+              MTTR_CLASS="Low (More than 1 day)"
+            fi
+          fi
+          echo "mttr_class=${MTTR_CLASS}" >> "$GITHUB_OUTPUT"
+
+      - name: Create metrics issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          WEEK_OF=$(date -u '+%Y-%m-%d')
+
+          BODY=$(cat <<'ISSUE_EOF'
+          ## DORA Metrics Report - Week of WEEK_PLACEHOLDER
+
+          ### Metrics Summary
+
+          | Metric | Value | Classification |
+          |--------|-------|----------------|
+          | **Deployment Frequency** | DEPLOY_FREQ deployments/week | DEPLOY_CLASS_PH |
+          | **Lead Time for Changes** | LEAD_TIME_PH hours (avg over LEAD_PRS_PH PRs) | LEAD_CLASS_PH |
+          | **Change Failure Rate** | CFR_PH% (FAILED_PH/TOTAL_PH) | CFR_CLASS_PH |
+          | **Mean Time to Recovery** | MTTR_PH hours | MTTR_CLASS_PH |
+
+          ### DORA Classification Guide
+
+          | Level | Deploy Frequency | Lead Time | Change Failure Rate | MTTR |
+          |-------|-----------------|-----------|--------------------|----|
+          | **Elite** | On-demand | < 1 day | 0-5% | < 1 hour |
+          | **High** | Weekly | < 1 week | 5-15% | < 1 day |
+          | **Medium** | Monthly | 1-6 months | 15-30% | < 1 week |
+          | **Low** | < Monthly | > 6 months | > 30% | > 1 week |
+
+          ---
+          *Generated automatically by ForgeOps Weekly Metrics workflow*
+          *Period: 7 days ending WEEK_PLACEHOLDER*
+          ISSUE_EOF
+          )
+
+          BODY=$(echo "$BODY" | sed \
+            -e "s|WEEK_PLACEHOLDER|${WEEK_OF}|g" \
+            -e "s|DEPLOY_FREQ|${{ steps.metrics.outputs.deploy_frequency }}|g" \
+            -e "s|DEPLOY_CLASS_PH|${{ steps.metrics.outputs.deploy_class }}|g" \
+            -e "s|LEAD_TIME_PH|${{ steps.metrics.outputs.lead_time_hours }}|g" \
+            -e "s|LEAD_PRS_PH|${{ steps.metrics.outputs.lead_time_prs }}|g" \
+            -e "s|LEAD_CLASS_PH|${{ steps.metrics.outputs.lead_time_class }}|g" \
+            -e "s|CFR_PH|${{ steps.metrics.outputs.cfr }}|g" \
+            -e "s|FAILED_PH|${{ steps.metrics.outputs.failed_deploys }}|g" \
+            -e "s|TOTAL_PH|${{ steps.metrics.outputs.total_deploys }}|g" \
+            -e "s|CFR_CLASS_PH|${{ steps.metrics.outputs.cfr_class }}|g" \
+            -e "s|MTTR_PH|${{ steps.metrics.outputs.mttr }}|g" \
+            -e "s|MTTR_CLASS_PH|${{ steps.metrics.outputs.mttr_class }}|g")
+
+          gh issue create \
+            --title "DORA Metrics Report - Week of ${WEEK_OF}" \
+            --body "$BODY" \
+            --label "metrics,automated"
+
+      - name: Write summary
+        if: always()
+        run: |
+          {
+            echo "## Weekly DORA Metrics"
+            echo ""
+            echo "| Metric | Value | Class |"
+            echo "|--------|-------|-------|"
+            echo "| Deployment Frequency | ${{ steps.metrics.outputs.deploy_frequency }}/week | ${{ steps.metrics.outputs.deploy_class }} |"
+            echo "| Lead Time | ${{ steps.metrics.outputs.lead_time_hours }}h | ${{ steps.metrics.outputs.lead_time_class }} |"
+            echo "| Change Failure Rate | ${{ steps.metrics.outputs.cfr }}% | ${{ steps.metrics.outputs.cfr_class }} |"
+            echo "| MTTR | ${{ steps.metrics.outputs.mttr }}h | ${{ steps.metrics.outputs.mttr_class }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

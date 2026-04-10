@@ -1,0 +1,402 @@
+# =============================================================================
+# JavaScript Web App CI/CD Pipeline
+# =============================================================================
+# Technology: Node.js 20 + npm
+# Environments: INT -> QA -> Stage -> Prod
+# =============================================================================
+
+name: "JavaScript Web App CI/CD"
+
+on:
+  push:
+    branches: [int, qa, stage, main, 'feature/*', 'hotfix/*']
+  pull_request:
+    branches: [int, qa, stage, main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: false
+        default: 'int'
+        type: choice
+        options: [int, qa, stage, prod]
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: "js-webapp"  # CHANGE THIS PER REPO
+
+# =============================================================================
+# JOBS
+# =============================================================================
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Validate Secrets
+  # ---------------------------------------------------------------------------
+  validate-secrets:
+    uses: ./.github/workflows/_validate-secrets.yml
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Build & Test
+  # ---------------------------------------------------------------------------
+  build:
+    name: "Build & Test"
+    needs: [validate-secrets]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact_name: ${{ steps.version.outputs.artifact_name }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh 2>/dev/null || true
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Determine version
+        id: version
+        run: |
+          BRANCH="${GITHUB_REF##*/}"
+          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+            VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "1.0.0")
+          elif [[ "$GITHUB_REF" == refs/heads/feature/* || "$GITHUB_REF" == refs/heads/hotfix/* ]]; then
+            VERSION="dev.${GITHUB_RUN_NUMBER}-${BRANCH//\//-}"
+          else
+            VERSION="${BRANCH}.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=${{ env.APP_NAME }}-${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "### Version: \`${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint || true
+
+      - name: Run tests
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: JavaScript Test Results
+          path: '**/junit.xml'
+          reporter: jest-junit
+          fail-on-error: false
+
+      - name: Build summary
+        if: always()
+        run: |
+          echo "## Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| App | ${{ env.APP_NAME }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | ${{ steps.version.outputs.version }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch | ${GITHUB_REF##*/} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Commit | ${GITHUB_SHA::8} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Node | $(node --version) |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            build/
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            coverage/
+            junit.xml
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Security Scan
+  # ---------------------------------------------------------------------------
+  security:
+    name: "Security Scan"
+    needs: [build]
+    uses: ./.github/workflows/_security-scan.yml
+    with:
+      project_name: ${{ github.event.repository.name }}
+      language: javascript
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Deploy to INT
+  # ---------------------------------------------------------------------------
+  deploy-int:
+    name: "Deploy to INT"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/int'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: int
+      version: ${{ needs.build.outputs.version }}
+      app_name: "js-webapp"
+    secrets: inherit
+
+  notify-int:
+    needs: [deploy-int, build]
+    if: always() && needs.deploy-int.result != 'skipped'
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Deploy to INT"
+      status: ${{ needs.deploy-int.result == 'success' && 'success' || 'failure' }}
+      app_name: ${{ github.event.repository.name }}
+      environment: "int"
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Deploy to QA
+  # ---------------------------------------------------------------------------
+  deploy-qa:
+    name: "Deploy to QA"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/qa'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: qa
+      version: ${{ needs.build.outputs.version }}
+      app_name: "js-webapp"
+    secrets: inherit
+
+  notify-qa:
+    needs: [deploy-qa, build]
+    if: always() && needs.deploy-qa.result != 'skipped'
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Deploy to QA"
+      status: ${{ needs.deploy-qa.result == 'success' && 'success' || 'failure' }}
+      app_name: ${{ github.event.repository.name }}
+      environment: "qa"
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Stage
+  # ---------------------------------------------------------------------------
+  deploy-stage:
+    name: "Deploy to Stage"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/stage'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: stage
+      version: ${{ needs.build.outputs.version }}
+      app_name: "js-webapp"
+    secrets: inherit
+
+  notify-stage:
+    needs: [deploy-stage, build]
+    if: always() && needs.deploy-stage.result != 'skipped'
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Deploy to Stage"
+      status: ${{ needs.deploy-stage.result == 'success' && 'success' || 'failure' }}
+      app_name: ${{ github.event.repository.name }}
+      environment: "stage"
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Prod
+  # ---------------------------------------------------------------------------
+  deploy-prod:
+    name: "Deploy to Prod"
+    needs: [build, security]
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: prod
+      version: ${{ needs.build.outputs.version }}
+      app_name: "js-webapp"
+      rollback_on_failure: true
+    secrets: inherit
+
+  notify-prod:
+    needs: [deploy-prod, build]
+    if: always() && needs.deploy-prod.result != 'skipped'
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Deploy to Prod"
+      status: ${{ needs.deploy-prod.result == 'success' && 'success' || 'failure' }}
+      app_name: ${{ github.event.repository.name }}
+      environment: "prod"
+      version: ${{ needs.build.outputs.version }}
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Notify Build Failure
+  # ---------------------------------------------------------------------------
+  notify-build-failure:
+    needs: [build]
+    if: failure()
+    uses: ./.github/workflows/_notify.yml
+    with:
+      job_name: "Build"
+      status: "failure"
+      app_name: ${{ github.event.repository.name }}
+      environment: "build"
+      version: "unknown"
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # DAST (Dynamic Application Security Testing) - Stage only
+  # ---------------------------------------------------------------------------
+  dast:
+    name: "DAST Security Scan"
+    needs: [deploy-stage]
+    if: github.ref == 'refs/heads/stage'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Check ZAP availability
+        id: zap-check
+        run: |
+          if command -v zap-cli &>/dev/null || docker image inspect ghcr.io/zaproxy/zaproxy:stable &>/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ZAP is not available - skipping DAST scan"
+            echo "## DAST Scan Skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "ZAP proxy is not available in this environment. DAST scan was gracefully skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Run ZAP baseline scan
+        if: steps.zap-check.outputs.available == 'true'
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ vars.STAGE_URL || 'https://stage.example.com' }}
+          rules_file_name: '.zap/rules.tsv'
+          allow_issue_writing: false
+        continue-on-error: true
+
+      - name: Upload DAST results
+        if: steps.zap-check.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-results
+          path: report_html.html
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Release Tag (main branch only)
+  # ---------------------------------------------------------------------------
+  release-tag:
+    name: "Create Release"
+    needs: [build, deploy-prod]
+    if: success() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Git tag
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-creatordate | head -2 | tail -1 || echo "")
+          if [ -n "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log "${PREVIOUS_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+          echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ needs.build.outputs.version }}"
+          name: "Release v${{ needs.build.outputs.version }}"
+          body: |
+            ## Release v${{ needs.build.outputs.version }}
+
+            ### Changes
+            ${{ steps.changelog.outputs.changelog }}
+
+            ### Deployment
+            - **App:** ${{ env.APP_NAME }}
+            - **Environment:** Production
+            - **Commit:** ${{ github.sha }}
+          generate_release_notes: true
+
+  # ---------------------------------------------------------------------------
+  # Pipeline Summary (always runs)
+  # ---------------------------------------------------------------------------
+  pipeline-summary:
+    name: "Pipeline Summary"
+    needs: [validate-secrets, build, security, deploy-int, deploy-qa, deploy-stage, deploy-prod, notify-int, notify-qa, notify-stage, notify-prod, notify-build-failure, dast, release-tag]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download all audit trails
+        uses: actions/download-artifact@v4
+        with:
+          path: audit-trails
+        continue-on-error: true
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh 2>/dev/null || true
+
+      - name: Generate pipeline summary
+        run: |
+          if [ -f scripts/forgeops-summary.sh ]; then
+            bash scripts/forgeops-summary.sh \
+              --app "${{ env.APP_NAME }}" \
+              --version "${{ needs.build.outputs.version }}" \
+              --ref "${{ github.ref }}" \
+              --sha "${{ github.sha }}" \
+              --run "${{ github.run_id }}"
+          else
+            echo "## Pipeline Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Stage | Status |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Validate Secrets | ${{ needs.validate-secrets.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Build | ${{ needs.build.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Security | ${{ needs.security.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Deploy INT | ${{ needs.deploy-int.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Deploy QA | ${{ needs.deploy-qa.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Deploy Stage | ${{ needs.deploy-stage.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Deploy Prod | ${{ needs.deploy-prod.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| DAST | ${{ needs.dast.result }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Release | ${{ needs.release-tag.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          fi

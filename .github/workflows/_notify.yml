@@ -1,0 +1,238 @@
+###############################################################################
+# _notify.yml - Reusable notification workflow
+# Sends notifications via Email, Teams, and Splunk
+###############################################################################
+name: Notify
+
+on:
+  workflow_call:
+    inputs:
+      job_name:
+        required: true
+        type: string
+      status:
+        required: true
+        type: string
+      app_name:
+        required: false
+        type: string
+        default: ""
+      environment:
+        required: false
+        type: string
+        default: ""
+      version:
+        required: false
+        type: string
+        default: ""
+    secrets:
+      SMTP_SERVER:
+        required: false
+      SMTP_PORT:
+        required: false
+      SMTP_USERNAME:
+        required: false
+      SMTP_PASSWORD:
+        required: false
+      TEAMS_WEBHOOK:
+        required: false
+      SPLUNK_HEC_URL:
+        required: false
+      SPLUNK_HEC_TOKEN:
+        required: false
+      SPLUNK_INDEX:
+        required: false
+
+jobs:
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh scripts/*.py 2>/dev/null || true
+
+      - name: Read notification config
+        id: config
+        run: |
+          EMAIL_GROUP=""
+          if [ -f forgeops-config.json ]; then
+            EMAIL_GROUP=$(python3 -c "
+          import json
+          with open('forgeops-config.json') as f:
+              data = json.load(f)
+          emails = data.get('notifications', {}).get('email_group', '')
+          if isinstance(emails, list):
+              print(','.join(emails))
+          else:
+              print(emails)
+          " 2>/dev/null || true)
+          fi
+
+          echo "email_group=${EMAIL_GROUP}" >> "$GITHUB_OUTPUT"
+
+          # Set status icon
+          case "${{ inputs.status }}" in
+            success) echo "icon=✅" >> "$GITHUB_OUTPUT" ;;
+            failure) echo "icon=❌" >> "$GITHUB_OUTPUT" ;;
+            cancelled) echo "icon=⚠️" >> "$GITHUB_OUTPUT" ;;
+            *)       echo "icon=ℹ️" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Send email notification
+        if: steps.config.outputs.email_group != ''
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "${{ steps.config.outputs.icon }} [${{ inputs.app_name }}] ${{ inputs.job_name }} - ${{ inputs.status }}"
+          to: ${{ steps.config.outputs.email_group }}
+          from: "ForgeOps CI/CD <noreply@forgeops.dev>"
+          html_body: |
+            <h2>${{ steps.config.outputs.icon }} ForgeOps Notification</h2>
+            <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
+              <tr><td><strong>Job</strong></td><td>${{ inputs.job_name }}</td></tr>
+              <tr><td><strong>Status</strong></td><td>${{ inputs.status }}</td></tr>
+              <tr><td><strong>Application</strong></td><td>${{ inputs.app_name }}</td></tr>
+              <tr><td><strong>Environment</strong></td><td>${{ inputs.environment }}</td></tr>
+              <tr><td><strong>Version</strong></td><td>${{ inputs.version }}</td></tr>
+              <tr><td><strong>Repository</strong></td><td>${{ github.repository }}</td></tr>
+              <tr><td><strong>Triggered by</strong></td><td>${{ github.actor }}</td></tr>
+              <tr><td><strong>Run</strong></td><td><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Run</a></td></tr>
+            </table>
+        continue-on-error: true
+
+      - name: Skip email notification
+        if: steps.config.outputs.email_group == ''
+        env:
+          TOKEN: ${{ secrets.SMTP_SERVER }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::SMTP_SERVER not configured - skipping email notification"
+          else
+            echo "::notice::No email group found in forgeops-config.json - skipping email"
+          fi
+
+      - name: Send Teams notification
+        env:
+          TOKEN: ${{ secrets.TEAMS_WEBHOOK }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::TEAMS_WEBHOOK not configured - skipping Teams notification"
+            exit 0
+          fi
+
+          # Build adaptive card
+          CARD_JSON=$(cat <<'CARD_EOF'
+          {
+            "type": "message",
+            "attachments": [
+              {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  "type": "AdaptiveCard",
+                  "version": "1.4",
+                  "body": [
+                    {
+                      "type": "TextBlock",
+                      "size": "Large",
+                      "weight": "Bolder",
+                      "text": "ICON_PLACEHOLDER ForgeOps: JOB_PLACEHOLDER"
+                    },
+                    {
+                      "type": "FactSet",
+                      "facts": [
+                        {"title": "Status", "value": "STATUS_PLACEHOLDER"},
+                        {"title": "Application", "value": "APP_PLACEHOLDER"},
+                        {"title": "Environment", "value": "ENV_PLACEHOLDER"},
+                        {"title": "Version", "value": "VERSION_PLACEHOLDER"},
+                        {"title": "Repository", "value": "REPO_PLACEHOLDER"},
+                        {"title": "Actor", "value": "ACTOR_PLACEHOLDER"}
+                      ]
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "Action.OpenUrl",
+                      "title": "View Run",
+                      "url": "RUN_URL_PLACEHOLDER"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+          CARD_EOF
+          )
+
+          CARD_JSON=$(echo "$CARD_JSON" | sed \
+            -e "s|ICON_PLACEHOLDER|${{ steps.config.outputs.icon }}|g" \
+            -e "s|JOB_PLACEHOLDER|${{ inputs.job_name }}|g" \
+            -e "s|STATUS_PLACEHOLDER|${{ inputs.status }}|g" \
+            -e "s|APP_PLACEHOLDER|${{ inputs.app_name }}|g" \
+            -e "s|ENV_PLACEHOLDER|${{ inputs.environment }}|g" \
+            -e "s|VERSION_PLACEHOLDER|${{ inputs.version }}|g" \
+            -e "s|REPO_PLACEHOLDER|${{ github.repository }}|g" \
+            -e "s|ACTOR_PLACEHOLDER|${{ github.actor }}|g" \
+            -e "s|RUN_URL_PLACEHOLDER|${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|g")
+
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "$CARD_JSON" \
+            "$TOKEN" || echo "::warning::Failed to send Teams notification"
+
+      - name: Log to Splunk
+        env:
+          SPLUNK_HEC_URL: ${{ secrets.SPLUNK_HEC_URL }}
+          TOKEN: ${{ secrets.SPLUNK_HEC_TOKEN }}
+          SPLUNK_INDEX: ${{ secrets.SPLUNK_INDEX }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::SPLUNK_HEC_TOKEN not configured - skipping Splunk logging"
+            exit 0
+          fi
+
+          PAYLOAD=$(cat <<SPLUNK_EOF
+          {
+            "index": "${SPLUNK_INDEX:-forgeops}",
+            "sourcetype": "forgeops:notification",
+            "event": {
+              "job_name": "${{ inputs.job_name }}",
+              "status": "${{ inputs.status }}",
+              "app_name": "${{ inputs.app_name }}",
+              "environment": "${{ inputs.environment }}",
+              "version": "${{ inputs.version }}",
+              "repository": "${{ github.repository }}",
+              "actor": "${{ github.actor }}",
+              "run_id": "${{ github.run_id }}",
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }
+          }
+          SPLUNK_EOF
+          )
+
+          curl -s -X POST \
+            -H "Authorization: Splunk ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "${SPLUNK_HEC_URL}/services/collector/event" || echo "::warning::Failed to log to Splunk"
+
+      - name: Write notification summary
+        if: always()
+        run: |
+          {
+            echo "## Notification Summary"
+            echo ""
+            echo "| Channel | Status |"
+            echo "|---------|--------|"
+            echo "| Email | ${{ steps.config.outputs.email_group != '' && '✅ Sent' || '⏭️ Skipped' }} |"
+            echo "| Teams | ${{ secrets.TEAMS_WEBHOOK != '' && '✅ Sent' || '⏭️ Skipped' }} |"
+            echo "| Splunk | ${{ secrets.SPLUNK_HEC_TOKEN != '' && '✅ Logged' || '⏭️ Skipped' }} |"
+            echo ""
+            echo "**Job:** ${{ inputs.job_name }} | **Status:** ${{ inputs.status }}"
+          } >> "$GITHUB_STEP_SUMMARY"

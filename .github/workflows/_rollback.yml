@@ -1,0 +1,125 @@
+###############################################################################
+# _rollback.yml - Rollback workflow
+# Finds the previous successful deployment and re-runs it
+###############################################################################
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: "Application name to rollback"
+        required: true
+        type: string
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - int
+          - qa
+          - stage
+          - prod
+
+jobs:
+  rollback:
+    name: Rollback ${{ inputs.app_name }} in ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh scripts/*.py 2>/dev/null || true
+
+      - name: Find previous successful deployment
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Searching for previous successful deployment of ${{ inputs.app_name }} to ${{ inputs.environment }}..."
+
+          # List recent workflow runs that were successful
+          RUNS=$(gh api \
+            "repos/${{ github.repository }}/actions/runs?status=success&per_page=50" \
+            --jq '.workflow_runs[] | select(.name | test("deploy|Deploy")) | {id: .id, name: .name, created_at: .created_at, head_sha: .head_sha}' \
+            2>/dev/null || true)
+
+          if [ -z "$RUNS" ]; then
+            echo "::error::No previous successful deployment runs found"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          # Find the most recent successful deploy run (skip the current/latest)
+          PREVIOUS_RUN_ID=$(gh api \
+            "repos/${{ github.repository }}/actions/runs?status=success&per_page=20" \
+            --jq '[.workflow_runs[] | select(.name | test("deploy|Deploy"; "i"))] | .[1].id // empty' \
+            2>/dev/null || true)
+
+          if [ -z "$PREVIOUS_RUN_ID" ]; then
+            echo "::error::Could not find a previous successful deployment run to rollback to"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          echo "Found previous successful run: ${PREVIOUS_RUN_ID}"
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "run_id=${PREVIOUS_RUN_ID}" >> "$GITHUB_OUTPUT"
+
+          # Get run details
+          RUN_INFO=$(gh api "repos/${{ github.repository }}/actions/runs/${PREVIOUS_RUN_ID}" 2>/dev/null || true)
+          RUN_SHA=$(echo "$RUN_INFO" | python3 -c "import json,sys; print(json.load(sys.stdin).get('head_sha','unknown'))" 2>/dev/null || echo "unknown")
+          RUN_DATE=$(echo "$RUN_INFO" | python3 -c "import json,sys; print(json.load(sys.stdin).get('created_at','unknown'))" 2>/dev/null || echo "unknown")
+
+          echo "run_sha=${RUN_SHA}" >> "$GITHUB_OUTPUT"
+          echo "run_date=${RUN_DATE}" >> "$GITHUB_OUTPUT"
+
+      - name: Confirm rollback details
+        if: steps.find.outputs.found == 'true'
+        run: |
+          {
+            echo "## Rollback Details"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| **Application** | ${{ inputs.app_name }} |"
+            echo "| **Environment** | ${{ inputs.environment }} |"
+            echo "| **Rolling back to run** | ${{ steps.find.outputs.run_id }} |"
+            echo "| **Commit SHA** | ${{ steps.find.outputs.run_sha }} |"
+            echo "| **Original run date** | ${{ steps.find.outputs.run_date }} |"
+            echo "| **Triggered by** | ${{ github.actor }} |"
+            echo "| **Timestamp** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Re-run previous deployment
+        if: steps.find.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Re-running workflow run ${{ steps.find.outputs.run_id }}..."
+
+          gh api \
+            -X POST \
+            "repos/${{ github.repository }}/actions/runs/${{ steps.find.outputs.run_id }}/rerun" \
+            2>/dev/null || {
+              echo "::error::Failed to re-run the previous deployment"
+              exit 1
+            }
+
+          echo "Successfully triggered re-run of deployment ${{ steps.find.outputs.run_id }}"
+
+          {
+            echo ""
+            echo "## Result"
+            echo "✅ Successfully triggered re-run of previous deployment."
+            echo ""
+            echo "[View re-run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ steps.find.outputs.run_id }})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Log to ForgeOps
+        if: always()
+        run: |
+          if [ -f scripts/forgeops-log.sh ]; then
+            ./scripts/forgeops-log.sh "rollback" "${{ job.status }}" "${{ inputs.app_name }}" "${{ inputs.environment }}"
+          fi
