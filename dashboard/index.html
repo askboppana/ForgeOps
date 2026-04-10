@@ -96,6 +96,9 @@ function Skels(){return html`<div><${Skel}/><${Skel}/><${Skel}/></div>`}
 function Empty(p){return html`<div class="c" style="text-align:center;padding:24px;color:var(--td)">${p.msg||'No data'}</div>`}
 
 var SPARK=[
+{p:['users'],q:'How do I invite a team member?',a:'Fill the invite form at the top of the Team page. It opens 3 tabs: GitHub collaborator page, config file editor, and an onboarding issue with checklist.'},
+{p:['users'],q:'What role should I assign?',a:'Developer for coders, Tech Lead for reviewers, Release Engineer for deployments, QA for SIT testing, UAT for acceptance testing, Admin for full control.'},
+{p:['users'],q:'How do I remove a team member?',a:'Click Edit on the Team page to open forgeops-config.json. Remove their entry from the users section. Also remove them from GitHub org.'},
 {p:['overview'],q:'What do stat cards show?',a:'Total repos, passing, failing, running counts from the command center data file.'},
 {p:['pipelines'],q:'How to run a pipeline?',a:'Click Run Pipeline, select repo/workflow/branch, click Run. It dispatches a workflow.'},
 {p:['prs'],q:'How to create a PR?',a:'Select repo, pick source and target branches, add Jira ticket and title, click Create. Opens GitHub compare.'},
@@ -260,7 +263,8 @@ function renderPage(){
   </div>`}
 
   if(page==='users'){
-    var invF=inv[0];var setInv=inv[1];
+    var invF=inv[0];var setInv=inv[1];var invMsg=useState('');
+    var ROLE_COLORS={admin:'#7c3aed',release_engineer:'var(--ok)',developer:'var(--in)',tech_lead:'var(--wa)',qa_team:'var(--er)',uat_team:'var(--er)'};
     function doInvite(){
       if(!invF.username||!invF.name||!invF.email){toast('Fill all fields','err');return}
       var onboardBody=encodeURIComponent('## Onboarding: '+invF.username+'\n\n- [ ] GitHub access granted\n- [ ] Added to forgeops-config.json as '+invF.role+'\n- [ ] VS Code extensions installed (Actions, Copilot, PR)\n- [ ] First feature branch created\n- [ ] First PR submitted and reviewed\n- [ ] Completed ForgeOps knowledge base review\n\nRole: '+invF.role+'\nEmail: '+invF.email+'\nName: '+invF.name);
@@ -268,24 +272,35 @@ function renderPage(){
       toast('Opening GitHub to add collaborator...');
       setTimeout(function(){window.open('https://github.com/'+ORG+'/ForgeOps/edit/main/forgeops-config.json','_blank');toast('Add user to forgeops-config.json')},500);
       setTimeout(function(){window.open('https://github.com/'+ORG+'/ForgeOps/issues/new?title=%5BONBOARD%5D+'+encodeURIComponent(invF.username)+'&body='+onboardBody+'&labels=onboarding','_blank');toast('Onboarding ticket created')},1000);
+      invMsg[1](invF.username);
     }
     var cfgUsers=(config&&config.users)||{};var userList=Object.keys(cfgUsers);
+    var PERMS=[['View all pipelines','Y','Y','Y','Own','QA','Stage'],['Create PR to INT','Y','Y','Y','Y','',''],['Promote INT to QA','Y','Y','','','',''],['Promote QA to Stage','Y','Y','','','',''],['Promote Stage to Prod','Y','Y','','','',''],['Approve prod deploy','Y','Y','Y','','',''],['Mark SIT Complete','Y','Y','','','Y',''],['Mark UAT Complete','Y','Y','','','','Y'],['Manage users','Y','','','','',''],['Configure integrations','Y','','','','',''],['View security results','Y','Y','Y','Y','',''],['Trigger rollback','Y','Y','','','','']];
     return html`<div class="fu">
       <div class="c" style="border-top:4px solid var(--pr)">
         <div style="font-weight:600;font-size:14px;margin-bottom:10px">Invite Team Member</div>
         <div class="fl">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">GitHub Username</div><input value=${invF.username} onInput=${function(e){setInv(function(p){return{username:e.target.value,name:p.name,email:p.email,role:p.role}})}} placeholder="jsmith"/></div><div><div class="lb">Full Name</div><input value=${invF.name} onInput=${function(e){setInv(function(p){return{username:p.username,name:e.target.value,email:p.email,role:p.role}})}} placeholder="Jane Smith"/></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">GitHub Username</div><input value=${invF.username} onInput=${function(e){setInv(function(p){return{username:e.target.value,name:p.name,email:p.email,role:p.role}});invMsg[1]('')}} placeholder="jsmith"/></div><div><div class="lb">Full Name</div><input value=${invF.name} onInput=${function(e){setInv(function(p){return{username:p.username,name:e.target.value,email:p.email,role:p.role}})}} placeholder="Jane Smith"/></div></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Email</div><input value=${invF.email} onInput=${function(e){setInv(function(p){return{username:p.username,name:p.name,email:e.target.value,role:p.role}})}} placeholder="jane@company.com"/></div><div><div class="lb">Role</div><select value=${invF.role} onChange=${function(e){setInv(function(p){return{username:p.username,name:p.name,email:p.email,role:e.target.value}})}}>${Object.keys(ROLE_DESC).map(function(r){return html`<option key=${r} value=${r}>${r.replace('_',' ')}</option>`})}</select></div></div>
           <div style="background:var(--sf);border-radius:8px;padding:10px;font-size:11px;color:var(--ts)">${ROLE_DESC[invF.role]||''}</div>
           <button class="bt bp" onClick=${doInvite}>Invite Member</button>
-          <div style="font-size:10px;color:var(--td);line-height:1.5">This opens 3 tabs: (1) GitHub collaborator page, (2) forgeops-config.json editor, (3) onboarding issue with checklist. Complete all 3 to finish the invite.</div>
+          ${invMsg[0]&&html`<div style="background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2);border-radius:8px;padding:12px;font-size:11px;color:var(--ok);line-height:1.7">3 tabs opened:<br/>1. GitHub -- add ${invMsg[0]} as collaborator<br/>2. Config -- add ${invMsg[0]} to forgeops-config.json<br/>3. Issue -- onboarding checklist created for ${invMsg[0]}<br/><br/>After completing all 3 steps, ${invMsg[0]} can access ForgeOps immediately.</div>`}
         </div>
       </div>
       <div class="c">
         <div style="font-weight:600;margin-bottom:8px">Current Team (${userList.length})</div>
-        ${userList.map(function(u){var ud=cfgUsers[u];return html`<div key=${u} class="lr"><div style="flex:1"><div style="font-size:12px;font-weight:500">${u}</div><div style="font-size:10px;color:var(--td)">${ud.name||''} -- ${ud.role||''} -- ${ud.email||'no email'}</div></div><span class="badge" style="background:var(--pl);color:var(--pr)">${(ud.role||'').replace('_',' ')}</span></div>`})}
-        ${userList.length===0&&html`<div style="text-align:center;padding:12px;color:var(--td);font-size:11px">No users in config yet.</div>`}
-        <div style="margin-top:10px"><a href=${'https://github.com/'+ORG+'/ForgeOps/edit/main/forgeops-config.json'} target="_blank" rel="noopener noreferrer" class="bt bs" style="font-size:10px">Edit Users on GitHub</a></div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="border-bottom:2px solid var(--bd)"><th style="padding:8px;text-align:left;color:var(--ts);font-size:10px;text-transform:uppercase;letter-spacing:1px">Username</th><th style="padding:8px;text-align:left;color:var(--ts);font-size:10px;text-transform:uppercase;letter-spacing:1px">Name</th><th style="padding:8px;text-align:left;color:var(--ts);font-size:10px;text-transform:uppercase;letter-spacing:1px">Role</th><th style="padding:8px;text-align:left;color:var(--ts);font-size:10px;text-transform:uppercase;letter-spacing:1px">Email</th><th style="padding:8px;text-align:right;color:var(--ts);font-size:10px;text-transform:uppercase;letter-spacing:1px">Actions</th></tr></thead>
+          <tbody>${userList.map(function(u){var ud=cfgUsers[u];var rc=ROLE_COLORS[ud.role]||'var(--td)';return html`<tr key=${u} style="border-bottom:1px solid var(--bd)"><td style="padding:8px;font-weight:500">${u}</td><td style="padding:8px;color:var(--ts)">${ud.name||'-'}</td><td style="padding:8px"><span class="badge" style=${'background:'+rc+';color:#fff;font-size:9px'}>${(ud.role||'').replace('_',' ')}</span></td><td style="padding:8px;color:var(--ts);font-size:11px">${ud.email||'-'}</td><td style="padding:8px;text-align:right"><a href=${'https://github.com/'+ORG+'/ForgeOps/edit/main/forgeops-config.json'} target="_blank" rel="noopener noreferrer" class="bt bs" style="font-size:9px;padding:3px 8px">Edit</a></td></tr>`})}</tbody>
+        </table></div>
+        ${userList.length===0&&html`<div style="text-align:center;padding:12px;color:var(--td);font-size:11px">No users in config. Invite your first team member above.</div>`}
+      </div>
+      <div class="c">
+        <div style="font-weight:600;margin-bottom:8px">Role Permissions Matrix</div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="border-bottom:2px solid var(--bd)"><th style="padding:6px;text-align:left;color:var(--ts);font-size:9px">Permission</th><th style="padding:6px;text-align:center;font-size:9px;color:#7c3aed">Admin</th><th style="padding:6px;text-align:center;font-size:9px;color:var(--ok)">Release</th><th style="padding:6px;text-align:center;font-size:9px;color:var(--wa)">Lead</th><th style="padding:6px;text-align:center;font-size:9px;color:var(--in)">Dev</th><th style="padding:6px;text-align:center;font-size:9px;color:var(--er)">QA</th><th style="padding:6px;text-align:center;font-size:9px;color:var(--er)">UAT</th></tr></thead>
+          <tbody>${PERMS.map(function(row){return html`<tr key=${row[0]} style="border-bottom:1px solid var(--bd)"><td style="padding:6px;font-weight:500">${row[0]}</td>${row.slice(1).map(function(cell,ci){var bg=cell==='Y'?'rgba(5,150,105,.08)':cell?'rgba(2,132,199,.06)':'transparent';var clr=cell==='Y'?'var(--ok)':cell?'var(--in)':'var(--td)';return html`<td key=${ci} style=${'padding:6px;text-align:center;background:'+bg+';color:'+clr+';font-weight:'+(cell?'600':'400')}>${cell||'-'}</td>`})}</tr>`})}</tbody>
+        </table></div>
       </div>
     </div>`}
 
