@@ -172,7 +172,7 @@ import{useState,useEffect,useCallback,useRef,useMemo}from'https://esm.sh/preact@
 import htm from'https://esm.sh/htm@3.1.1';
 const html=htm.bind(h);
 try{
-/* ── Helpers ── */
+/* -- Helpers -- */
 const PAGES=['overview','pipelines','prs','environments','security','settings'];
 const PAGE_TITLES={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',environments:'Environments',security:'Security',settings:'Settings'};
 const ENVS=['INT','QA','STAGE','PROD'];
@@ -221,26 +221,26 @@ function EmptyState(props){return html`<div class="empty"><${Logo}/><p>${props.m
 function Skeleton(){return html`<div class="skel" style="margin:8px 0"/>`}
 function LoadingBlock(){return html`<div>${[1,2,3].map(function(){return html`<${Skeleton}/>`})}</div>`}
 
-/* ── Landing Page ── */
+/* -- Landing Page -- */
 function LandingPage(props){
   var mockScreens=[
-    {title:'Pipeline View',emoji:'🔀',desc:'Live stage graph showing Build → Security → Deploy with job status colors and durations'},
-    {title:'Pull Requests',emoji:'📬',desc:'Create PRs, review code, approve and merge — all from one screen with CI check status'},
-    {title:'Environments',emoji:'🌐',desc:'INT → QA → STAGE → PROD promotion flow with Jira status sync and one-click promote'},
-    {title:'Security Gate',emoji:'🛡️',desc:'5 parallel scans: SAST, SCA, secrets, containers, SBOM — blocks unsafe code automatically'},
-    {title:'Notifications',emoji:'📧',desc:'Email + Teams alerts on every deploy. QA gets SIT-ready, UAT gets UAT-ready, all get prod alerts'},
-    {title:'Self-Healing',emoji:'🔧',desc:'Every 6 hours: validates YAML, fixes script permissions, checks dashboard, auto-commits repairs'},
-    {title:'DORA Metrics',emoji:'📊',desc:'Weekly automated report: deploy frequency, lead time, change failure rate, mean time to recover'},
-    {title:'Rollback',emoji:'🔄',desc:'One-click rollback from dashboard or GitHub Actions. Auto-rollback on health check failure'}
+    {title:'Pipeline View',emoji:'[pipeline]',desc:'Live stage graph showing Build -> Security -> Deploy with job status colors and durations'},
+    {title:'Pull Requests',emoji:'[pr]',desc:'Create PRs, review code, approve and merge -- all from one screen with CI check status'},
+    {title:'Environments',emoji:'[env]',desc:'INT -> QA -> STAGE -> PROD promotion flow with Jira status sync and one-click promote'},
+    {title:'Security Gate',emoji:'[shield]',desc:'5 parallel scans: SAST, SCA, secrets, containers, SBOM -- blocks unsafe code automatically'},
+    {title:'Notifications',emoji:'[email]',desc:'Email + Teams alerts on every deploy. QA gets SIT-ready, UAT gets UAT-ready, all get prod alerts'},
+    {title:'Self-Healing',emoji:'[wrench]',desc:'Every 6 hours: validates YAML, fixes script permissions, checks dashboard, auto-commits repairs'},
+    {title:'DORA Metrics',emoji:'[chart]',desc:'Weekly automated report: deploy frequency, lead time, change failure rate, mean time to recover'},
+    {title:'Rollback',emoji:'[refresh]',desc:'One-click rollback from dashboard or GitHub Actions. Auto-rollback on health check failure'}
   ];
 
   var aiFeatures=[
-    {icon:'🤖',title:'Copilot Code Review',desc:'GitHub Copilot reviews every PR — catches bugs, suggests improvements, and explains complex changes in plain English.'},
-    {icon:'🔍',title:'Copilot Autofix',desc:'When security scans find vulnerabilities, Copilot suggests fixes automatically. Accept with one click.'},
-    {icon:'💡',title:'AI Commit Messages',desc:'Copilot generates meaningful commit messages from your diffs. Never write "fix stuff" again.'},
-    {icon:'📝',title:'AI PR Descriptions',desc:'Copilot writes PR descriptions summarizing what changed, why, and what to test. Reviewers love it.'},
-    {icon:'🧪',title:'AI Test Generation',desc:'Copilot generates unit tests for your code. Higher coverage with less effort.'},
-    {icon:'🚨',title:'AI Failure Analysis',desc:'When a pipeline fails, Copilot analyzes the error log and suggests the most likely fix.'}
+    {icon:'[ai]',title:'Copilot Code Review',desc:'GitHub Copilot reviews every PR -- catches bugs, suggests improvements, and explains complex changes in plain English.'},
+    {icon:'[search]',title:'Copilot Autofix',desc:'When security scans find vulnerabilities, Copilot suggests fixes automatically. Accept with one click.'},
+    {icon:'[idea]',title:'AI Commit Messages',desc:'Copilot generates meaningful commit messages from your diffs. Never write "fix stuff" again.'},
+    {icon:'[doc]',title:'AI PR Descriptions',desc:'Copilot writes PR descriptions summarizing what changed, why, and what to test. Reviewers love it.'},
+    {icon:'[test]',title:'AI Test Generation',desc:'Copilot generates unit tests for your code. Higher coverage with less effort.'},
+    {icon:'[alert]',title:'AI Failure Analysis',desc:'When a pipeline fails, Copilot analyzes the error log and suggests the most likely fix.'}
   ];
 
   var flowNodes=[
@@ -263,16 +263,16 @@ function LandingPage(props){
       <${Logo}/>
       <h1>ForgeOps</h1>
       <div style="font-size:11px;font-weight:700;letter-spacing:4px;color:var(--violet);margin-bottom:12px">DEVSECOPS PLATFORM</div>
-      <p class="landing-sub">Ship code from feature branch to production with zero scripts. Security scanning, Jira sync, email notifications, and approval gates — all automated.</p>
+      <p class="landing-sub">Ship code from feature branch to production with zero scripts. Security scanning, Jira sync, email notifications, and approval gates -- all automated.</p>
 
       <div class="flow-anim">
         ${flowNodes.map(function(n,i){
-          return html`<><div class="flow-node" style=${'border-color:'+n.color+';color:'+n.color+';background:'+n.bg+';animation-delay:'+n.delay}>${n.label}</div>${i<flowNodes.length-1?html`<div class="flow-arrow" style=${'animation-delay:'+(i*.1+.15)+'s'}>→</div>`:null}</>`;
+          return html`<><div class="flow-node" style=${'border-color:'+n.color+';color:'+n.color+';background:'+n.bg+';animation-delay:'+n.delay}>${n.label}</div>${i<flowNodes.length-1?html`<div class="flow-arrow" style=${'animation-delay:'+(i*.1+.15)+'s'}>-></div>`:null}</>`;
         })}
       </div>
 
       <div style="display:flex;gap:6px;margin-top:4px;font-size:11px;color:var(--text-dim)">
-        <span>Tech Lead reviews</span><span>→</span><span>Release Eng promotes</span><span>→</span><span>2 approvals for prod</span>
+        <span>Tech Lead reviews</span><span>-></span><span>Release Eng promotes</span><span>-></span><span>2 approvals for prod</span>
       </div>
 
       <div class="stat-row">
@@ -295,8 +295,8 @@ function LandingPage(props){
     </div>
 
     <div class="landing-section">
-      <h2 style="font-size:24px;font-weight:700;margin-bottom:4px">🤖 AI-Powered DevSecOps</h2>
-      <p style="color:var(--text-soft);font-size:13px;margin-bottom:20px">GitHub Copilot integrates at every step — from writing code to fixing vulnerabilities to analyzing failures.</p>
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:4px">AI-Powered DevSecOps</h2>
+      <p style="color:var(--text-soft);font-size:13px;margin-bottom:20px">GitHub Copilot integrates at every step -- from writing code to fixing vulnerabilities to analyzing failures.</p>
       <div class="ai-grid">
         ${aiFeatures.map(function(f){
           return html`<div class="ai-card">
@@ -326,7 +326,7 @@ function LandingPage(props){
   </div>`;
 }
 
-/* ── App ── */
+/* -- App -- */
 function App(){
   const[page,setPage]=useState('overview');
   const[user,setUser]=useState(null);
@@ -382,11 +382,11 @@ function App(){
     <div class="main">
       <header class="header">
         <div style="display:flex;align-items:center;gap:12px">
-          <button class="menu-toggle" onClick=${function(){setSideOpen(!sideOpen)}}>☰</button>
+          <button class="menu-toggle" onClick=${function(){setSideOpen(!sideOpen)}}>&#9776;</button>
           <h2>${PAGE_TITLES[page]||'Dashboard'}</h2>
         </div>
         <div class="header-actions">
-          <button class="btn btn-secondary btn-sm" onClick=${refresh}>↻ Refresh</button>
+          <button class="btn btn-secondary btn-sm" onClick=${refresh}>Refresh</button>
           <div class="avatar">${initials}</div>
         </div>
       </header>
@@ -404,7 +404,7 @@ function App(){
 
 
 
-/* ── Overview ── */
+/* -- Overview -- */
 function OverviewPage(props){
   const[data,setData]=useState(null);
   const[runs,setRuns]=useState(null);
@@ -457,7 +457,7 @@ function OverviewPage(props){
   </div>`;
 }
 
-/* ── Pipelines ── */
+/* -- Pipelines -- */
 function PipelinesPage(props){
   const[repos,setRepos]=useState(null);
   const[expanded,setExpanded]=useState(null);
@@ -523,12 +523,12 @@ function PipelinesPage(props){
           <div style="display:flex;align-items:center;gap:8px">
             ${lr?statusBadge(lr.conclusion||lr.status):html`<span class="badge badge-neutral">no runs</span>`}
             ${lr&&html`<a class="btn btn-secondary btn-sm" href=${lr.html_url} target="_blank" onClick=${function(e){e.stopPropagation()}}>Logs</a>`}
-            <span style="color:var(--text-dim)">${isExp?'▲':'▼'}</span>
+            <span style="color:var(--text-dim)">${isExp?'^':'v'}</span>
           </div>
         </div>
         ${isExp&&lr&&jobs[lr.id]&&html`<div class="stage-graph" onClick=${function(e){e.stopPropagation()}}>
           ${jobs[lr.id].map(function(j,i){return html`
-            ${i>0&&html`<span class="stage-arrow">→</span>`}
+            ${i>0&&html`<span class="stage-arrow">-></span>`}
             <span class="stage-box" style=${"background:"+(conclusionColor[j.conclusion]||'var(--info)')+";color:#fff"}>${j.name}</span>`})}
         </div>`}
         ${isExp&&lr&&!jobs[lr.id]&&html`<${Skeleton}/>`}
@@ -544,7 +544,7 @@ function PipelinesPage(props){
   </div>`;
 }
 
-/* ── Pull Requests ── */
+/* -- Pull Requests -- */
 function PRsPage(props){
   const[tab,setTab]=useState('create');
   const[repos,setRepos]=useState([]);
@@ -606,7 +606,7 @@ function PRsPage(props){
     </div>
     ${tab==='create'&&html`<div>
       <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-        ${PR_FLOWS.map(function(f){return html`<button class="btn btn-secondary btn-sm" onClick=${function(){quickCreate(f[0],f[1])}}>${f[0]} → ${f[1]}</button>`})}
+        ${PR_FLOWS.map(function(f){return html`<button class="btn btn-secondary btn-sm" onClick=${function(){quickCreate(f[0],f[1])}}>${f[0]} -> ${f[1]}</button>`})}
       </div>
       <div class="grid grid-2">
         <div class="field"><label>Repository</label><select class="input" value=${selRepo} onChange=${function(e){loadBranches(e.target.value)}}>${repos.map(function(r){return html`<option value=${r.full_name}>${r.full_name}</option>`})}</select></div>
@@ -623,7 +623,7 @@ function PRsPage(props){
       ${!openPRs.length?html`<${EmptyState} msg="No open pull requests"/>`:openPRs.map(function(pr){
         return html`<div class="card" style="margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><a href=${pr.html_url} target="_blank"><strong>#${pr.number}</strong> ${pr.title}</a><div style="font-size:12px;color:var(--text-dim)">${pr.base.repo.full_name} · ${pr.head.ref} → ${pr.base.ref}</div></div>
+            <div><a href=${pr.html_url} target="_blank"><strong>#${pr.number}</strong> ${pr.title}</a><div style="font-size:12px;color:var(--text-dim)">${pr.base.repo.full_name} | ${pr.head.ref} -> ${pr.base.ref}</div></div>
             <div style="display:flex;gap:6px">
               <button class="btn btn-success btn-sm" onClick=${function(){approvePR(pr)}}>Approve</button>
               <button class="btn btn-primary btn-sm" onClick=${function(){mergePR(pr)}}>Merge</button>
@@ -639,7 +639,7 @@ function PRsPage(props){
   </div>`;
 }
 
-/* ── Environments ── */
+/* -- Environments -- */
 function EnvironmentsPage(props){
   const[repos,setRepos]=useState([]);
   const[deploys,setDeploys]=useState({});
@@ -663,14 +663,14 @@ function EnvironmentsPage(props){
   function markComplete(env,depId){
     var nC=Object.assign({},completed);nC[env+'-'+depId]=true;setCompleted(nC);toast(env+' deploy marked complete','success');
   }
-  function promote(from,to){toast('Promotion '+from+' → '+to+' triggered','info')}
+  function promote(from,to){toast('Promotion '+from+' -> '+to+' triggered','info')}
 
   return html`<div>
     <div class="env-flow">
       ${ENVS.map(function(env,i){
         var envDeps=deploys[env]||[];
         return html`
-          ${i>0&&html`<div class="env-arrow">→</div>`}
+          ${i>0&&html`<div class="env-arrow">-></div>`}
           <div class="env-card card">
             <div style="text-align:center;margin-bottom:12px"><span class="badge badge-info" style="font-size:14px;padding:6px 18px">${env}</span></div>
             ${!envDeps.length?html`<p style="color:var(--text-dim);font-size:12px;text-align:center">No deployments</p>`:envDeps.map(function(d){
@@ -690,7 +690,7 @@ function EnvironmentsPage(props){
   </div>`;
 }
 
-/* ── Security ── */
+/* -- Security -- */
 function SecurityPage(props){
   const[alerts,setAlerts]=useState(null);
   const[repos,setRepos]=useState([]);
@@ -731,11 +731,11 @@ function SecurityPage(props){
       <div class="card">
         <div class="card-header"><strong>Free Security Tools</strong></div>
         <div style="font-size:13px;color:var(--text-soft);line-height:1.8">
-          <div><span style="color:var(--success)">●</span> <strong>Dependabot</strong> — Dependency vulnerability alerts (free)</div>
-          <div><span style="color:var(--info)">●</span> <strong>CodeQL</strong> — Code scanning via Actions (free for public repos)</div>
-          <div><span style="color:var(--violet)">●</span> <strong>Secret Scanning</strong> — Push protection (free for public repos)</div>
-          <div><span style="color:var(--warning)">●</span> <strong>Trivy / Grype</strong> — Container scanning via Actions (OSS)</div>
-          <div><span style="color:var(--cyan)">●</span> <strong>OSSF Scorecard</strong> — Supply chain security (OSS)</div>
+          <div><span style="color:var(--success)">*</span> <strong>Dependabot</strong> -- Dependency vulnerability alerts (free)</div>
+          <div><span style="color:var(--info)">*</span> <strong>CodeQL</strong> -- Code scanning via Actions (free for public repos)</div>
+          <div><span style="color:var(--violet)">*</span> <strong>Secret Scanning</strong> -- Push protection (free for public repos)</div>
+          <div><span style="color:var(--warning)">*</span> <strong>Trivy / Grype</strong> -- Container scanning via Actions (OSS)</div>
+          <div><span style="color:var(--cyan)">*</span> <strong>OSSF Scorecard</strong> -- Supply chain security (OSS)</div>
         </div>
       </div>
     </div>
@@ -748,7 +748,7 @@ function SecurityPage(props){
   </div>`;
 }
 
-/* ── Settings ── */
+/* -- Settings -- */
 function SettingsPage(props){
   var u=props.user;
   return html`<div>
@@ -785,7 +785,7 @@ function SettingsPage(props){
   </div>`;
 }
 
-/* ── Mount ── */
+/* -- Mount -- */
 render(html`<${App}/>`,document.getElementById('root'));
 
 }catch(err){
