@@ -1,43 +1,125 @@
 # ForgeOps - Enterprise DevSecOps Platform
 
-GitHub Actions CI/CD replacing Jenkins. Security scanning, Jira sync, email + Teams notifications, and approval gates - fully automated. No Docker, no scripts, no command line.
-
-**Dashboard:** https://askboppana.github.io/ForgeOps
+ForgeOps is a centralized DevSecOps platform built entirely on GitHub Actions. It manages CI/CD pipelines across multiple technology stacks (Java, JavaScript, UiPath, System Integration), provides a real-time dashboard, integrates with Jira for status tracking, and delivers notifications via email and Microsoft Teams. One platform to build, test, secure, deploy, and monitor all your applications.
 
 ## Quick Start
-1. Create branches in your app repo: int, qa, stage (main exists)
-2. Copy workflows + scripts from this repo
-3. Edit APP_NAME in ci.yml
-4. Create GitHub Environments: int, qa, stage, prod
-5. Push - pipeline runs automatically
+
+1. Clone: `git clone https://github.com/askboppana/ForgeOps.git`
+2. Add secrets: configure SMTP, Teams, Jira, SonarQube tokens in GitHub Organization Secrets (see docs/SETUP.md)
+3. Register repos: add your projects to forgeops-config.json
+4. Enable workflows: push to your org -- workflows activate on first push
+5. Open dashboard: visit the GitHub Pages URL to see pipeline status
+
+## Architecture
+
+```
++-----------------------------------------------------------+
+|                    ForgeOps Command Center                 |
+|                   (forgeops-config.json)                   |
++----------+----------+-----------+-------------------------+
+           |          |           |
+     +-----+--+ +----+---+ +-----+------+ +----------------+
+     |  Java  | |  JS/TS | |  UiPath    | | Sys Integration|
+     +-----+--+ +----+---+ +-----+------+ +-------+--------+
+           |          |           |                |
+     +-----+----------+-----------+----------------+
+     |           Reusable Workflows (7)            |
+     |  build | test | scan | deploy | notify |    |
+     |  jira-update | health-check                 |
+     +---------+-----------+-----------+-----------+
+               |           |           |           |
+          +----+--+  +-----+-+  +------+-+  +-----+-+
+          |  INT  |  |  QA   |  | STAGE  |  | PROD  |
+          +-------+  +-------+  +--------+  +-------+
+```
 
 ## Workflow
+
 ```
-feature/* --PR--> int --PR--> qa --PR--> stage --PR--> main (prod)
-           Tech Lead    Release Eng   Release Eng    2 Approvals
+feature/* --PR--> develop --merge--> INT
+                      |
+              release/* --merge--> QA
+                      |
+                   main --merge--> STAGE
+                      |
+                  tag v* --dispatch--> PROD
 ```
-Each promotion: build > scan > deploy > Jira > email > Teams > Splunk.
+
+Each stage updates Jira, sends email/Teams notifications, and logs to Splunk.
 
 ## Command Center
-forgeops-config.json defines all projects, repos, teams, and templates. The generate-dashboard-data workflow fetches status every 15 min. Create issues with label forgeops-dispatch for bulk operations.
 
-## Integrations (all skip gracefully)
-| Tool | Status |
-|------|--------|
-| Gitleaks + Syft | Always active (free) |
-| OWASP Dep-Check | Active (free SCA fallback) |
-| SonarQube | Add SONAR_HOST_URL + SONAR_TOKEN |
-| Jira | Add JIRA_URL + JIRA_TOKEN |
-| Email | Add SMTP_SERVER + credentials |
-| Teams | Add TEAMS_WEBHOOK |
-| Splunk | Add SPLUNK_HEC_URL + SPLUNK_HEC_TOKEN |
-| Cherwell | Add CHERWELL_URL + credentials |
+- **Project Registry**: forgeops-config.json defines all projects, repos, teams, and templates
+- **Dashboard**: generate-dashboard-data.yml runs every 15 min, populates the dashboard
+- **Bulk Operations**: create an issue titled `[FORGEOPS] deploy java-backend qa` to deploy all repos in a project
+- **Self-Healing**: health checks run every 6 hours to detect and repair drift
+
+## Dashboard
+
+Hosted on GitHub Pages. Light theme by default with 4 switchable themes.
+Shows real-time pipeline status for all registered repos.
+
+URL: `https://askboppana.github.io/ForgeOps/`
+
+## File Structure
+
+```
+ForgeOps/
+  .github/
+    dependabot.yml
+    PULL_REQUEST_TEMPLATE.md
+    ISSUE_TEMPLATE/
+      support-request.md
+      feature-request.md
+      bug-report.md
+      security-vulnerability.md
+      config.yml
+  docs/
+    VISION.md
+    WORKFLOW.md
+    ENVIRONMENTS.md
+    SETUP.md
+    ROLLBACK.md
+    TROUBLESHOOTING.md
+    MIGRATION-TO-SELF-HOSTED.md
+    CHERWELL-SETUP.md
+    COMMAND-CENTER.md
+    BACKLOG.md
+    knowledge/
+      (12 articles)
+  templates/
+    CODEOWNERS.template
+  dashboard/
+    (static site files)
+  scripts/
+    (automation scripts)
+  forgeops-config.json
+  CODEOWNERS
+  SECURITY.md
+  CHANGELOG.md
+  LICENSE
+  README.md
+```
+
+## Integrations
+
+| Integration | Purpose                          | Config                    |
+|-------------|----------------------------------|---------------------------|
+| Jira        | Status sync per environment      | JIRA_BASE_URL + API token |
+| Email/SMTP  | Build and deploy notifications   | SMTP_SERVER + credentials |
+| MS Teams    | Webhook alerts for prod/critical | TEAMS_WEBHOOK_URL         |
+| SonarQube   | Code quality and security gates  | SONAR_TOKEN + host URL    |
+| Splunk      | Pipeline log forwarding          | SPLUNK_HEC_URL + token    |
+| Dependabot  | Auto-update Actions dependencies | .github/dependabot.yml    |
+| Cherwell    | ITSM change management (opt-in)  | CHERWELL_BASE_URL + key   |
 
 ## Support
-Create an issue: https://github.com/askboppana/ForgeOps/issues/new/choose
 
-## Docs
-See docs/ folder and docs/knowledge/ for articles.
+- **Knowledge Base**: docs/knowledge/ (12 articles covering common tasks)
+- **Troubleshooting**: docs/TROUBLESHOOTING.md (10 common issues with fixes)
+- **File an Issue**: use the issue templates (Support, Bug, Feature, Security)
+- **Contact**: @askboppana
 
 ## License
-MIT
+
+MIT License. See LICENSE file.
