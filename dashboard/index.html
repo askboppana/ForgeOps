@@ -111,10 +111,7 @@ select.input{appearance:auto}
 .skel{background:linear-gradient(90deg,var(--surface) 25%,var(--border) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:20px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 /* Login */
-.login-wrap{display:flex;height:100vh}
-.login-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px;background:var(--panel)}
-.login-right{flex:1;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:40px}
-.login-right .big{font-size:48px;font-weight:700;opacity:.9}
+/* login styles removed — internal tool, minimal token prompt only */
 /* Empty */
 .empty{text-align:center;padding:48px;color:var(--text-dim)}
 .empty svg{opacity:.25;margin-bottom:16px}
@@ -242,8 +239,8 @@ function App(){
   function nav(p){setPage(p);setSideOpen(false)}
   function refresh(){Object.keys(cache).forEach(function(k){delete cache[k]});setRefreshKey(function(k){return k+1});toast('Refreshed','info')}
 
-  if(authChecking)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;gap:12px;color:var(--cyan)"><${Logo}/>Checking session...</div>`;
-  if(!user)return html`<${LoginPage} onLogin=${doLogin}/>`;
+  if(authChecking)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;gap:12px;color:var(--cyan)"><${Logo}/>Loading...</div>`;
+  if(!user)return html`<${TokenPrompt} onLogin=${doLogin}/>`;
 
   var initials=(user.login||'?').slice(0,2).toUpperCase();
   var connected=!!ss('pat');
@@ -284,66 +281,23 @@ function App(){
   </div>`;
 }
 
-/* ── Login ── */
-function LoginPage(props){
+/* ── Token Prompt (minimal — no login page, just a quick token entry) ── */
+function TokenPrompt(props){
   const[pat,setPat]=useState('');
   const[loading,setLoading]=useState(false);
-  const[remember,setRemember]=useState(true);
-  const[showAdvanced,setShowAdvanced]=useState(false);
-  const TOKEN_URL='https://github.com/settings/tokens/new?description=ForgeOps%20Dashboard&scopes=repo,workflow';
-
   function submit(e){
-    e.preventDefault();if(!pat.trim()){toast('Token is required','error');return}
-    setLoading(true);props.onLogin(pat.trim(),remember).catch(function(){}).finally(function(){setLoading(false)});
+    e.preventDefault();if(!pat.trim()){toast('Token required','error');return}
+    setLoading(true);props.onLogin(pat.trim(),true).catch(function(){}).finally(function(){setLoading(false)});
   }
-
-  return html`<div class="login-wrap">
-    <div class="login-left">
-      <div style="max-width:400px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:36px"><${Logo}/><div><h1 style="font-size:24px">ForgeOps</h1><small style="font-size:10px;letter-spacing:3px;background:linear-gradient(90deg,var(--cyan),#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700">DEVSECOPS PLATFORM</small></div></div>
-
-        <h2 style="font-size:20px;margin-bottom:6px">Sign in to ForgeOps</h2>
-        <p style="color:var(--text-soft);font-size:13px;margin-bottom:24px">Connect with your GitHub account to view pipelines, create PRs, and manage deployments.</p>
-
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
-          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
-            <span style="font-size:22px;line-height:1">①</span>
-            <div>
-              <div style="font-weight:600;font-size:14px;margin-bottom:4px">Create a GitHub access token</div>
-              <p style="font-size:12px;color:var(--text-soft);margin-bottom:10px">Click below to open GitHub with the right permissions pre-selected. Just click "Generate token" and copy it.</p>
-              <a href=${TOKEN_URL} target="_blank" rel="noopener" class="btn btn-primary" style="font-size:13px;padding:8px 16px">Create Token on GitHub →</a>
-            </div>
-          </div>
-
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            <span style="font-size:22px;line-height:1">②</span>
-            <div style="flex:1">
-              <div style="font-weight:600;font-size:14px;margin-bottom:8px">Paste your token below</div>
-              <form onSubmit=${submit}>
-                <input class="input" type="password" value=${pat} onInput=${function(e){setPat(e.target.value)}} placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="margin-bottom:10px;font-family:var(--mono);font-size:13px"/>
-
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-soft);margin-bottom:12px;user-select:none">
-                  <input type="checkbox" checked=${remember} onChange=${function(){setRemember(!remember)}} style="width:auto;accent-color:var(--cyan)"/>
-                  Remember me on this browser
-                </label>
-
-                <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px" disabled=${loading}>${loading?'Signing in...':'Sign In'}</button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <div style="font-size:11px;color:var(--text-dim);line-height:1.6">
-          ${remember
-            ?html`<span>✓ Token will be saved in this browser. Sign out anytime from Settings.</span>`
-            :html`<span>Token stored for this tab only. Closing the tab clears it.</span>`}
-        </div>
-      </div>
-    </div>
-    <div class="login-right">
-      <div class="big" style="margin-bottom:8px">Ship Fast.</div>
-      <div class="big" style="opacity:.7">Ship Safe.</div>
-      <p style="margin-top:24px;opacity:.8;max-width:300px;text-align:center">Unified DevSecOps dashboard for GitHub-powered delivery pipelines.</p>
+  return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:24px">
+    <div style="max-width:420px;width:100%;text-align:center">
+      <${Logo}/><h1 style="font-size:22px;margin:12px 0 4px">ForgeOps</h1>
+      <p style="color:var(--text-soft);font-size:13px;margin-bottom:24px">Paste your GitHub token to continue. <a href="https://github.com/settings/tokens/new?description=ForgeOps&scopes=repo,workflow" target="_blank" rel="noopener" style="color:var(--cyan)">Create one here →</a></p>
+      <form onSubmit=${submit} style="display:flex;gap:8px">
+        <input class="input" type="password" value=${pat} onInput=${function(e){setPat(e.target.value)}} placeholder="ghp_..." style="flex:1;font-family:var(--mono)"/>
+        <button class="btn btn-primary" disabled=${loading}>${loading?'...':'Go'}</button>
+      </form>
+      <p style="color:var(--text-dim);font-size:11px;margin-top:12px">Token is saved in this browser. Sign out from Settings.</p>
     </div>
   </div>`;
 }
