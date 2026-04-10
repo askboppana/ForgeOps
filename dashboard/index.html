@@ -198,15 +198,9 @@ function App(){
   const tick=useRef(null);
   const[refreshKey,setRefreshKey]=useState(0);
 
-  const[authChecking,setAuthChecking]=useState(true);
   useEffect(function(){
     var p=ss('pat');
-    if(!p){setAuthChecking(false);return}
-    api('/user').then(function(u){
-      ss('user',JSON.stringify(u));setUser(u);setAuthChecking(false);
-    }).catch(function(){
-      clearAuth();setAuthChecking(false);toast('Session expired. Please sign in again.','error');
-    });
+    if(p){api('/user').then(function(u){ss('user',JSON.stringify(u));setUser(u)}).catch(function(){clearAuth()})}
   },[]);
 
   useEffect(function(){
@@ -226,21 +220,17 @@ function App(){
     window.addEventListener('keydown',onKey);return function(){window.removeEventListener('keydown',onKey)}
   },[]);
 
-  function doLogin(pat,remember){
-    if(remember){persist('pat',pat)}else{ss('pat',pat)}
-    return api('/user').then(function(u){
-      var save=remember?persist:ss;
-      save('user',JSON.stringify(u));
-      if(u.avatar_url)save('avatar',u.avatar_url);
-      setUser(u);toast('Signed in as '+u.login,'success');
-    }).catch(function(e){clearAuth();toast('Auth failed: '+e.message,'error');throw e});
-  }
   function logout(){clearAuth();setUser(null);Object.keys(cache).forEach(function(k){delete cache[k]})}
   function nav(p){setPage(p);setSideOpen(false)}
   function refresh(){Object.keys(cache).forEach(function(k){delete cache[k]});setRefreshKey(function(k){return k+1});toast('Refreshed','info')}
 
-  if(authChecking)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;gap:12px;color:var(--cyan)"><${Logo}/>Loading...</div>`;
-  if(!user)return html`<${TokenPrompt} onLogin=${doLogin}/>`;
+  if(!user)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:24px">
+    <div style="text-align:center;max-width:380px"><${Logo}/><h1 style="font-size:20px;margin:12px 0 8px">ForgeOps</h1>
+    <p style="color:var(--text-soft);font-size:13px;margin-bottom:16px">Enter your GitHub token to connect.</p>
+    <form onSubmit=${function(e){e.preventDefault();var v=e.target.querySelector('input').value.trim();if(!v)return;persist('pat',v);api('/user').then(function(u){persist('user',JSON.stringify(u));setUser(u)}).catch(function(err){clearAuth();toast('Invalid token','error')})}} style="display:flex;gap:8px">
+      <input class="input" type="password" placeholder="ghp_..." style="flex:1;font-family:var(--mono)"/>
+      <button class="btn btn-primary">Go</button>
+    </form></div></div>`;
 
   var initials=(user.login||'?').slice(0,2).toUpperCase();
   var connected=!!ss('pat');
@@ -281,26 +271,7 @@ function App(){
   </div>`;
 }
 
-/* ── Token Prompt (minimal — no login page, just a quick token entry) ── */
-function TokenPrompt(props){
-  const[pat,setPat]=useState('');
-  const[loading,setLoading]=useState(false);
-  function submit(e){
-    e.preventDefault();if(!pat.trim()){toast('Token required','error');return}
-    setLoading(true);props.onLogin(pat.trim(),true).catch(function(){}).finally(function(){setLoading(false)});
-  }
-  return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:24px">
-    <div style="max-width:420px;width:100%;text-align:center">
-      <${Logo}/><h1 style="font-size:22px;margin:12px 0 4px">ForgeOps</h1>
-      <p style="color:var(--text-soft);font-size:13px;margin-bottom:24px">Paste your GitHub token to continue. <a href="https://github.com/settings/tokens/new?description=ForgeOps&scopes=repo,workflow" target="_blank" rel="noopener" style="color:var(--cyan)">Create one here →</a></p>
-      <form onSubmit=${submit} style="display:flex;gap:8px">
-        <input class="input" type="password" value=${pat} onInput=${function(e){setPat(e.target.value)}} placeholder="ghp_..." style="flex:1;font-family:var(--mono)"/>
-        <button class="btn btn-primary" disabled=${loading}>${loading?'...':'Go'}</button>
-      </form>
-      <p style="color:var(--text-dim);font-size:11px;margin-top:12px">Token is saved in this browser. Sign out from Settings.</p>
-    </div>
-  </div>`;
-}
+
 
 /* ── Overview ── */
 function OverviewPage(props){
