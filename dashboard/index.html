@@ -4,793 +4,346 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ForgeOps DevSecOps Platform</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2326c6da'/><stop offset='1' stop-color='%237c4dff'/></linearGradient></defs><rect width='40' height='40' rx='8' fill='url(%23g)'/><path d='M22 8l-8 16h6l-2 10 10-18h-7z' fill='white'/></svg>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%2326c6da'/%3E%3Cstop offset='1' stop-color='%237c4dff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' rx='10' fill='url(%23g)'/%3E%3Cpath d='M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#07090f;--panel:#0c1017;--card:#111621;--surface:#1a2233;--border:#1e2940;--text:#edf2f7;--text-soft:#8b9dc3;--text-dim:#4a5d80;--cyan:#26c6da;--violet:#7c4dff;--success:#06d6a0;--danger:#ef476f;--warning:#ffd166;--info:#118ab2;--sidebar-w:260px;--header-h:60px}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;overflow:hidden}
-code,pre,.mono{font-family:'JetBrains Mono',monospace}
-a{color:var(--cyan);text-decoration:none}
-a:hover{text-decoration:underline}
-input,select,textarea,button{font-family:inherit;font-size:inherit;color:inherit;border:none;outline:none;background:none}
-button{cursor:pointer}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:var(--panel)}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-/* Layout */
-.app{display:flex;height:100vh}
-.sidebar{width:var(--sidebar-w);background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;transition:transform .25s}
-.sidebar-brand{padding:20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
-.sidebar-brand h1{font-size:18px;font-weight:700;line-height:1}
-.sidebar-brand small{display:block;font-size:9px;font-weight:700;letter-spacing:3px;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.sidebar-section{padding:16px 12px 4px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim)}
-.sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 16px;margin:2px 8px;border-radius:8px;color:var(--text-soft);font-weight:500;cursor:pointer;transition:all .15s}
-.sidebar-link:hover,.sidebar-link.active{background:var(--surface);color:var(--text)}
-.sidebar-link.active{border-left:3px solid var(--cyan)}
-.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-dim)}
-.sidebar-footer .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
-.sidebar-footer .dot.on{background:var(--success)}
-.sidebar-footer .dot.off{background:var(--danger)}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.header{height:var(--header-h);padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--panel);flex-shrink:0}
-.header h2{font-size:20px;font-weight:600}
-.header-actions{display:flex;align-items:center;gap:12px}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-weight:600;font-size:13px;transition:all .15s}
-.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--violet));color:#fff}
-.btn-primary:hover{opacity:.85}
-.btn-secondary{background:var(--surface);color:var(--text-soft);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--cyan);color:var(--text)}
-.btn-sm{padding:5px 10px;font-size:11px}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-success{background:var(--success);color:#07090f}
-.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff}
-.content{flex:1;overflow-y:auto;padding:24px}
-/* Cards & Grid */
-.grid{display:grid;gap:16px}
-.grid-4{grid-template-columns:repeat(4,1fr)}
-.grid-3{grid-template-columns:repeat(3,1fr)}
-.grid-2{grid-template-columns:repeat(2,1fr)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.stat-card{text-align:center}
-.stat-card .val{font-size:32px;font-weight:700}
-.stat-card .label{font-size:12px;color:var(--text-soft);margin-top:4px}
-/* Chart */
-.bar-chart{display:flex;align-items:flex-end;gap:8px;height:140px;padding-top:8px}
-.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
-.bar{width:100%;border-radius:4px 4px 0 0;transition:height .4s;min-height:2px}
-.bar-label{font-size:10px;color:var(--text-dim)}
-/* Table */
-.tbl{width:100%;border-collapse:collapse}
-.tbl th,.tbl td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.tbl th{font-size:11px;text-transform:uppercase;color:var(--text-dim);letter-spacing:1px;font-weight:600}
-.tbl tr:hover td{background:var(--surface)}
-/* Badges */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.badge-success{background:rgba(6,214,160,.12);color:var(--success)}
-.badge-danger{background:rgba(239,71,111,.12);color:var(--danger)}
-.badge-warning{background:rgba(255,209,102,.12);color:var(--warning)}
-.badge-info{background:rgba(17,138,178,.12);color:var(--info)}
-.badge-neutral{background:var(--surface);color:var(--text-soft)}
-/* Tabs */
-.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:-1px}
-.tab{padding:10px 16px;font-weight:600;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
-.tab:hover{color:var(--text-soft)}
-.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
-/* Forms */
-.field{margin-bottom:14px}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:5px}
-.input{width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);transition:border-color .15s}
-.input:focus{border-color:var(--cyan)}
-select.input{appearance:auto}
-/* Toast */
-.toast-wrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.toast{padding:12px 20px;border-radius:10px;font-weight:500;font-size:13px;animation:slideIn .25s;max-width:360px}
-.toast-success{background:var(--success);color:#07090f}
-.toast-error{background:var(--danger);color:#fff}
-.toast-info{background:var(--info);color:#fff}
-@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-/* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000}
-.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:480px;max-width:92vw;max-height:85vh;overflow-y:auto}
-.modal h3{margin-bottom:20px;font-size:18px}
-/* Pipeline stages */
-.stage-graph{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:12px 0}
-.stage-box{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600}
-.stage-arrow{color:var(--text-dim);margin:0 4px;font-size:16px}
-/* Env cards */
-.env-flow{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:8px 0}
-.env-arrow{display:flex;align-items:center;font-size:28px;color:var(--text-dim);padding:40px 4px 0}
-.env-card{flex:1;min-width:200px}
-/* Coverage bar */
-.cov-bar-bg{height:8px;background:var(--surface);border-radius:4px;overflow:hidden}
-.cov-bar-fg{height:100%;border-radius:4px;transition:width .4s}
-/* Skeleton */
-.skel{background:linear-gradient(90deg,var(--surface) 25%,var(--border) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:20px}
+:root{--bg:#07090f;--pn:#0c1017;--cd:#111621;--sf:#1a2233;--bd:#1e2940;--tx:#edf2f7;--ts:#8b9dc3;--td:#4a5d80;--cy:#26c6da;--vi:#7c4dff;--ok:#06d6a0;--er:#ef476f;--wa:#ffd166;--r:12px}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Space Grotesk',sans-serif;font-size:14px}
+a{color:var(--cy);text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;background:var(--sf);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:10px 14px;font-size:13px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--cy)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-/* Login */
-/* Landing page */
-.landing{height:100vh;overflow-y:auto;background:var(--bg)}
-.landing-hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;position:relative;overflow:hidden}
-.landing-hero::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(38,198,218,.08),transparent);top:-200px;right:-100px;animation:float 8s ease-in-out infinite}
-.landing-hero::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(124,77,255,.06),transparent);bottom:-100px;left:-100px;animation:float 10s ease-in-out infinite reverse}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
-.landing h1{font-size:48px;font-weight:700;margin:16px 0 8px;background:linear-gradient(135deg,#fff,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.landing-sub{font-size:14px;color:var(--text-soft);max-width:520px;line-height:1.7;margin-bottom:32px}
-.flow-anim{display:flex;align-items:center;gap:0;margin:32px 0;flex-wrap:wrap;justify-content:center}
-.flow-node{padding:10px 18px;border-radius:10px;font-weight:600;font-size:13px;border:2px solid;position:relative;animation:fadeUp .5s ease-out both}
-.flow-arrow{width:36px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:18px;animation:fadeUp .5s ease-out both}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.screens{display:flex;gap:20px;overflow:hidden;width:100%;max-width:900px;margin:40px auto;position:relative;height:260px}
-.screen-card{flex:0 0 280px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;animation:scroll-left 20s linear infinite}
-@keyframes scroll-left{0%{transform:translateX(0)}100%{transform:translateX(calc(-300px * 4))}}
-.landing-section{padding:60px 24px;max-width:900px;margin:0 auto}
-.ai-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
-.ai-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;transition:border .2s,transform .2s}
-.ai-card:hover{border-color:var(--cyan);transform:translateY(-2px)}
-.ai-icon{font-size:32px;margin-bottom:12px}
-.ai-title{font-size:15px;font-weight:600;margin-bottom:6px}
-.ai-desc{font-size:12px;color:var(--text-soft);line-height:1.6}
-.stat-row{display:flex;gap:16px;justify-content:center;margin:24px 0;flex-wrap:wrap}
-.stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:10px 24px;text-align:center}
-.stat-pill b{display:block;font-size:22px;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.stat-pill small{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
-.connect-bar{background:var(--panel);border-top:1px solid var(--border);padding:20px 24px;display:flex;align-items:center;justify-content:center;gap:10px;position:sticky;bottom:0}
-.connect-bar input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;width:320px;font-family:'JetBrains Mono',monospace;color:var(--text);font-size:13px}
-.connect-bar input:focus{border-color:var(--cyan);outline:none;box-shadow:0 0 0 3px rgba(38,198,218,.12)}
-.connect-bar button{background:linear-gradient(135deg,var(--cyan),var(--violet));color:#fff;font-weight:600;padding:10px 28px;border-radius:8px;font-size:14px;border:none;cursor:pointer;transition:filter .15s}
-.connect-bar button:hover{filter:brightness(1.15)}
-@media(max-width:600px){.landing h1{font-size:32px}.flow-node{font-size:11px;padding:8px 12px}.screens{height:200px}.screen-card{flex:0 0 220px}.connect-bar input{width:200px}}
-/* Empty */
-.empty{text-align:center;padding:48px;color:var(--text-dim)}
-.empty svg{opacity:.25;margin-bottom:16px}
-/* Responsive */
-.menu-toggle{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:18px}
-@media(max-width:900px){
-  .sidebar{position:fixed;z-index:999;height:100%;transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
-  .menu-toggle{display:block}
-  .login-right{display:none}
-  .grid-4{grid-template-columns:repeat(2,1fr)}
-  .env-flow{flex-direction:column;align-items:stretch}
-  .env-arrow{padding:4px 0;justify-content:center;transform:rotate(90deg)}
-}
-@media(max-width:600px){
-  .grid-4,.grid-3,.grid-2{grid-template-columns:1fr}
-  .content{padding:16px}
-}
+.sk{background:linear-gradient(90deg,var(--cd) 25%,var(--sf) 50%,var(--cd) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r);height:20px;margin:8px 0}
+.app{display:flex;height:100vh;overflow:hidden}
+.sb{width:230px;background:var(--pn);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.mn{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.hd{padding:12px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;background:var(--pn)}
+.ct{flex:1;overflow-y:auto;padding:20px}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px}
+.bt{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.bp{background:linear-gradient(135deg,var(--cy),var(--vi));color:#fff}
+.bg{background:var(--sf);color:var(--ts);border:1px solid var(--bd)}
+.bd{background:none;color:var(--er);border:1px solid rgba(239,71,111,.3)}
+.bs{background:var(--ok);color:#000}
+.lr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.lr:last-child{border-bottom:none}
+.tabs{display:flex;border-bottom:1px solid var(--bd);margin-bottom:16px}
+.tab{padding:9px 16px;font-size:13px;font-weight:500;color:var(--ts);cursor:pointer;border-bottom:2px solid transparent}
+.tab.ac{color:var(--cy);border-color:var(--cy)}
+.badge{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600}
+.fl{display:flex;flex-direction:column;gap:12px}
+.lb{font-size:11px;color:var(--ts);margin-bottom:4px;font-weight:600}
+.toast{position:fixed;bottom:16px;right:16px;z-index:9999;padding:12px 20px;border-radius:8px;font-size:13px;background:var(--cd);border:1px solid var(--bd);color:var(--tx)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+@media(max-width:768px){.sb{display:none}.g4{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b9dc3;font-family:sans-serif"><p>Loading ForgeOps Dashboard...</p></div></div>
-<div class="toast-wrap" id="toasts"></div>
+<div id="root"><p style="display:flex;align-items:center;justify-content:center;height:100vh;color:#8b9dc3">Loading ForgeOps...</p></div>
 <script type="module">
-import{h,render,Component}from'https://esm.sh/preact@10.22.0';
-import{useState,useEffect,useCallback,useRef,useMemo}from'https://esm.sh/preact@10.22.0/hooks';
+import{h,render}from'https://esm.sh/preact@10.22.0';
+import{useState,useEffect,useRef}from'https://esm.sh/preact@10.22.0/hooks';
 import htm from'https://esm.sh/htm@3.1.1';
-const html=htm.bind(h);
-try{
-/* -- Helpers -- */
-const PAGES=['overview','pipelines','prs','environments','security','settings'];
-const PAGE_TITLES={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',environments:'Environments',security:'Security',settings:'Settings'};
-const ENVS=['INT','QA','STAGE','PROD'];
-const PR_FLOWS=[['Feature','INT'],['INT','QA'],['QA','STAGE'],['STAGE','PROD']];
-const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const cache={};
-const CACHE_TTL=60000;
+var html=htm.bind(h);
 
-function store(k,v){if(v===undefined){return localStorage.getItem(k)||sessionStorage.getItem(k)}sessionStorage.setItem(k,v)}
-function ss(k,v){if(v===undefined){return localStorage.getItem(k)||sessionStorage.getItem(k)}sessionStorage.setItem(k,v)}
-function persist(k,v){localStorage.setItem(k,v);sessionStorage.setItem(k,v)}
-function clearAuth(){['pat','user','avatar'].forEach(function(k){sessionStorage.removeItem(k);localStorage.removeItem(k)})}
-
-function toast(msg,type){
-  const el=document.getElementById('toasts');if(!el)return;
-  const t=document.createElement('div');t.className='toast toast-'+(type||'info');t.textContent=msg;
-  el.appendChild(t);setTimeout(function(){t.remove()},4000);
-}
+var cache={};
+function ss(k,v){if(v===undefined)return localStorage.getItem(k)||sessionStorage.getItem(k);localStorage.setItem(k,v)}
+function clearAuth(){['pat','user'].forEach(function(k){localStorage.removeItem(k);sessionStorage.removeItem(k)})}
 
 function api(path,opts){
-  var token=ss('pat');var base='https://api.github.com';
-  var url=base+path;var key=url+JSON.stringify(opts||{});
+  var token=ss('pat');
+  var url='https://api.github.com'+path;
+  var key=url+JSON.stringify(opts||'');
   var method=(opts&&opts.method)||'GET';
-  if(method==='GET'&&cache[key]&&Date.now()-cache[key].t<CACHE_TTL){
-    return Promise.resolve(cache[key].d);
-  }
-  var headers={'Authorization':'token '+token,'Accept':'application/vnd.github+json'};
+  if(method==='GET'&&cache[key]&&Date.now()-cache[key].t<60000)return Promise.resolve(cache[key].d);
+  var headers={Authorization:'token '+token,Accept:'application/vnd.github+json'};
   if(opts&&opts.body)headers['Content-Type']='application/json';
-  return fetch(url,{method:method,headers:headers,body:opts&&opts.body?JSON.stringify(opts.body):undefined})
-    .then(function(r){
-      if(!r.ok)return r.json().then(function(e){throw new Error(e.message||r.statusText)});
-      if(r.status===204)return null;return r.json();
-    }).then(function(d){if(method==='GET'){cache[key]={d:d,t:Date.now()}}return d;});
+  return fetch(url,{method:method,headers:headers,body:opts&&opts.body?JSON.stringify(opts.body):undefined}).then(function(r){
+    if(!r.ok)return r.json().then(function(e){throw new Error(e.message||r.statusText)});
+    if(r.status===204)return null;return r.json();
+  }).then(function(d){if(method==='GET')cache[key]={d:d,t:Date.now()};return d});
 }
 
-function statusBadge(s){
-  var map={completed:'success',success:'success',failure:'danger',cancelled:'warning',in_progress:'info',queued:'neutral',pending:'info'};
-  return html`<span class="badge badge-${map[s]||'neutral'}">${s||'unknown'}</span>`;
-}
+function ago(d){if(!d)return'';var s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
+function dur(a,b){if(!a||!b)return'-';var s=Math.round((new Date(b)-new Date(a))/1000);if(s<60)return s+'s';return Math.floor(s/60)+'m'}
+function sColor(s){return{success:'var(--ok)',completed:'var(--ok)',failure:'var(--er)',in_progress:'var(--cy)',queued:'var(--wa)',waiting:'var(--wa)'}[s]||'var(--td)'}
 
-function Logo(){
-  return html`<svg width="40" height="40" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26c6da"/><stop offset="1" stop-color="#7c4dff"/></linearGradient></defs><rect width="40" height="40" rx="8" fill="url(#lg)"/><path d="M22 8l-8 16h6l-2 10 10-18h-7z" fill="white"/></svg>`;
-}
+function Logo(){return html`<svg width="36" height="36" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26c6da"/><stop offset="1" stop-color="#7c4dff"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#lg)"/><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="white"/></svg>`}
 
-function EmptyState(props){return html`<div class="empty"><${Logo}/><p>${props.msg||'No data yet'}</p></div>`}
-function Skeleton(){return html`<div class="skel" style="margin:8px 0"/>`}
-function LoadingBlock(){return html`<div>${[1,2,3].map(function(){return html`<${Skeleton}/>`})}</div>`}
+function Skel(){return html`<div class="sk"></div>`}
 
-/* -- Landing Page -- */
-function LandingPage(props){
-  var mockScreens=[
-    {title:'Pipeline View',emoji:'[pipeline]',desc:'Live stage graph showing Build -> Security -> Deploy with job status colors and durations'},
-    {title:'Pull Requests',emoji:'[pr]',desc:'Create PRs, review code, approve and merge -- all from one screen with CI check status'},
-    {title:'Environments',emoji:'[env]',desc:'INT -> QA -> STAGE -> PROD promotion flow with Jira status sync and one-click promote'},
-    {title:'Security Gate',emoji:'[shield]',desc:'5 parallel scans: SAST, SCA, secrets, containers, SBOM -- blocks unsafe code automatically'},
-    {title:'Notifications',emoji:'[email]',desc:'Email + Teams alerts on every deploy. QA gets SIT-ready, UAT gets UAT-ready, all get prod alerts'},
-    {title:'Self-Healing',emoji:'[wrench]',desc:'Every 6 hours: validates YAML, fixes script permissions, checks dashboard, auto-commits repairs'},
-    {title:'DORA Metrics',emoji:'[chart]',desc:'Weekly automated report: deploy frequency, lead time, change failure rate, mean time to recover'},
-    {title:'Rollback',emoji:'[refresh]',desc:'One-click rollback from dashboard or GitHub Actions. Auto-rollback on health check failure'}
+function LandingPage(p){
+  var features=[
+    {t:'Pipeline Stages',d:'Build, Security, Deploy with live status per job'},
+    {t:'Pull Requests',d:'Create, review, approve, merge from one screen'},
+    {t:'Environments',d:'INT, QA, STAGE, PROD with one-click promotion'},
+    {t:'Security Gate',d:'SAST, SCA, secrets, containers, SBOM scanning'},
+    {t:'Notifications',d:'Email + Teams alerts on every deploy and failure'},
+    {t:'AI Copilot',d:'Code review, autofix, test generation, failure analysis'},
+    {t:'Self-Healing',d:'Auto-fixes script permissions and validates YAML'},
+    {t:'DORA Metrics',d:'Deploy frequency, lead time, change failure rate'}
   ];
+  var flow=['feature/*','INT','QA','STAGE','PROD'];
+  var colors=['var(--td)','var(--cy)','var(--wa)','var(--wa)','var(--er)'];
 
-  var aiFeatures=[
-    {icon:'[ai]',title:'Copilot Code Review',desc:'GitHub Copilot reviews every PR -- catches bugs, suggests improvements, and explains complex changes in plain English.'},
-    {icon:'[search]',title:'Copilot Autofix',desc:'When security scans find vulnerabilities, Copilot suggests fixes automatically. Accept with one click.'},
-    {icon:'[idea]',title:'AI Commit Messages',desc:'Copilot generates meaningful commit messages from your diffs. Never write "fix stuff" again.'},
-    {icon:'[doc]',title:'AI PR Descriptions',desc:'Copilot writes PR descriptions summarizing what changed, why, and what to test. Reviewers love it.'},
-    {icon:'[test]',title:'AI Test Generation',desc:'Copilot generates unit tests for your code. Higher coverage with less effort.'},
-    {icon:'[alert]',title:'AI Failure Analysis',desc:'When a pipeline fails, Copilot analyzes the error log and suggests the most likely fix.'}
-  ];
-
-  var flowNodes=[
-    {label:'feature/*',color:'var(--text-dim)',bg:'var(--surface)',delay:'.1s'},
-    {label:'INT',color:'var(--cyan)',bg:'rgba(38,198,218,.1)',delay:'.2s'},
-    {label:'QA',color:'var(--warning)',bg:'rgba(255,209,102,.1)',delay:'.3s'},
-    {label:'STAGE',color:'var(--warning)',bg:'rgba(255,209,102,.1)',delay:'.4s'},
-    {label:'PROD',color:'var(--danger)',bg:'rgba(239,71,111,.1)',delay:'.5s'}
-  ];
-
-  function handleSubmit(e){
+  function doConnect(e){
     e.preventDefault();
-    var v=e.target.querySelector('input').value.trim();
-    if(v)props.onConnect(v);
+    var v=e.target.elements.tok.value.trim();
+    if(v)p.onConnect(v);
   }
 
-  return html`<div class="landing">
+  return html`<div style="height:100vh;overflow-y:auto;background:var(--bg)">
+    <div style="min-height:90vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;position:relative;overflow:hidden">
+      <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(38,198,218,.07),transparent);top:-150px;right:-100px;animation:float 8s ease-in-out infinite;pointer-events:none"></div>
+      <${Logo} />
+      <h1 style="font-size:44px;font-weight:700;margin:16px 0 4px;background:linear-gradient(135deg,#fff,var(--cy));-webkit-background-clip:text;-webkit-text-fill-color:transparent">ForgeOps</h1>
+      <div style="font-size:10px;font-weight:700;letter-spacing:4px;color:var(--vi);margin-bottom:20px">DEVSECOPS PLATFORM</div>
+      <p style="color:var(--ts);max-width:480px;line-height:1.7;margin-bottom:28px">Ship code from feature branch to production with zero scripts. Security scanning, Jira sync, email notifications, and approval gates - all automated.</p>
 
-    <div class="landing-hero">
-      <${Logo}/>
-      <h1>ForgeOps</h1>
-      <div style="font-size:11px;font-weight:700;letter-spacing:4px;color:var(--violet);margin-bottom:12px">DEVSECOPS PLATFORM</div>
-      <p class="landing-sub">Ship code from feature branch to production with zero scripts. Security scanning, Jira sync, email notifications, and approval gates -- all automated.</p>
-
-      <div class="flow-anim">
-        ${flowNodes.map(function(n,i){
-          return html`<><div class="flow-node" style=${'border-color:'+n.color+';color:'+n.color+';background:'+n.bg+';animation-delay:'+n.delay}>${n.label}</div>${i<flowNodes.length-1?html`<div class="flow-arrow" style=${'animation-delay:'+(i*.1+.15)+'s'}>-></div>`:null}</>`;
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:12px;flex-wrap:wrap;justify-content:center">
+        ${flow.map(function(label,i){
+          return html`<span key=${i}><span style=${'display:inline-block;padding:8px 16px;border-radius:8px;font-weight:600;font-size:12px;border:2px solid '+colors[i]+';color:'+colors[i]+';background:rgba(0,0,0,.2)'}>${label}</span>${i<flow.length-1?html`<span style="color:var(--td);margin:0 4px;font-size:16px"> > </span>`:null}</span>`;
         })}
       </div>
+      <div style="font-size:11px;color:var(--td);margin-bottom:24px">Tech Lead reviews > Release Eng promotes > 2 approvals for prod</div>
 
-      <div style="display:flex;gap:6px;margin-top:4px;font-size:11px;color:var(--text-dim)">
-        <span>Tech Lead reviews</span><span>-></span><span>Release Eng promotes</span><span>-></span><span>2 approvals for prod</span>
-      </div>
-
-      <div class="stat-row">
-        ${[['53','Deploys/wk'],['94%','Success Rate'],['2.4h','Lead Time'],['< 6%','Fail Rate']].map(function(s){
-          return html`<div class="stat-pill"><b>${s[0]}</b><small>${s[1]}</small></div>`;
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:32px">
+        ${[['53','Deploys/wk'],['94%','Success'],['2.4h','Lead Time'],['<6%','Fail Rate']].map(function(s){
+          return html`<div key=${s[1]} style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:10px 20px;text-align:center"><div style="font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--cy),var(--vi));-webkit-background-clip:text;-webkit-text-fill-color:transparent">${s[0]}</div><div style="font-size:9px;color:var(--td);text-transform:uppercase;letter-spacing:1px">${s[1]}</div></div>`;
         })}
       </div>
     </div>
 
-    <div style="overflow:hidden;padding:20px 0">
-      <div style="display:flex;gap:20px;animation:scroll-left 24s linear infinite;width:max-content">
-        ${mockScreens.concat(mockScreens).map(function(s,i){
-          return html`<div class="screen-card" key=${i} style="flex:0 0 280px;animation:none">
-            <div style="font-size:28px;margin-bottom:8px">${s.emoji}</div>
-            <div style="font-weight:600;font-size:14px;margin-bottom:6px">${s.title}</div>
-            <div style="font-size:12px;color:var(--text-soft);line-height:1.6">${s.desc}</div>
-          </div>`;
+    <div style="padding:40px 20px;max-width:900px;margin:0 auto">
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:16px;text-align:center">Platform Features</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+        ${features.map(function(f){
+          return html`<div key=${f.t} class="c" style="transition:transform .2s;cursor:default"><div style="font-weight:600;font-size:14px;margin-bottom:4px;color:var(--cy)">${f.t}</div><div style="font-size:12px;color:var(--ts);line-height:1.6">${f.d}</div></div>`;
         })}
       </div>
     </div>
 
-    <div class="landing-section">
-      <h2 style="font-size:24px;font-weight:700;margin-bottom:4px">AI-Powered DevSecOps</h2>
-      <p style="color:var(--text-soft);font-size:13px;margin-bottom:20px">GitHub Copilot integrates at every step -- from writing code to fixing vulnerabilities to analyzing failures.</p>
-      <div class="ai-grid">
-        ${aiFeatures.map(function(f){
-          return html`<div class="ai-card">
-            <div class="ai-icon">${f.icon}</div>
-            <div class="ai-title">${f.title}</div>
-            <div class="ai-desc">${f.desc}</div>
-          </div>`;
+    <div style="padding:40px 20px;max-width:900px;margin:0 auto">
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;text-align:center">AI-Powered DevSecOps</h2>
+      <p style="text-align:center;color:var(--ts);font-size:13px;margin-bottom:20px">GitHub Copilot integrates at every step of the pipeline.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+        ${[
+          ['Code Review','Copilot reviews PRs, catches bugs, explains changes'],
+          ['Autofix','Security findings get auto-fix suggestions'],
+          ['Test Generation','Copilot writes unit tests for your code'],
+          ['Failure Analysis','Copilot analyzes pipeline failures and suggests fixes']
+        ].map(function(a){
+          return html`<div key=${a[0]} class="c"><div style="font-weight:600;margin-bottom:4px">${a[0]}</div><div style="font-size:12px;color:var(--ts);line-height:1.5">${a[1]}</div></div>`;
         })}
       </div>
     </div>
 
-    <div class="landing-section" style="text-align:center">
-      <h2 style="font-size:20px;font-weight:600;margin-bottom:12px">Integrations</h2>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
-        ${['GitHub Actions','GitHub Copilot','SonarQube','OWASP DC','Gitleaks','Trivy','Syft','Jira','Splunk','Teams','Email','Cherwell'].map(function(t){
-          return html`<span style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:12px;color:var(--text-soft)">${t}</span>`;
+    <div style="padding:20px 20px;text-align:center">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px">
+        ${['GitHub Actions','Copilot','SonarQube','OWASP DC','Gitleaks','Trivy','Syft','Jira','Splunk','Teams','Email','Cherwell'].map(function(t){
+          return html`<span key=${t} style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:5px 14px;font-size:11px;color:var(--ts)">${t}</span>`;
         })}
       </div>
-      <p style="color:var(--text-dim);font-size:11px;margin-top:12px">All integrations skip gracefully when not configured. Pipelines never fail because a tool isn't set up.</p>
+      <p style="font-size:10px;color:var(--td)">All integrations skip gracefully when not configured.</p>
     </div>
 
-    <form class="connect-bar" onSubmit=${handleSubmit}>
-      <${Logo}/>
-      <input type="password" placeholder="Paste GitHub token to connect..." />
-      <button type="submit">Connect</button>
+    <form onSubmit=${doConnect} style="background:var(--pn);border-top:1px solid var(--bd);padding:18px 20px;display:flex;align-items:center;justify-content:center;gap:10px;position:sticky;bottom:0">
+      <${Logo} />
+      <input name="tok" type="password" placeholder="Paste GitHub token to connect..." style="width:300px;max-width:50vw;font-family:'JetBrains Mono',monospace" />
+      <button type="submit" class="bt bp" style="padding:10px 24px;font-size:14px">Connect</button>
     </form>
   </div>`;
 }
 
-/* -- App -- */
-function App(){
-  const[page,setPage]=useState('overview');
-  const[user,setUser]=useState(null);
-  const[sideOpen,setSideOpen]=useState(false);
-  const tick=useRef(null);
-  const[refreshKey,setRefreshKey]=useState(0);
-
-  useEffect(function(){
-    var p=ss('pat');
-    if(p){api('/user').then(function(u){ss('user',JSON.stringify(u));setUser(u)}).catch(function(){clearAuth()})}
-  },[]);
-
-  useEffect(function(){
-    if(!user)return;
-    var id=setInterval(function(){setRefreshKey(function(k){return k+1})},20000);
-    tick.current=id;
-    return function(){clearInterval(id)};
-  },[user]);
-
-  useEffect(function(){
-    function onKey(e){
-      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
-      if(e.key==='Escape'){setSideOpen(false);return}
-      if(e.key==='r'){setRefreshKey(function(k){return k+1});return}
-      var n=parseInt(e.key);if(n>=1&&n<=6){setPage(PAGES[n-1]);setSideOpen(false)}
-    }
-    window.addEventListener('keydown',onKey);return function(){window.removeEventListener('keydown',onKey)}
-  },[]);
-
-  function logout(){clearAuth();setUser(null);Object.keys(cache).forEach(function(k){delete cache[k]})}
-  function nav(p){setPage(p);setSideOpen(false)}
-  function refresh(){Object.keys(cache).forEach(function(k){delete cache[k]});setRefreshKey(function(k){return k+1});toast('Refreshed','info')}
-
-  if(!user)return html`<${LandingPage} onConnect=${function(token){persist('pat',token);api('/user').then(function(u){persist('user',JSON.stringify(u));setUser(u)}).catch(function(){clearAuth();toast('Invalid token','error')})}}/>`;
-
-
-  var initials=(user.login||'?').slice(0,2).toUpperCase();
-  var connected=!!ss('pat');
-
-  return html`<div class="app">
-    <aside class=${"sidebar"+(sideOpen?" open":"")}>
-      <div class="sidebar-brand"><${Logo}/><div><h1>ForgeOps</h1><small>DEVSECOPS</small></div></div>
-      <div class="sidebar-section">Delivery</div>
-      ${['overview','pipelines','prs','environments'].map(function(p){
-        return html`<div class=${"sidebar-link"+(page===p?" active":"")} onClick=${function(){nav(p)}}>${PAGE_TITLES[p]}</div>`
-      })}
-      <div class="sidebar-section">Quality</div>
-      <div class=${"sidebar-link"+(page==='security'?" active":"")} onClick=${function(){nav('security')}}>Security</div>
-      <div class="sidebar-section">Operations</div>
-      <div class=${"sidebar-link"+(page==='settings'?" active":"")} onClick=${function(){nav('settings')}}>Settings</div>
-      <div class="sidebar-footer"><span class=${"dot "+(connected?"on":"off")}/> ${connected?'Connected':'Disconnected'}</div>
-    </aside>
-    <div class="main">
-      <header class="header">
-        <div style="display:flex;align-items:center;gap:12px">
-          <button class="menu-toggle" onClick=${function(){setSideOpen(!sideOpen)}}>=</button>
-          <h2>${PAGE_TITLES[page]||'Dashboard'}</h2>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-secondary btn-sm" onClick=${refresh}>Refresh</button>
-          <div class="avatar">${initials}</div>
-        </div>
-      </header>
-      <div class="content">
-        ${page==='overview'&&html`<${OverviewPage} key=${refreshKey} user=${user}/>`}
-        ${page==='pipelines'&&html`<${PipelinesPage} key=${refreshKey} user=${user}/>`}
-        ${page==='prs'&&html`<${PRsPage} key=${refreshKey} user=${user}/>`}
-        ${page==='environments'&&html`<${EnvironmentsPage} key=${refreshKey} user=${user}/>`}
-        ${page==='security'&&html`<${SecurityPage} key=${refreshKey} user=${user}/>`}
-        ${page==='settings'&&html`<${SettingsPage} user=${user} onLogout=${logout}/>`}
-      </div>
-    </div>
-  </div>`;
-}
-
-
-
-/* -- Overview -- */
-function OverviewPage(props){
-  const[data,setData]=useState(null);
-  const[runs,setRuns]=useState(null);
-  useEffect(function(){
-    var owner=props.user.login;
-    api('/user/repos?per_page=100&sort=updated').then(function(repos){
-      setData({repos:repos});
-      var repoNames=repos.slice(0,5).map(function(r){return r.full_name});
-      return Promise.all(repoNames.map(function(name){return api('/repos/'+name+'/actions/runs?per_page=15').catch(function(){return{workflow_runs:[]}})}));
-    }).then(function(results){
-      var all=[];results.forEach(function(r){if(r&&r.workflow_runs)all=all.concat(r.workflow_runs)});
-      all.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});
-      setRuns(all.slice(0,15));
-    }).catch(function(e){toast('Failed to load overview: '+e.message,'error')});
-  },[]);
-
-  if(!data)return html`<${LoadingBlock}/>`;
-  var totalRuns=runs?runs.length:0;
-  var successRuns=runs?runs.filter(function(r){return r.conclusion==='success'}).length:0;
-  var rate=totalRuns?Math.round(successRuns/totalRuns*100):0;
-  var active=runs?runs.filter(function(r){return r.status==='in_progress'||r.status==='queued'}).length:0;
-
-  var dayBuckets=[0,0,0,0,0,0,0];var dayLabels=[];
-  for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);dayLabels.push(DAY_NAMES[d.getDay()]);
-    if(runs)runs.forEach(function(r){var rd=new Date(r.created_at);if(rd.toDateString()===d.toDateString())dayBuckets[6-i]++});
-  }
-  var maxB=Math.max.apply(null,dayBuckets)||1;
-
+function OverviewPage(p){
+  var d=p.data;var runs=p.runs||[];
+  var active=runs.filter(function(r){return r.status==='in_progress'}).length;
+  var total=runs.filter(function(r){return r.status==='completed'});
+  var rate=total.length?Math.round(total.filter(function(r){return r.conclusion==='success'}).length/total.length*100):0;
+  var prs=p.prs||[];var openPr=prs.filter(function(x){return x.state==='open'}).length;
   return html`<div>
-    <div class="grid grid-4" style="margin-bottom:20px">
-      <div class="card stat-card"><div class="val" style="color:var(--cyan)">${active}</div><div class="label">Active Runs</div></div>
-      <div class="card stat-card"><div class="val" style="color:var(--success)">${rate}%</div><div class="label">Success Rate</div></div>
-      <div class="card stat-card"><div class="val" style="color:var(--violet)">${data.repos?data.repos.length:0}</div><div class="label">Repositories</div></div>
-      <div class="card stat-card"><div class="val" style="color:var(--warning)">${totalRuns}</div><div class="label">Recent Runs</div></div>
+    <div class="g4">
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Active</div><div style="font-size:28px;font-weight:700;color:var(--cy)">${active}</div></div>
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Success</div><div style="font-size:28px;font-weight:700;color:${rate>=80?'var(--ok)':'var(--er)'}">${rate}%</div></div>
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Open PRs</div><div style="font-size:28px;font-weight:700;color:var(--vi)">${openPr}</div></div>
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Repos</div><div style="font-size:28px;font-weight:700">${d?d.length:0}</div></div>
     </div>
-    <div class="grid grid-2">
-      <div class="card"><div class="card-header"><strong>Runs (7 days)</strong></div>
-        <div class="bar-chart">${dayBuckets.map(function(v,idx){
-          var pct=Math.round(v/maxB*100);
-          return html`<div class="bar-col"><div class="bar" style=${"height:"+pct+"%;background:linear-gradient(0deg,var(--cyan),var(--violet))"}></div><span class="bar-label">${dayLabels[idx]}</span></div>`;
-        })}</div>
-      </div>
-      <div class="card"><div class="card-header"><strong>Recent Activity</strong></div>
-        ${!runs||!runs.length?html`<${EmptyState} msg="No recent runs"/>`:html`<div style="max-height:260px;overflow-y:auto">
-          <table class="tbl"><thead><tr><th>Repo</th><th>Status</th><th>When</th></tr></thead><tbody>
-          ${runs.slice(0,15).map(function(r){return html`<tr><td class="mono" style="font-size:12px">${r.repository?r.repository.name:'-'}</td><td>${statusBadge(r.conclusion||r.status)}</td><td style="color:var(--text-dim);font-size:12px">${new Date(r.created_at).toLocaleDateString()}</td></tr>`})}
-          </tbody></table></div>`}
-      </div>
+    <div class="c"><div style="font-size:12px;font-weight:600;color:var(--ts);margin-bottom:8px">Recent Activity</div>
+      ${runs.slice(0,15).map(function(r){return html`<div class="lr" key=${r.id}><span class="badge" style=${'background:'+sColor(r.conclusion||r.status).replace('var(','rgba(').replace(')',',.12)')+';color:'+sColor(r.conclusion||r.status)}>${r.conclusion||r.status}</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.repository?r.repository.full_name:r._repo||''}</div><div style="font-size:10px;color:var(--td);font-family:'JetBrains Mono',monospace">${r.head_branch||''} #${r.run_number||''}</div></div><span style="font-size:10px;color:var(--td)">${ago(r.created_at)}</span></div>`})}
+      ${runs.length===0&&html`<div style="text-align:center;padding:24px;color:var(--td)">No runs yet</div>`}
     </div>
   </div>`;
 }
 
-/* -- Pipelines -- */
-function PipelinesPage(props){
-  const[repos,setRepos]=useState(null);
-  const[expanded,setExpanded]=useState(null);
-  const[jobs,setJobs]=useState({});
-  const[modal,setModal]=useState(false);
-  const[workflows,setWorkflows]=useState([]);
-  const[branches,setBranches]=useState([]);
-  const[selRepo,setSelRepo]=useState('');
-  const[selWf,setSelWf]=useState('');
-  const[selBr,setSelBr]=useState('');
-
-  useEffect(function(){
-    api('/user/repos?per_page=100&sort=updated').then(function(repos){
-      return Promise.all(repos.slice(0,20).map(function(repo){
-        return api('/repos/'+repo.full_name+'/actions/runs?per_page=1').then(function(d){
-          return Object.assign({},repo,{latestRun:(d.workflow_runs&&d.workflow_runs[0])||null});
-        }).catch(function(){return Object.assign({},repo,{latestRun:null})});
-      }));
-    }).then(setRepos).catch(function(e){toast('Error: '+e.message,'error')});
-  },[]);
-
-  function toggle(repo){
-    if(expanded===repo.full_name){setExpanded(null);return}
-    setExpanded(repo.full_name);
-    if(repo.latestRun&&!jobs[repo.latestRun.id]){
-      api('/repos/'+repo.full_name+'/actions/runs/'+repo.latestRun.id+'/jobs').then(function(d){
-        var nj=Object.assign({},jobs);nj[repo.latestRun.id]=d.jobs||[];setJobs(nj);
-      }).catch(function(){});
-    }
-  }
-
-  function openModal(){
-    setModal(true);
-    if(!repos||!repos.length)return;
-    var first=repos[0];setSelRepo(first.full_name);
-    loadWfBr(first.full_name);
-  }
-  function loadWfBr(repoName){
-    setSelRepo(repoName);
-    api('/repos/'+repoName+'/actions/workflows').then(function(d){setWorkflows(d.workflows||[]);if(d.workflows&&d.workflows.length)setSelWf(d.workflows[0].id+'')}).catch(function(){setWorkflows([])});
-    api('/repos/'+repoName+'/branches?per_page=30').then(function(d){setBranches(d||[]);if(d&&d.length)setSelBr(d[0].name)}).catch(function(){setBranches([])});
-  }
-  function dispatch(){
-    if(!selRepo||!selWf||!selBr){toast('Select all fields','error');return}
-    api('/repos/'+selRepo+'/actions/workflows/'+selWf+'/dispatches',{method:'POST',body:{ref:selBr}})
-      .then(function(){toast('Pipeline dispatched','success');setModal(false)})
-      .catch(function(e){toast('Dispatch failed: '+e.message,'error')});
-  }
-
-  var conclusionColor={success:'var(--success)',failure:'var(--danger)',cancelled:'var(--warning)',skipped:'var(--text-dim)'};
-
-  if(!repos)return html`<${LoadingBlock}/>`;
+function PipelinesPage(p){
+  var runs=p.runs||[];
   return html`<div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:16px">
-      <span style="color:var(--text-soft)">${repos.length} repositories</span>
-      <button class="btn btn-primary btn-sm" onClick=${openModal}>Run Pipeline</button>
+    <div class="c">
+      ${runs.slice(0,20).map(function(r){return html`<div class="lr" key=${r.id} style=${'border-left:3px solid '+sColor(r.conclusion||r.status)+';padding-left:10px'}><span class="badge" style=${'background:'+sColor(r.conclusion||r.status).replace('var(','rgba(').replace(')',',.12)')+';color:'+sColor(r.conclusion||r.status)}>${r.conclusion||r.status}</span><div style="flex:1"><div style="font-size:13px;font-weight:500">${r.repository?r.repository.full_name:r._repo||''}</div><div style="font-size:11px;color:var(--td)">${r.name||r.display_title||''} - ${r.head_branch||''}</div></div><span style="font-size:11px;color:var(--td);font-family:'JetBrains Mono',monospace">${dur(r.run_started_at,r.updated_at)}</span><span style="font-size:10px;color:var(--td)">${ago(r.created_at)}</span><a href=${r.html_url||'#'} target="_blank" rel="noopener" class="bt bg" style="font-size:10px;padding:4px 8px">Logs</a></div>`})}
+      ${runs.length===0&&html`<div style="text-align:center;padding:24px;color:var(--td)">No pipeline runs found</div>`}
     </div>
-    ${repos.map(function(repo){
-      var lr=repo.latestRun;var isExp=expanded===repo.full_name;
-      return html`<div class="card" style="margin-bottom:8px;cursor:pointer" onClick=${function(){toggle(repo)}}>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>${repo.name}</strong> <span style="color:var(--text-dim);font-size:12px;margin-left:8px">${repo.full_name}</span></div>
-          <div style="display:flex;align-items:center;gap:8px">
-            ${lr?statusBadge(lr.conclusion||lr.status):html`<span class="badge badge-neutral">no runs</span>`}
-            ${lr&&html`<a class="btn btn-secondary btn-sm" href=${lr.html_url} target="_blank" onClick=${function(e){e.stopPropagation()}}>Logs</a>`}
-            <span style="color:var(--text-dim)">${isExp?'^':'v'}</span>
-          </div>
-        </div>
-        ${isExp&&lr&&jobs[lr.id]&&html`<div class="stage-graph" onClick=${function(e){e.stopPropagation()}}>
-          ${jobs[lr.id].map(function(j,i){return html`
-            ${i>0&&html`<span class="stage-arrow">-></span>`}
-            <span class="stage-box" style=${"background:"+(conclusionColor[j.conclusion]||'var(--info)')+";color:#fff"}>${j.name}</span>`})}
-        </div>`}
-        ${isExp&&lr&&!jobs[lr.id]&&html`<${Skeleton}/>`}
-      </div>`;
-    })}
-    ${modal&&html`<div class="modal-overlay" onClick=${function(){setModal(false)}}><div class="modal" onClick=${function(e){e.stopPropagation()}}>
-      <h3>Run Pipeline</h3>
-      <div class="field"><label>Repository</label><select class="input" value=${selRepo} onChange=${function(e){loadWfBr(e.target.value)}}>${repos.map(function(r){return html`<option value=${r.full_name}>${r.full_name}</option>`})}</select></div>
-      <div class="field"><label>Workflow</label><select class="input" value=${selWf} onChange=${function(e){setSelWf(e.target.value)}}>${workflows.map(function(w){return html`<option value=${w.id}>${w.name}</option>`})}</select></div>
-      <div class="field"><label>Branch</label><select class="input" value=${selBr} onChange=${function(e){setSelBr(e.target.value)}}>${branches.map(function(b){return html`<option value=${b.name}>${b.name}</option>`})}</select></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-secondary" onClick=${function(){setModal(false)}}>Cancel</button><button class="btn btn-primary" onClick=${dispatch}>Dispatch</button></div>
-    </div></div>`}
   </div>`;
 }
 
-/* -- Pull Requests -- */
-function PRsPage(props){
-  const[tab,setTab]=useState('create');
-  const[repos,setRepos]=useState([]);
-  const[branches,setBranches]=useState([]);
-  const[selRepo,setSelRepo]=useState('');
-  const[srcBr,setSrcBr]=useState('');
-  const[tgtBr,setTgtBr]=useState('');
-  const[title,setTitle]=useState('');
-  const[desc,setDesc]=useState('');
-  const[jira,setJira]=useState('');
-  const[openPRs,setOpenPRs]=useState([]);
-  const[mergedPRs,setMergedPRs]=useState([]);
-  const[loading,setLoading]=useState(false);
-
-  useEffect(function(){
-    api('/user/repos?per_page=100&sort=updated').then(function(r){setRepos(r||[]);if(r&&r.length){setSelRepo(r[0].full_name);loadBranches(r[0].full_name)}}).catch(function(){});
-  },[]);
-  useEffect(function(){if(tab==='open')loadOpen();if(tab==='merged')loadMerged()},[tab]);
-
-  function loadBranches(name){
-    setSelRepo(name);
-    api('/repos/'+name+'/branches?per_page=50').then(function(b){setBranches(b||[]);if(b&&b.length>=2){setSrcBr(b[0].name);setTgtBr(b.length>1?b[1].name:b[0].name)}}).catch(function(){setBranches([])});
-  }
-  function loadOpen(){
-    if(!repos.length)return;
-    Promise.all(repos.slice(0,10).map(function(r){return api('/repos/'+r.full_name+'/pulls?state=open&per_page=5').catch(function(){return[]})}))
-      .then(function(all){var flat=[];all.forEach(function(a){flat=flat.concat(a)});setOpenPRs(flat)});
-  }
-  function loadMerged(){
-    if(!repos.length)return;
-    Promise.all(repos.slice(0,10).map(function(r){return api('/repos/'+r.full_name+'/pulls?state=closed&per_page=5').catch(function(){return[]})}))
-      .then(function(all){var flat=[];all.forEach(function(a){flat=flat.concat(a)});setMergedPRs(flat.filter(function(p){return p.merged_at}).slice(0,15))});
-  }
-  function quickCreate(src,tgt){
-    if(!selRepo){toast('Select a repo first','error');return}
-    setSrcBr(src);setTgtBr(tgt);setTitle(src+' -> '+tgt+' promotion');
-  }
-  function createPR(){
-    if(!selRepo||!srcBr||!tgtBr||!title){toast('Fill all required fields','error');return}
-    setLoading(true);
-    var body=desc;if(jira)body='Jira: '+jira+'\n\n'+body;
-    api('/repos/'+selRepo+'/pulls',{method:'POST',body:{title:title,head:srcBr,base:tgtBr,body:body}})
-      .then(function(pr){toast('PR #'+pr.number+' created','success');setTitle('');setDesc('');setJira('')})
-      .catch(function(e){toast('Failed: '+e.message,'error')})
-      .finally(function(){setLoading(false)});
-  }
-  function approvePR(pr){
-    api('/repos/'+pr.base.repo.full_name+'/pulls/'+pr.number+'/reviews',{method:'POST',body:{event:'APPROVE'}})
-      .then(function(){toast('Approved PR #'+pr.number,'success');loadOpen()}).catch(function(e){toast(e.message,'error')});
-  }
-  function mergePR(pr){
-    api('/repos/'+pr.base.repo.full_name+'/pulls/'+pr.number+'/merge',{method:'PUT',body:{merge_method:'squash'}})
-      .then(function(){toast('Merged PR #'+pr.number,'success');loadOpen()}).catch(function(e){toast(e.message,'error')});
-  }
-
+function PRsPage(p){
+  var prs=p.prs||[];var tab=p.tab;
+  var openPrs=prs.filter(function(x){return x.state==='open'});
+  var merged=prs.filter(function(x){return x.merged_at}).slice(0,15);
   return html`<div>
     <div class="tabs">
-      ${['create','open','merged'].map(function(t){return html`<div class=${"tab"+(tab===t?" active":"")} onClick=${function(){setTab(t)}}>${t.charAt(0).toUpperCase()+t.slice(1)}</div>`})}
+      <div class=${'tab'+(tab==='open'?' ac':'')} onClick=${function(){p.setTab('open')}}>Open (${openPrs.length})</div>
+      <div class=${'tab'+(tab==='merged'?' ac':'')} onClick=${function(){p.setTab('merged')}}>Merged</div>
     </div>
-    ${tab==='create'&&html`<div>
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-        ${PR_FLOWS.map(function(f){return html`<button class="btn btn-secondary btn-sm" onClick=${function(){quickCreate(f[0],f[1])}}>${f[0]} -> ${f[1]}</button>`})}
-      </div>
-      <div class="grid grid-2">
-        <div class="field"><label>Repository</label><select class="input" value=${selRepo} onChange=${function(e){loadBranches(e.target.value)}}>${repos.map(function(r){return html`<option value=${r.full_name}>${r.full_name}</option>`})}</select></div>
-        <div/>
-        <div class="field"><label>Source Branch</label><select class="input" value=${srcBr} onChange=${function(e){setSrcBr(e.target.value)}}>${branches.map(function(b){return html`<option value=${b.name}>${b.name}</option>`})}</select></div>
-        <div class="field"><label>Target Branch</label><select class="input" value=${tgtBr} onChange=${function(e){setTgtBr(e.target.value)}}>${branches.map(function(b){return html`<option value=${b.name}>${b.name}</option>`})}</select></div>
-      </div>
-      <div class="field"><label>Jira Ticket</label><input class="input" value=${jira} onInput=${function(e){setJira(e.target.value)}} placeholder="PROJ-123"/></div>
-      <div class="field"><label>Title</label><input class="input" value=${title} onInput=${function(e){setTitle(e.target.value)}} placeholder="PR title"/></div>
-      <div class="field"><label>Description</label><textarea class="input" rows="3" value=${desc} onInput=${function(e){setDesc(e.target.value)}} placeholder="Details..."/></div>
-      <button class="btn btn-primary" onClick=${createPR} disabled=${loading}>${loading?'Creating...':'Create Pull Request'}</button>
-    </div>`}
-    ${tab==='open'&&html`<div>
-      ${!openPRs.length?html`<${EmptyState} msg="No open pull requests"/>`:openPRs.map(function(pr){
-        return html`<div class="card" style="margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><a href=${pr.html_url} target="_blank"><strong>#${pr.number}</strong> ${pr.title}</a><div style="font-size:12px;color:var(--text-dim)">${pr.base.repo.full_name} | ${pr.head.ref} -> ${pr.base.ref}</div></div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-success btn-sm" onClick=${function(){approvePR(pr)}}>Approve</button>
-              <button class="btn btn-primary btn-sm" onClick=${function(){mergePR(pr)}}>Merge</button>
-            </div>
-          </div>
-        </div>`;
-      })}</div>`}
-    ${tab==='merged'&&html`<div>
-      ${!mergedPRs.length?html`<${EmptyState} msg="No recently merged PRs"/>`:html`<table class="tbl"><thead><tr><th>PR</th><th>Repo</th><th>Merged</th></tr></thead><tbody>
-        ${mergedPRs.map(function(pr){return html`<tr><td><a href=${pr.html_url} target="_blank">#${pr.number} ${pr.title}</a></td><td style="color:var(--text-dim);font-size:12px">${pr.base.repo.full_name}</td><td style="color:var(--text-dim);font-size:12px">${new Date(pr.merged_at).toLocaleDateString()}</td></tr>`})}
-      </tbody></table>`}
-    </div>`}
+    ${tab==='open'&&html`<div class="c">${openPrs.length===0?html`<div style="text-align:center;padding:20px;color:var(--td)">No open PRs</div>`:openPrs.map(function(pr){return html`<div class="lr" key=${pr.id}><div style="flex:1"><div style="font-size:13px;font-weight:500">${pr.title}</div><div style="font-size:11px;color:var(--td)">${pr._repo||''} - ${(pr.head&&pr.head.ref)||''} > ${(pr.base&&pr.base.ref)||''} - ${ago(pr.created_at)}</div></div><a href=${pr.html_url||'#'} target="_blank" rel="noopener" class="bt bg" style="font-size:10px;padding:4px 8px">View</a></div>`})}</div>`}
+    ${tab==='merged'&&html`<div class="c">${merged.length===0?html`<div style="text-align:center;padding:20px;color:var(--td)">No merged PRs</div>`:merged.map(function(pr){return html`<div class="lr" key=${pr.id}><div style="flex:1"><div style="font-size:12px;font-weight:500">${pr._repo||''}: ${pr.title}</div><div style="font-size:10px;color:var(--td)">merged ${ago(pr.merged_at)}</div></div></div>`})}</div>`}
   </div>`;
 }
 
-/* -- Environments -- */
-function EnvironmentsPage(props){
-  const[repos,setRepos]=useState([]);
-  const[deploys,setDeploys]=useState({});
-  const[completed,setCompleted]=useState({});
-
-  useEffect(function(){
-    api('/user/repos?per_page=100&sort=updated').then(function(r){
-      setRepos(r||[]);
-      var envD={};ENVS.forEach(function(e){envD[e]=[]});
-      return Promise.all((r||[]).slice(0,10).map(function(repo){
-        return api('/repos/'+repo.full_name+'/deployments?per_page=5').then(function(deps){
-          (deps||[]).forEach(function(d){
-            var env=(d.environment||'').toUpperCase();
-            ENVS.forEach(function(e){if(env.indexOf(e)!==-1&&envD[e].length<5)envD[e].push(Object.assign({},d,{repo_name:repo.full_name}))});
-          });
-        }).catch(function(){});
-      })).then(function(){setDeploys(envD)});
-    }).catch(function(){});
-  },[]);
-
-  function markComplete(env,depId){
-    var nC=Object.assign({},completed);nC[env+'-'+depId]=true;setCompleted(nC);toast(env+' deploy marked complete','success');
-  }
-  function promote(from,to){toast('Promotion '+from+' -> '+to+' triggered','info')}
-
+function EnvPage(p){
+  var runs=p.runs||[];
+  var envs=['INT','QA','STAGE','PROD'];
+  var colors=['var(--cy)','var(--wa)','var(--wa)','var(--er)'];
   return html`<div>
-    <div class="env-flow">
-      ${ENVS.map(function(env,i){
-        var envDeps=deploys[env]||[];
-        return html`
-          ${i>0&&html`<div class="env-arrow">-></div>`}
-          <div class="env-card card">
-            <div style="text-align:center;margin-bottom:12px"><span class="badge badge-info" style="font-size:14px;padding:6px 18px">${env}</span></div>
-            ${!envDeps.length?html`<p style="color:var(--text-dim);font-size:12px;text-align:center">No deployments</p>`:envDeps.map(function(d){
-              var done=completed[env+'-'+d.id];
-              return html`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-                <div class="mono" style="color:var(--text-soft)">${d.repo_name}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-                  ${done?html`<span class="badge badge-success">Complete</span>`:html`<span class="badge badge-warning">Pending</span>`}
-                  ${!done&&html`<button class="btn btn-sm btn-secondary" onClick=${function(){markComplete(env,d.id)}}>Mark Complete</button>`}
-                </div>
-              </div>`;
-            })}
-            ${i<ENVS.length-1&&html`<button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;margin-top:12px" onClick=${function(){promote(env,ENVS[i+1])}}>Promote to ${ENVS[i+1]}</button>`}
-          </div>`;
+    <div style="display:flex;gap:8px;overflow-x:auto;align-items:stretch">
+      ${envs.map(function(env,i){
+        var deploys=runs.filter(function(r){var n=(r.name||'').toUpperCase();return n.indexOf(env)>=0&&(n.indexOf('DEPLOY')>=0||n.indexOf('>')>=0)});
+        return html`<div key=${env} style="flex:1;min-width:160px">
+          <div class="c" style="height:100%">
+            <div style=${'padding:3px;background:'+colors[i]+';border-radius:6px;margin:-18px -18px 12px -18px'}></div>
+            <div style="font-weight:700;font-size:15px;margin-bottom:8px">${env}</div>
+            ${deploys.slice(0,3).map(function(r){return html`<div key=${r.id} style="font-size:10px;color:var(--ts);margin-bottom:3px"><span style=${'display:inline-block;width:6px;height:6px;border-radius:50%;background:'+sColor(r.conclusion||r.status)+';margin-right:4px'}></span>${r.repository?r.repository.full_name.split('/')[1]:r._repo||''} ${ago(r.created_at)}</div>`})}
+            ${deploys.length===0&&html`<div style="font-size:11px;color:var(--td)">No deploys</div>`}
+          </div>
+        </div>`;
       })}
     </div>
   </div>`;
 }
 
-/* -- Security -- */
-function SecurityPage(props){
-  const[alerts,setAlerts]=useState(null);
-  const[repos,setRepos]=useState([]);
+function SecurityPage(p){
+  var runs=p.runs||[];
+  var sec=runs.filter(function(r){var n=(r.name||'').toLowerCase();return n.indexOf('security')>=0||n.indexOf('scan')>=0||n.indexOf('sast')>=0||n.indexOf('sca')>=0});
+  var passed=sec.filter(function(r){return r.conclusion==='success'}).length;
+  var failed=sec.filter(function(r){return r.conclusion==='failure'}).length;
+  var rate=sec.length?Math.round(passed/sec.length*100):0;
+  return html`<div>
+    <div class="g4">
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Scans</div><div style="font-size:28px;font-weight:700;color:var(--cy)">${sec.length}</div></div>
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Passed</div><div style="font-size:28px;font-weight:700;color:var(--ok)">${passed}</div></div>
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Failed</div><div style="font-size:28px;font-weight:700;color:var(--er)">${failed}</div></div>
+      <div class="c" style="text-align:center"><div style="font-size:10px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Rate</div><div style="font-size:28px;font-weight:700;color:${rate>=80?'var(--ok)':'var(--er)'}">${rate}%</div></div>
+    </div>
+    ${sec.length===0&&html`<div class="c" style="background:rgba(38,198,218,.04);border-color:rgba(38,198,218,.1)"><div style="font-weight:600;color:var(--cy);margin-bottom:6px">Free Tools Active in Pipelines</div><div style="font-size:12px;color:var(--ts);line-height:1.8">Gitleaks - secret scanning (always active)${'<br/>'}OWASP Dependency-Check - SCA (free)${'<br/>'}Syft - SBOM generation (always active)${'<br/>'}Add SONAR_HOST_URL + SONAR_TOKEN for SAST</div></div>`}
+    <div class="c"><div style="font-size:12px;font-weight:600;color:var(--ts);margin-bottom:8px">Recent Results</div>
+      ${sec.slice(0,10).map(function(r){return html`<div class="lr" key=${r.id}><span class="badge" style=${'background:'+sColor(r.conclusion||r.status).replace('var(','rgba(').replace(')',',.12)')+';color:'+sColor(r.conclusion||r.status)}>${r.conclusion||r.status}</span><div style="flex:1;font-size:11px">${r.repository?r.repository.full_name:r._repo||''} - ${r.name||''}</div><span style="font-size:10px;color:var(--td)">${ago(r.created_at)}</span></div>`})}
+    </div>
+  </div>`;
+}
 
-  useEffect(function(){
-    api('/user/repos?per_page=100&sort=updated').then(function(r){
-      setRepos(r||[]);
-      return Promise.all((r||[]).slice(0,10).map(function(repo){
-        return api('/repos/'+repo.full_name+'/vulnerability-alerts').then(function(){return{repo:repo.full_name,enabled:true}}).catch(function(){return{repo:repo.full_name,enabled:false}});
-      }));
-    }).then(function(results){setAlerts(results||[])}).catch(function(){setAlerts([])});
+function SettingsPage(p){
+  var u=p.user;
+  return html`<div>
+    <div class="c" style="background:rgba(38,198,218,.03);border-color:rgba(38,198,218,.1)"><div style="font-size:12px;font-weight:600;color:var(--cy);margin-bottom:4px">Security</div><div style="font-size:11px;color:var(--ts)">Token stored in localStorage. Closing all tabs does not clear it. Click Disconnect to remove.</div></div>
+    <div class="c"><div style="font-size:12px;font-weight:600;color:var(--ts);margin-bottom:8px">Connection</div>
+      <div style="font-size:13px;margin-bottom:4px">User: <strong>${u&&u.login||'unknown'}</strong></div>
+      <div style="font-size:13px;margin-bottom:12px">Repos: <strong>${p.repoCount||0}</strong></div>
+      <button class="bt bd" onClick=${p.onLogout}>Disconnect</button>
+    </div>
+  </div>`;
+}
+
+var PAGES=['overview','pipelines','prs','environments','security','settings'];
+var PAGE_LABELS={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',environments:'Environments',security:'Security',settings:'Settings'};
+
+function App(){
+  var st=useState;var ue=useEffect;var ur=useRef;
+  var pg=st('overview');var page=pg[0];var setPage=pg[1];
+  var us=st(null);var user=us[0];var setUser=us[1];
+  var rs=st([]);var repos=rs[0];var setRepos=rs[1];
+  var rn=st([]);var runs=rn[0];var setRuns=rn[1];
+  var pr=st([]);var prs=pr[0];var setPrs=pr[1];
+  var pt=st('open');var prTab=pt[0];var setPrTab=pt[1];
+  var ld=st(true);var loading=ld[0];var setLoading=ld[1];
+  var timer=ur(null);
+
+  ue(function(){
+    var token=ss('pat');
+    if(!token){setLoading(false);return}
+    api('/user').then(function(u){setUser(u);ss('user',JSON.stringify(u))}).catch(function(){clearAuth();setLoading(false)});
   },[]);
 
-  var enabled=alerts?alerts.filter(function(a){return a.enabled}).length:0;
-  var total=alerts?alerts.length:0;
-  var pct=total?Math.round(enabled/total*100):0;
+  ue(function(){
+    if(!user)return;
+    function fetchAll(){
+      api('/user/repos?per_page=100&sort=updated').then(function(r){
+        setRepos(r||[]);
+        return Promise.all((r||[]).slice(0,10).map(function(repo){
+          return api('/repos/'+repo.full_name+'/actions/runs?per_page=15').catch(function(){return{workflow_runs:[]}});
+        }));
+      }).then(function(results){
+        var all=[];
+        results.forEach(function(r){if(r&&r.workflow_runs)all=all.concat(r.workflow_runs)});
+        all.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});
+        setRuns(all);
+        return Promise.all((repos||[]).slice(0,10).map(function(repo){
+          return api('/repos/'+repo.full_name+'/pulls?state=all&per_page=10&sort=updated&direction=desc').then(function(p){
+            return(p||[]).map(function(x){x._repo=repo.name;return x});
+          }).catch(function(){return[]});
+        }));
+      }).then(function(results){
+        var all=[];results.forEach(function(r){all=all.concat(r)});
+        all.sort(function(a,b){return new Date(b.updated_at)-new Date(a.updated_at)});
+        setPrs(all);setLoading(false);
+      }).catch(function(){setLoading(false)});
+    }
+    fetchAll();
+    timer.current=setInterval(fetchAll,20000);
+    return function(){clearInterval(timer.current)};
+  },[user]);
 
-  return html`<div>
-    <div class="grid grid-4" style="margin-bottom:20px">
-      <div class="card stat-card"><div class="val" style="color:var(--success)">${enabled}</div><div class="label">Repos with Alerts</div></div>
-      <div class="card stat-card"><div class="val" style="color:var(--cyan)">${total}</div><div class="label">Scanned Repos</div></div>
-      <div class="card stat-card"><div class="val" style="color:var(--violet)">${pct}%</div><div class="label">Coverage</div></div>
-      <div class="card stat-card"><div class="val" style="color:var(--warning)">Free</div><div class="label">Tier</div></div>
-    </div>
-    <div class="grid grid-2">
-      <div class="card">
-        <div class="card-header"><strong>Security Coverage</strong></div>
-        <div style="margin-bottom:12px"><span style="font-size:12px;color:var(--text-soft)">Dependabot Alerts</span>
-          <div class="cov-bar-bg" style="margin-top:4px"><div class="cov-bar-fg" style=${"width:"+pct+"%;background:var(--success)"}/></div>
-        </div>
-        <div><span style="font-size:12px;color:var(--text-soft)">Code Scanning (requires GHAS)</span>
-          <div class="cov-bar-bg" style="margin-top:4px"><div class="cov-bar-fg" style="width:0%;background:var(--info)"/></div>
-        </div>
-        <div style="margin-top:8px"><span style="font-size:12px;color:var(--text-soft)">Secret Scanning (requires GHAS)</span>
-          <div class="cov-bar-bg" style="margin-top:4px"><div class="cov-bar-fg" style="width:0%;background:var(--violet)"/></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><strong>Free Security Tools</strong></div>
-        <div style="font-size:13px;color:var(--text-soft);line-height:1.8">
-          <div><span style="color:var(--success)">*</span> <strong>Dependabot</strong> -- Dependency vulnerability alerts (free)</div>
-          <div><span style="color:var(--info)">*</span> <strong>CodeQL</strong> -- Code scanning via Actions (free for public repos)</div>
-          <div><span style="color:var(--violet)">*</span> <strong>Secret Scanning</strong> -- Push protection (free for public repos)</div>
-          <div><span style="color:var(--warning)">*</span> <strong>Trivy / Grype</strong> -- Container scanning via Actions (OSS)</div>
-          <div><span style="color:var(--cyan)">*</span> <strong>OSSF Scorecard</strong> -- Supply chain security (OSS)</div>
-        </div>
-      </div>
-    </div>
-    ${alerts&&html`<div class="card" style="margin-top:16px">
-      <div class="card-header"><strong>Repository Security Status</strong></div>
-      <table class="tbl"><thead><tr><th>Repository</th><th>Dependabot</th></tr></thead><tbody>
-        ${alerts.map(function(a){return html`<tr><td class="mono" style="font-size:12px">${a.repo}</td><td>${a.enabled?html`<span class="badge badge-success">Enabled</span>`:html`<span class="badge badge-neutral">Disabled</span>`}</td></tr>`})}
-      </tbody></table>
-    </div>`}
-  </div>`;
-}
+  function connect(token){
+    ss('pat',token);
+    api('/user').then(function(u){setUser(u);ss('user',JSON.stringify(u))}).catch(function(){clearAuth()});
+  }
+  function logout(){clearAuth();setUser(null);setRepos([]);setRuns([]);setPrs([])}
+  function nav(p){setPage(p)}
 
-/* -- Settings -- */
-function SettingsPage(props){
-  var u=props.user;
-  return html`<div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header"><strong>Connection</strong></div>
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-        <img src=${u.avatar_url} width="60" height="60" style="border-radius:50%"/>
-        <div>
-          <div style="font-size:18px;font-weight:600">${u.name||u.login}</div>
-          <div style="color:var(--text-soft);font-size:13px">@${u.login}</div>
-          ${u.bio&&html`<div style="color:var(--text-dim);font-size:12px;margin-top:4px">${u.bio}</div>`}
-        </div>
-      </div>
-      <div style="font-size:13px;color:var(--text-soft);line-height:1.8">
-        <div><strong>API:</strong> <span class="mono">api.github.com</span> <span class="badge badge-success" style="margin-left:8px">Connected</span></div>
-        <div><strong>Repos:</strong> ${u.public_repos} public${u.total_private_repos?' + '+u.total_private_repos+' private':''}</div>
-        <div><strong>Plan:</strong> ${u.plan?u.plan.name:'N/A'}</div>
-      </div>
+  if(!user&&!loading)return html`<${LandingPage} onConnect=${connect} />`;
+  if(!user)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:var(--ts)">Connecting...</div>`;
+
+  return html`<div class="app">
+    <div class="sb">
+      <div style="padding:18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd)"><${Logo} /><div><div style="font-size:16px;font-weight:700">ForgeOps</div><div style="font-size:9px;font-weight:700;letter-spacing:3px;background:linear-gradient(90deg,var(--cy),var(--vi));-webkit-background-clip:text;-webkit-text-fill-color:transparent">DEVSECOPS</div></div></div>
+      <div style="padding:14px 12px 4px;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--td)">DELIVERY</div>
+      ${['overview','pipelines','prs','environments'].map(function(k){return html`<div key=${k} style=${'display:flex;padding:9px 16px;margin:1px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:'+(page===k?'var(--cy)':'var(--ts)')+';background:'+(page===k?'var(--sf)':'transparent')+';border-left:3px solid '+(page===k?'var(--cy)':'transparent')} onClick=${function(){nav(k)}}>${PAGE_LABELS[k]}</div>`})}
+      <div style="padding:14px 12px 4px;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--td)">QUALITY</div>
+      <div style=${'display:flex;padding:9px 16px;margin:1px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:'+(page==='security'?'var(--cy)':'var(--ts)')+';background:'+(page==='security'?'var(--sf)':'transparent')+';border-left:3px solid '+(page==='security'?'var(--cy)':'transparent')} onClick=${function(){nav('security')}}>Security</div>
+      <div style="padding:14px 12px 4px;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--td)">OPERATIONS</div>
+      <div style=${'display:flex;padding:9px 16px;margin:1px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:'+(page==='settings'?'var(--cy)':'var(--ts)')+';background:'+(page==='settings'?'var(--sf)':'transparent')+';border-left:3px solid '+(page==='settings'?'var(--cy)':'transparent')} onClick=${function(){nav('settings')}}>Settings</div>
+      <div style="margin-top:auto;padding:14px;border-top:1px solid var(--bd);font-size:10px;color:var(--td)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:5px"></span>Connected - ${user.login}</div>
     </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header"><strong>Integrations</strong></div>
-      <div style="font-size:13px;color:var(--text-soft);line-height:2">
-        <div><span class="badge badge-success">Active</span> GitHub Actions</div>
-        <div><span class="badge badge-success">Active</span> GitHub Pull Requests</div>
-        <div><span class="badge badge-success">Active</span> GitHub Deployments</div>
-        <div><span class="badge badge-neutral">Optional</span> Jira (via PR description)</div>
+    <div class="mn">
+      <div class="hd"><h2 style="flex:1;font-size:18px">${PAGE_LABELS[page]||''}</h2><button class="bt bg" style="font-size:11px" onClick=${function(){Object.keys(cache).forEach(function(k){delete cache[k]})}}>Refresh</button><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--cy),var(--vi));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">${(user.login||'?')[0].toUpperCase()}</div></div>
+      <div class="ct">
+        ${loading&&html`<div><${Skel} /><${Skel} /><${Skel} /></div>`}
+        ${!loading&&page==='overview'&&html`<${OverviewPage} data=${repos} runs=${runs} prs=${prs} />`}
+        ${!loading&&page==='pipelines'&&html`<${PipelinesPage} runs=${runs} />`}
+        ${!loading&&page==='prs'&&html`<${PRsPage} prs=${prs} tab=${prTab} setTab=${setPrTab} />`}
+        ${!loading&&page==='environments'&&html`<${EnvPage} runs=${runs} />`}
+        ${!loading&&page==='security'&&html`<${SecurityPage} runs=${runs} />`}
+        ${!loading&&page==='settings'&&html`<${SettingsPage} user=${user} repoCount=${repos.length} onLogout=${logout} />`}
       </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><strong>Session</strong></div>
-      <p style="color:var(--text-soft);font-size:13px;margin-bottom:12px">Token stored in sessionStorage. Cleared when tab closes.</p>
-      <button class="btn btn-danger" onClick=${props.onLogout}>Disconnect</button>
     </div>
   </div>`;
 }
 
-/* -- Mount -- */
-render(html`<${App}/>`,document.getElementById('root'));
-
-}catch(err){
-  document.getElementById('root').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#ef476f;font-family:sans-serif;flex-direction:column;padding:40px;text-align:center"><h2>ForgeOps failed to load</h2><pre style="margin-top:16px;color:#8b9dc3;font-size:13px">'+String(err)+'</pre></div>';
-}
+render(html`<${App} />`,document.getElementById('root'));
 </script>
 </body>
 </html>
