@@ -163,6 +163,7 @@ var srch=useState('');var searchTxt=srch[0];var setSearch=srch[1];var debounceRe
 var prTab=useState('create');
 var prForm=useState({repo:'',src:'',tgt:'int',title:'',jira:''});
 var branches=useState([]);
+var inv=useState({username:'',name:'',email:'',role:'developer'});
 
 useEffect(function(){
   var tk=getToken();
@@ -195,8 +196,9 @@ function buildNotifications(){var notifs=[];allRuns.forEach(function(r){if(r.con
 
 if(!user&&!getToken()&&!loading)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;padding:20px"><div style="text-align:center;max-width:360px"><${Logo} s=${40}/><h1 style="font-size:20px;margin:12px 0 4px">ForgeOps</h1><p style="color:var(--ts);font-size:12px;margin-bottom:16px">Enter your GitHub token once. Saved in this browser forever.</p><form onSubmit=${function(e){e.preventDefault();var v=e.target.elements.tok.value.trim();if(!v)return;localStorage.setItem('fg_pat',v);api('/user').then(function(u){setUser(u);toast('Connected as '+u.login)}).catch(function(err){localStorage.removeItem('fg_pat');toast('Invalid token','err')})}} style="display:flex;gap:6px"><input name="tok" type="password" placeholder="ghp_..." style="flex:1;font-family:'JetBrains Mono',monospace"/><button type="submit" class="bt bp">Go</button></form></div></div>`;
 
-var sections={DELIVERY:['overview','pipelines','prs','deploy','environments'],QUALITY:['security','alm'],OPERATIONS:['settings']};
-var labels={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',deploy:'Deploy',environments:'Environments',security:'Security',alm:'ALM / Jira',settings:'Settings'};
+var sections={DELIVERY:['overview','pipelines','prs','deploy','environments'],QUALITY:['security','alm'],OPERATIONS:['users','settings']};
+var labels={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',deploy:'Deploy',environments:'Environments',security:'Security',alm:'ALM / Jira',users:'Team',settings:'Settings'};
+var ROLE_DESC={developer:'Can commit code, create PRs to INT, view own pipelines',tech_lead:'Can review PRs, approve merges, view security, monitor analytics',release_engineer:'Can promote code between environments, deploy, rollback',qa_team:'Can view QA environment, mark SIT testing complete',uat_team:'Can view Stage environment, mark UAT testing complete',admin:'Full control over all features and settings'};
 
 function renderPage(){
   if(loading)return html`<${Skels}/>`;
@@ -256,6 +258,36 @@ function renderPage(){
     </div>
     <div class="c" style="border-left:4px solid var(--in)"><div style="font-size:12px;font-weight:600;margin-bottom:4px">Jira Integration Setup</div><div style="font-size:11px;color:var(--ts);line-height:1.6">To enable automatic Jira status transitions, add these GitHub Actions secrets: <code style="background:var(--sf);padding:1px 4px;border-radius:3px;font-size:10px">JIRA_BASE_URL</code>, <code style="background:var(--sf);padding:1px 4px;border-radius:3px;font-size:10px">JIRA_USER_EMAIL</code>, <code style="background:var(--sf);padding:1px 4px;border-radius:3px;font-size:10px">JIRA_API_TOKEN</code></div><div style="margin-top:8px"><a href=${'https://github.com/'+ORG+'/ForgeOps/settings/secrets/actions'} target="_blank" rel="noopener noreferrer" class="bt bp" style="font-size:10px">Configure Secrets</a></div></div>
   </div>`}
+
+  if(page==='users'){
+    var invF=inv[0];var setInv=inv[1];
+    function doInvite(){
+      if(!invF.username||!invF.name||!invF.email){toast('Fill all fields','err');return}
+      var onboardBody=encodeURIComponent('## Onboarding: '+invF.username+'\n\n- [ ] GitHub access granted\n- [ ] Added to forgeops-config.json as '+invF.role+'\n- [ ] VS Code extensions installed (Actions, Copilot, PR)\n- [ ] First feature branch created\n- [ ] First PR submitted and reviewed\n- [ ] Completed ForgeOps knowledge base review\n\nRole: '+invF.role+'\nEmail: '+invF.email+'\nName: '+invF.name);
+      window.open('https://github.com/'+ORG+'/ForgeOps/settings/access','_blank');
+      toast('Opening GitHub to add collaborator...');
+      setTimeout(function(){window.open('https://github.com/'+ORG+'/ForgeOps/edit/main/forgeops-config.json','_blank');toast('Add user to forgeops-config.json')},500);
+      setTimeout(function(){window.open('https://github.com/'+ORG+'/ForgeOps/issues/new?title=%5BONBOARD%5D+'+encodeURIComponent(invF.username)+'&body='+onboardBody+'&labels=onboarding','_blank');toast('Onboarding ticket created')},1000);
+    }
+    var cfgUsers=(config&&config.users)||{};var userList=Object.keys(cfgUsers);
+    return html`<div class="fu">
+      <div class="c" style="border-top:4px solid var(--pr)">
+        <div style="font-weight:600;font-size:14px;margin-bottom:10px">Invite Team Member</div>
+        <div class="fl">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">GitHub Username</div><input value=${invF.username} onInput=${function(e){setInv(function(p){return{username:e.target.value,name:p.name,email:p.email,role:p.role}})}} placeholder="jsmith"/></div><div><div class="lb">Full Name</div><input value=${invF.name} onInput=${function(e){setInv(function(p){return{username:p.username,name:e.target.value,email:p.email,role:p.role}})}} placeholder="Jane Smith"/></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Email</div><input value=${invF.email} onInput=${function(e){setInv(function(p){return{username:p.username,name:p.name,email:e.target.value,role:p.role}})}} placeholder="jane@company.com"/></div><div><div class="lb">Role</div><select value=${invF.role} onChange=${function(e){setInv(function(p){return{username:p.username,name:p.name,email:p.email,role:e.target.value}})}}>${Object.keys(ROLE_DESC).map(function(r){return html`<option key=${r} value=${r}>${r.replace('_',' ')}</option>`})}</select></div></div>
+          <div style="background:var(--sf);border-radius:8px;padding:10px;font-size:11px;color:var(--ts)">${ROLE_DESC[invF.role]||''}</div>
+          <button class="bt bp" onClick=${doInvite}>Invite Member</button>
+          <div style="font-size:10px;color:var(--td);line-height:1.5">This opens 3 tabs: (1) GitHub collaborator page, (2) forgeops-config.json editor, (3) onboarding issue with checklist. Complete all 3 to finish the invite.</div>
+        </div>
+      </div>
+      <div class="c">
+        <div style="font-weight:600;margin-bottom:8px">Current Team (${userList.length})</div>
+        ${userList.map(function(u){var ud=cfgUsers[u];return html`<div key=${u} class="lr"><div style="flex:1"><div style="font-size:12px;font-weight:500">${u}</div><div style="font-size:10px;color:var(--td)">${ud.name||''} -- ${ud.role||''} -- ${ud.email||'no email'}</div></div><span class="badge" style="background:var(--pl);color:var(--pr)">${(ud.role||'').replace('_',' ')}</span></div>`})}
+        ${userList.length===0&&html`<div style="text-align:center;padding:12px;color:var(--td);font-size:11px">No users in config yet.</div>`}
+        <div style="margin-top:10px"><a href=${'https://github.com/'+ORG+'/ForgeOps/edit/main/forgeops-config.json'} target="_blank" rel="noopener noreferrer" class="bt bs" style="font-size:10px">Edit Users on GitHub</a></div>
+      </div>
+    </div>`}
 
   if(page==='settings')return html`<div class="fu">
     <div class="c" style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">Integration Hub</div><div style="font-size:11px;color:var(--ts);margin-bottom:6px">ForgeOps v6.0 -- ${totalRepos} repos across ${projNames.length} projects</div>${user&&html`<div style="font-size:11px;margin-bottom:8px">Connected as: ${user.login}</div>`}<div style="display:flex;gap:6px"><button class="bt bd" onClick=${function(){localStorage.removeItem('fg_pat');setUser(null);toast('Disconnected')}} aria-label="Disconnect account">Disconnect</button><a href=${'https://github.com/'+ORG+'/ForgeOps'} target="_blank" rel="noopener noreferrer" class="bt bs" style="font-size:11px">GitHub Repo</a></div></div>
