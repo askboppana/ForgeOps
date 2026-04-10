@@ -69,6 +69,14 @@ textarea{resize:vertical;min-height:60px}
 .jira-flow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:8px 0}
 .jira-node{padding:6px 10px;border-radius:6px;font-size:10px;font-weight:600;border:1px solid var(--bd);background:var(--sf);white-space:nowrap;flex-shrink:0}
 .jira-arrow{width:20px;display:flex;align-items:center;justify-content:center;color:var(--td);flex-shrink:0}
+.tour-overlay{position:fixed;inset:0;z-index:200;pointer-events:none}
+.tour-spot{position:fixed;z-index:201;box-shadow:0 0 0 3px var(--pr),0 0 0 9999px rgba(0,0,0,.45);border-radius:8px;pointer-events:none;animation:spotPulse 2s infinite}
+@keyframes spotPulse{0%,100%{box-shadow:0 0 0 3px var(--pr),0 0 0 9999px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 5px var(--pr),0 0 0 9999px rgba(0,0,0,.45)}}
+.tour-tip{position:fixed;z-index:202;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:16px;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.15);pointer-events:auto}
+.tour-arrow-down{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid var(--pn);position:absolute;bottom:-8px;left:24px}
+.tour-arrow-up{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid var(--pn);position:absolute;top:-8px;left:24px}
+.welcome-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+.welcome-box{background:var(--pn);border-radius:16px;padding:32px;max-width:400px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.2)}
 @media(max-width:900px){.sb{position:fixed;z-index:80;height:100%;transform:translateX(-100%);transition:transform .2s}.sb.open{transform:translateX(0)}.hb{display:block;font-size:18px;padding:4px 8px;cursor:pointer;color:var(--ts);background:none;border:none}.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.spark-panel{width:calc(100vw - 40px);right:10px}.log-panel{width:100%}}
 </style>
 </head>
@@ -124,7 +132,10 @@ return html`<div class="spark-panel"><div style="display:flex;align-items:center
 <div style="display:flex;gap:4px;margin-bottom:8px"><input value=${chat} onInput=${function(e){setChat(e.target.value)}} onKeyDown=${function(e){if(e.key==='Enter')ask()}} placeholder="Ask a question..." style="flex:1;font-size:11px;padding:8px 10px"/><button class="bt bp" style="padding:5px 10px;font-size:10px" onClick=${ask}>Ask</button></div>
 ${reply&&html`<div style="background:rgba(2,132,199,.06);border:1px solid rgba(2,132,199,.15);border-radius:8px;padding:8px;margin-bottom:8px;font-size:11px;color:var(--ts);line-height:1.4">${reply}</div>`}
 <input value=${search} onInput=${function(e){setS(e.target.value)}} placeholder="Filter..." style="margin-bottom:6px;font-size:10px;padding:6px 8px"/>
-${filtered.map(function(i){return html`<div key=${i.q} style="background:var(--sf);border-radius:6px;padding:6px;margin-bottom:4px;cursor:pointer;font-size:10px" onClick=${function(){setReply(i.a)}}><div style="font-weight:600;margin-bottom:1px">${i.q}</div><div style="color:var(--ts);line-height:1.3">${i.a}</div></div>`})}</div>`}
+${filtered.map(function(i){return html`<div key=${i.q} style="background:var(--sf);border-radius:6px;padding:6px;margin-bottom:4px;cursor:pointer;font-size:10px" onClick=${function(){setReply(i.a)}}><div style="font-weight:600;margin-bottom:1px">${i.q}</div><div style="color:var(--ts);line-height:1.3">${i.a}</div>${i.tour&&p.startTour&&html`<button class="bt bp" style="font-size:9px;padding:3px 8px;margin-top:4px" onClick=${function(e){e.stopPropagation();p.startTour(i.tour)}}>Show me</button>`}</div>`})}
+<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)"><div style="font-size:9px;font-weight:600;color:var(--td);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Guided tours</div>
+${Object.keys(TOURS).map(function(id){var t=TOURS[id];return html`<div key=${id} style="background:var(--sf);border-radius:6px;padding:8px;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:6px" onClick=${function(){if(p.startTour)p.startTour(id)}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pr)" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg><div style="flex:1"><div style="font-size:10px;font-weight:600">${t.name}</div></div><span style="font-size:9px;color:var(--td)">${t.time}</span></div>`})}
+</div></div>`}
 
 function LogPanel(p){var jb=useState([]);var jobs=jb[0];var setJobs=jb[1];var at=useState(0);var ld=useState(true);
 useEffect(function(){if(!p.run)return;setJobs([]);at[1](0);ld[1](true);var repo=p.run.repository&&p.run.repository.full_name||'';apiGet('https://api.github.com/repos/'+repo+'/actions/runs/'+p.run.id+'/jobs').then(function(d){setJobs((d&&d.jobs)||[]);ld[1](false)}).catch(function(){ld[1](false)})},[p.run&&p.run.id]);
@@ -151,6 +162,77 @@ ${p.secrets&&html`<div style="margin-bottom:8px"><div style="font-size:10px;font
 </div>`}
 </div>`}
 
+var TOURS={
+'quick-start':{name:'Quick start tour',time:'3 min',steps:[
+{pg:'overview',sel:'[data-tour="stat-cards"]',t:'Your command center',d:'These cards show real-time status across all repos. Active pipelines, success rate, open PRs, and pending approvals.',pos:'bottom'},
+{pg:'overview',sel:'[data-tour="project-cards"]',t:'Projects',d:'Repos are grouped by project. Each card shows pass rate. Click any to drill down.',pos:'bottom'},
+{pg:'pipelines',sel:'[data-tour="pipeline-list"]',t:'Pipeline runs',d:'Every CI/CD run appears here. Click any row to expand and see jobs, steps, and logs.',pos:'bottom'},
+{pg:'prs',sel:'[data-tour="quick-actions"]',t:'Promote code',d:'These cards let you promote code between environments. Click one to create a PR on GitHub.',pos:'bottom'},
+{pg:'environments',sel:'[data-tour="env-cards"]',t:'Environments',d:'See deployed versions. Mark testing complete. Promote to the next environment.',pos:'bottom'},
+{pg:'security',sel:'[data-tour="severity-cards"]',t:'Security',d:'Every commit is scanned. Critical and high findings must be fixed before deploying.',pos:'bottom'},
+{pg:'settings',sel:'[data-tour="integrations"]',t:'Integrations',d:'Connect Jira, Teams, Splunk, and more. Click any card for setup instructions.',pos:'top'}]},
+'create-first-pr':{name:'Create your first PR',time:'2 min',steps:[
+{pg:'prs',sel:'[data-tour="quick-actions"]',t:'Quick actions',d:'Click a card to create a PR with pre-filled branches. Feature to INT is for developers.',pos:'bottom'},
+{pg:'prs',sel:'[data-tour="repo-select"]',t:'Select repo',d:'Choose the repository. Branch dropdowns update automatically.',pos:'bottom'},
+{pg:'prs',sel:'[data-tour="create-pr-btn"]',t:'Create it',d:'Click Create on GitHub. It opens a new tab with everything pre-filled.',pos:'top'}]},
+'promote-to-production':{name:'Promote to production',time:'3 min',steps:[
+{pg:'environments',sel:'[data-tour="env-cards"]',t:'Environment flow',d:'Code moves INT > QA > STAGE > PROD. Each has testing and approval steps.',pos:'bottom'},
+{pg:'prs',sel:'[data-tour="quick-actions"]',t:'Create promotion PRs',d:'Release engineer clicks INT>QA, QA>Stage, Stage>Prod to promote.',pos:'bottom'},
+{pg:'environments',sel:'[data-tour="env-cards"]',t:'Mark complete',d:'After testing, mark the environment complete to signal readiness.',pos:'bottom'}]},
+'setup-integrations':{name:'Set up integrations',time:'2 min',steps:[
+{pg:'settings',sel:'[data-tour="integration-teams"]',t:'Teams notifications',d:'Get alerts in your Teams channel. Click the card for setup steps.',pos:'bottom'},
+{pg:'settings',sel:'[data-tour="integration-jira"]',t:'Jira tracking',d:'Auto-transition tickets on deploy. Free for 10 users.',pos:'bottom'},
+{pg:'settings',sel:'[data-tour="integration-splunk"]',t:'Splunk logging',d:'Centralized logging with ready-to-use dashboard queries.',pos:'bottom'}]}
+};
+
+function TourOverlay(p){
+  if(!p.tour)return null;
+  var steps=p.tour.steps||[];var step=steps[p.step]||{};
+  var pos=useState({top:0,left:0,width:0,height:0});var tipPos=useState({top:0,left:0});
+  useEffect(function(){
+    if(step.pg&&p.setPage)p.setPage(step.pg);
+    setTimeout(function(){
+      var el=step.sel&&document.querySelector(step.sel);
+      if(!el)return;
+      var r=el.getBoundingClientRect();
+      pos[1]({top:r.top-4,left:r.left-4,width:r.width+8,height:r.height+8});
+      var tt=r.top-160;var tl=r.left;
+      if(step.pos==='bottom')tt=r.bottom+16;
+      if(tt<10)tt=r.bottom+16;
+      if(tl+280>window.innerWidth)tl=window.innerWidth-290;
+      if(tl<10)tl=10;
+      tipPos[1]({top:tt,left:tl});
+    },400);
+  },[p.step,p.tour]);
+  return html`<${Fragment}>
+    <div class="tour-overlay"></div>
+    <div class="tour-spot" style=${'top:'+pos[0].top+'px;left:'+pos[0].left+'px;width:'+pos[0].width+'px;height:'+pos[0].height+'px'}></div>
+    <div class="tour-tip" style=${'top:'+tipPos[0].top+'px;left:'+tipPos[0].left+'px'}>
+      ${step.pos!=='bottom'&&html`<div class="tour-arrow-down"></div>`}
+      ${step.pos==='bottom'&&html`<div class="tour-arrow-up"></div>`}
+      <div style="font-size:10px;color:var(--td);margin-bottom:4px">Step ${p.step+1} of ${steps.length}</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px">${step.t||''}</div>
+      <div style="font-size:12px;color:var(--ts);line-height:1.5;margin-bottom:12px">${step.d||''}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        ${p.step>0&&html`<button class="bt bs" style="font-size:11px;padding:5px 10px" onClick=${function(){p.setStep(p.step-1)}}>Back</button>`}
+        <button class="bt bp" style="font-size:11px;padding:5px 14px" onClick=${function(){if(p.step<steps.length-1)p.setStep(p.step+1);else p.onClose()}}>${p.step<steps.length-1?'Next':'Done'}</button>
+        <button style="font-size:10px;color:var(--td);margin-left:auto" onClick=${p.onClose}>Skip</button>
+      </div>
+    </div>
+  <//>`;
+}
+
+function WelcomeModal(p){
+  if(!p.show)return null;
+  return html`<div class="welcome-modal"><div class="welcome-box">
+    <${Logo} s=${48}/><h2 style="font-size:20px;margin:12px 0 6px">Welcome to ForgeOps</h2>
+    <p style="color:var(--ts);font-size:13px;margin-bottom:20px">Your DevSecOps command center. Take a quick tour to learn the basics.</p>
+    <div style="display:flex;flex-direction:column;gap:8px"><button class="bt bp" style="width:100%;justify-content:center;padding:10px" onClick=${function(){p.onStart()}}>Start tour</button>
+    <button class="bt bs" style="width:100%;justify-content:center" onClick=${function(){localStorage.setItem('fg_tour_dismissed','1');p.onClose()}}>Maybe later</button>
+    <button style="font-size:11px;color:var(--td)" onClick=${function(){localStorage.setItem('fg_tour_completed','1');p.onClose()}}>Skip</button></div>
+  </div></div>`;
+}
+
 function App(){
 var us=useState(null);var user=us[0];var setUser=us[1];
 var pg=useState('overview');var page=pg[0];var setPage=pg[1];
@@ -167,6 +249,10 @@ var prTab=useState('create');
 var prForm=useState({repo:'',src:'',tgt:'int',title:'',jira:''});
 var branches=useState([]);
 var inv=useState({username:'',name:'',email:'',role:'developer'});
+var tour=useState(null);var tourStep=useState(0);
+var showWelcome=useState(!localStorage.getItem('fg_tour_completed')&&!localStorage.getItem('fg_tour_dismissed'));
+function startTour(id){var t=TOURS[id];if(t){tour[1](t);tourStep[1](0);showWelcome[1](false);setSpark(false)}};
+function endTour(){tour[1](null);tourStep[1](0);localStorage.setItem('fg_tour_completed','1')}
 
 useEffect(function(){
   var tk=getToken();
@@ -214,12 +300,12 @@ function renderPage(){
       <div class="c" style="border-left:4px solid var(--er);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Failing</div><div style="font-size:24px;font-weight:700;color:var(--er)">${failing}</div></div>
       <div class="c" style="border-left:4px solid var(--in);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Running</div><div style="font-size:24px;font-weight:700;color:var(--in)">${running}</div></div>
     </div>
-    <div class="g2">${projNames.map(function(pn){var proj=projects[pn];var repos=proj.repos||[];var ok=repos.filter(function(r){var l=r&&r.runs&&r.runs[0];return l&&l.conclusion==='success'}).length;return html`<div key=${pn} class="c"><div style="font-weight:600;font-size:13px;margin-bottom:2px">${pn}</div><div style="font-size:10px;color:var(--ts);margin-bottom:6px">${proj.team||proj.description||''} -- ${repos.length} repos</div><div style="height:5px;background:var(--sf);border-radius:3px;overflow:hidden"><div style=${'height:100%;width:'+(repos.length?Math.round(ok/repos.length*100):0)+'%;background:var(--ok);border-radius:3px'}></div></div></div>`})}</div>
+    <div class="g2" data-tour="project-cards">${projNames.map(function(pn){var proj=projects[pn];var repos=proj.repos||[];var ok=repos.filter(function(r){var l=r&&r.runs&&r.runs[0];return l&&l.conclusion==='success'}).length;return html`<div key=${pn} class="c"><div style="font-weight:600;font-size:13px;margin-bottom:2px">${pn}</div><div style="font-size:10px;color:var(--ts);margin-bottom:6px">${proj.team||proj.description||''} -- ${repos.length} repos</div><div style="height:5px;background:var(--sf);border-radius:3px;overflow:hidden"><div style=${'height:100%;width:'+(repos.length?Math.round(ok/repos.length*100):0)+'%;background:var(--ok);border-radius:3px'}></div></div></div>`})}</div>
     <div class="c"><div style="font-size:11px;font-weight:600;color:var(--ts);margin-bottom:6px">Recent Activity</div>${allRuns.slice(0,15).map(function(r){return html`<div class="lr" key=${r.id||r.repo} style="cursor:pointer" onClick=${function(){setLogRun(r)}}><span class="badge" style=${'background:'+sCol(r.conclusion||r.status).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(r.conclusion||r.status)}>${r.conclusion||r.status||'?'}</span><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.repo||''}</div><div class="mono" style="font-size:9px;color:var(--td)">${r.branch||r.head_branch||''}</div></div><span style="font-size:9px;color:var(--td)">${ago(r.created||r.created_at)}</span></div>`})}${allRuns.length===0&&html`<div style="color:var(--td);font-size:11px;text-align:center;padding:12px">No pipeline data yet. Push code to a registered repo.</div>`}</div>
     <div class="c"><div style="font-size:11px;font-weight:600;color:var(--ts);margin-bottom:6px">Recent Notifications</div>${notifs.length>0?notifs.map(function(n,i){return html`<div key=${i} class="lr" style="font-size:11px"><span class="badge" style="background:var(--pl);color:var(--pr)">${n.type}</span><div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.msg}</div></div><span style="font-size:9px;color:var(--td)">${ago(n.time)}</span></div>`}):html`<div style="color:var(--td);font-size:11px;text-align:center;padding:12px">Configure integrations in Settings to see notifications here</div>`}</div>
   </div>`}
 
-  if(page==='pipelines'){var paged=paginate(filteredRepos,'pipes');return html`<div class="fu">
+  if(page==='pipelines'){var paged=paginate(filteredRepos,'pipes');return html`<div class="fu" data-tour="pipeline-page">
     <input value=${searchTxt} onInput=${onSearch} placeholder="Search repos..." style="margin-bottom:12px;font-size:12px;padding:8px 12px"/>
     <div class="c">${paged.map(function(r){var latest=r.runs&&r.runs[0];return html`<div key=${r.name} class="lr" style=${'border-left:3px solid '+sCol(latest&&(latest.conclusion||latest.status))+';padding-left:8px;cursor:pointer'} onClick=${function(){if(latest)setLogRun({id:latest.id,repository:{full_name:ORG+'/'+r.name,name:r.name},html_url:'https://github.com/'+ORG+'/'+r.name+'/actions',run_number:latest.id,head_branch:latest.branch,conclusion:latest.conclusion,status:latest.status,created_at:latest.created})}}>
       <span class="badge" style=${'background:'+sCol(latest&&(latest.conclusion||latest.status)).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(latest&&(latest.conclusion||latest.status))}>${latest&&(latest.conclusion||latest.status)||'none'}</span>
@@ -230,7 +316,7 @@ function renderPage(){
     ${paged.length<filteredRepos.length&&html`<button class="bt bs" style="width:100%" onClick=${function(){nextPage('pipes')}}>Show more (${filteredRepos.length-paged.length} remaining)</button>`}
   </div>`}
 
-  if(page==='prs')return html`<div class="fu">
+  if(page==='prs')return html`<div class="fu" data-tour="prs-page">
     <div class="tabs"><div class=${'tab'+(prTab[0]==='create'?' ac':'')} onClick=${function(){prTab[1]('create')}}>Create PR</div></div>
     <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Create Pull Request</div><div class="fl">
       <div><div class="lb">Repository</div><select value=${prForm[0].repo} onChange=${function(e){var v=e.target.value;prForm[1](function(p){return{repo:v,src:'',tgt:p.tgt,title:p.title,jira:p.jira}});if(v)api('/repos/'+ORG+'/'+v+'/branches?per_page=100').then(function(b){branches[1]((b||[]).map(function(x){return x.name}))}).catch(function(){branches[1]([])})}}><option value="">Select repo...</option>${filteredRepos.slice(0,50).map(function(r){return html`<option key=${r.name} value=${r.name}>${r.name}</option>`})}</select></div>
@@ -248,7 +334,7 @@ function renderPage(){
 
   if(page==='environments'){var envs=['INT','QA','STAGE','PROD'];var cols=['var(--in)','var(--wa)','var(--wa)','var(--er)'];var jiraMap={INT:'Jira: Ready for Unit Testing',QA:'Jira: Ready for SIT',STAGE:'Jira: Ready for UAT',PROD:'Jira: Deployed to Production'};return html`<div class="fu"><div style="display:flex;gap:6px;overflow-x:auto">${envs.map(function(e,i){return html`<div key=${e} style="flex:1;min-width:140px"><div class="c" style=${'border-top:4px solid '+cols[i]}><div style="font-weight:700;font-size:13px;margin-bottom:6px">${e}</div><div style="font-size:10px;color:var(--ts)">${totalRepos} repos registered</div><div style="font-size:9px;color:var(--td);margin-top:4px">Push to ${e.toLowerCase()} branch to deploy</div><div style="font-size:9px;color:var(--in);margin-top:6px;font-weight:600">${jiraMap[e]}</div></div></div>`})}</div></div>`}
 
-  if(page==='security')return html`<div class="fu"><div class="g4"><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Gitleaks</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">OWASP DC</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Syft SBOM</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--td);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">SonarQube</div><div style="font-size:18px;font-weight:700;color:var(--td)">Add secret</div></div></div><div class="c"><div style="font-size:11px;color:var(--ts);line-height:1.6">Free tools (Gitleaks, OWASP Dependency-Check, Syft) run automatically on every pipeline. Add SONAR_HOST_URL + SONAR_TOKEN for SAST.</div></div></div>`;
+  if(page==='security')return html`<div class="fu" data-tour="security-page"><div class="g4"><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Gitleaks</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">OWASP DC</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">Syft SBOM</div><div style="font-size:18px;font-weight:700;color:var(--ok)">Active</div></div><div class="c" style="border-left:4px solid var(--td);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px">SonarQube</div><div style="font-size:18px;font-weight:700;color:var(--td)">Add secret</div></div></div><div class="c"><div style="font-size:11px;color:var(--ts);line-height:1.6">Free tools (Gitleaks, OWASP Dependency-Check, Syft) run automatically on every pipeline. Add SONAR_HOST_URL + SONAR_TOKEN for SAST.</div></div></div>`;
 
   if(page==='alm'){var tickets=extractTickets();var jiraStatuses=['Ready for Unit Testing','Unit Testing Complete','Ready for SIT','SIT Complete','Ready for UAT','UAT Complete','Deployed to Production'];return html`<div class="fu">
     <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Jira Status Flow</div>
@@ -331,8 +417,10 @@ return html`<div class="app">
     <div class="hd"><button class="hb" onClick=${function(){setSideOpen(!sideOpen)}} aria-label="Toggle menu">Menu</button><span style="font-size:15px;font-weight:700;flex:1">${labels[page]||''}</span><button class="bt bs" style="font-size:10px" onClick=${refresh} aria-label="Refresh data">${loading?'...':'Refresh'}</button></div>
     <div class="ct">${renderPage()}</div>
     <div class="spark-btn" onClick=${function(){setSpark(!sparkOpen)}} aria-label="Open Spark AI assistant"><svg width="20" height="20" viewBox="0 0 40 40"><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="var(--in)" style="animation:sparkGlow 3s infinite"/></svg></div>
-    ${sparkOpen&&html`<${SparkPanel} pg=${page} close=${function(){setSpark(false)}}/>`}
+    ${sparkOpen&&html`<${SparkPanel} pg=${page} close=${function(){setSpark(false)}} startTour=${startTour}/>`}
     <${LogPanel} run=${logRun} onClose=${function(){setLogRun(null)}}/>
+    <${TourOverlay} tour=${tour[0]} step=${tourStep[0]} setStep=${tourStep[1]} setPage=${setPage} onClose=${endTour}/>
+    <${WelcomeModal} show=${showWelcome[0]} onClose=${function(){showWelcome[1](false)}} onStart=${function(){startTour('quick-start')}}/>
   </div>
 </div>`;
 }
