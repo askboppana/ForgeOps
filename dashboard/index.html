@@ -153,7 +153,10 @@ const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const cache={};
 const CACHE_TTL=60000;
 
-function ss(k,v){if(v===undefined){return sessionStorage.getItem(k)}sessionStorage.setItem(k,v)}
+function store(k,v){if(v===undefined){return localStorage.getItem(k)||sessionStorage.getItem(k)}sessionStorage.setItem(k,v)}
+function ss(k,v){if(v===undefined){return localStorage.getItem(k)||sessionStorage.getItem(k)}sessionStorage.setItem(k,v)}
+function persist(k,v){localStorage.setItem(k,v);sessionStorage.setItem(k,v)}
+function clearAuth(){['pat','user','avatar'].forEach(function(k){sessionStorage.removeItem(k);localStorage.removeItem(k)})}
 
 function toast(msg,type){
   const el=document.getElementById('toasts');if(!el)return;
@@ -198,9 +201,15 @@ function App(){
   const tick=useRef(null);
   const[refreshKey,setRefreshKey]=useState(0);
 
+  const[authChecking,setAuthChecking]=useState(true);
   useEffect(function(){
-    var u=ss('user');var p=ss('pat');
-    if(u&&p){try{setUser(JSON.parse(u))}catch(e){}}
+    var p=ss('pat');
+    if(!p){setAuthChecking(false);return}
+    api('/user').then(function(u){
+      ss('user',JSON.stringify(u));setUser(u);setAuthChecking(false);
+    }).catch(function(){
+      clearAuth();setAuthChecking(false);toast('Session expired. Please sign in again.','error');
+    });
   },[]);
 
   useEffect(function(){
@@ -220,15 +229,20 @@ function App(){
     window.addEventListener('keydown',onKey);return function(){window.removeEventListener('keydown',onKey)}
   },[]);
 
-  function doLogin(username,pat){
-    ss('pat',pat);
-    return api('/user').then(function(u){ss('user',JSON.stringify(u));setUser(u);toast('Connected as '+u.login,'success')})
-      .catch(function(e){toast('Auth failed: '+e.message,'error');throw e});
+  function doLogin(pat,remember){
+    if(remember){persist('pat',pat)}else{ss('pat',pat)}
+    return api('/user').then(function(u){
+      var save=remember?persist:ss;
+      save('user',JSON.stringify(u));
+      if(u.avatar_url)save('avatar',u.avatar_url);
+      setUser(u);toast('Signed in as '+u.login,'success');
+    }).catch(function(e){clearAuth();toast('Auth failed: '+e.message,'error');throw e});
   }
-  function logout(){sessionStorage.clear();setUser(null);Object.keys(cache).forEach(function(k){delete cache[k]})}
+  function logout(){clearAuth();setUser(null);Object.keys(cache).forEach(function(k){delete cache[k]})}
   function nav(p){setPage(p);setSideOpen(false)}
   function refresh(){Object.keys(cache).forEach(function(k){delete cache[k]});setRefreshKey(function(k){return k+1});toast('Refreshed','info')}
 
+  if(authChecking)return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;gap:12px;color:var(--cyan)"><${Logo}/>Checking session...</div>`;
   if(!user)return html`<${LoginPage} onLogin=${doLogin}/>`;
 
   var initials=(user.login||'?').slice(0,2).toUpperCase();
@@ -272,22 +286,58 @@ function App(){
 
 /* ── Login ── */
 function LoginPage(props){
-  const[username,setUsername]=useState('');
   const[pat,setPat]=useState('');
   const[loading,setLoading]=useState(false);
+  const[remember,setRemember]=useState(true);
+  const[showAdvanced,setShowAdvanced]=useState(false);
+  const TOKEN_URL='https://github.com/settings/tokens/new?description=ForgeOps%20Dashboard&scopes=repo,workflow';
+
   function submit(e){
-    e.preventDefault();if(!pat){toast('PAT is required','error');return}
-    setLoading(true);props.onLogin(username,pat).catch(function(){}).finally(function(){setLoading(false)});
+    e.preventDefault();if(!pat.trim()){toast('Token is required','error');return}
+    setLoading(true);props.onLogin(pat.trim(),remember).catch(function(){}).finally(function(){setLoading(false)});
   }
+
   return html`<div class="login-wrap">
     <div class="login-left">
-      <div style="max-width:380px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px"><${Logo}/><div><h1 style="font-size:24px">ForgeOps</h1><small style="font-size:10px;letter-spacing:3px;color:var(--text-dim)">DEVSECOPS PLATFORM</small></div></div>
-        <form onSubmit=${submit}>
-          <div class="field"><label>GitHub Username</label><input class="input" value=${username} onInput=${function(e){setUsername(e.target.value)}} placeholder="username"/></div>
-          <div class="field"><label>Personal Access Token</label><input class="input" type="password" value=${pat} onInput=${function(e){setPat(e.target.value)}} placeholder="ghp_..."/></div>
-          <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" disabled=${loading}>${loading?'Connecting...':'Connect'}</button>
-        </form>
+      <div style="max-width:400px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:36px"><${Logo}/><div><h1 style="font-size:24px">ForgeOps</h1><small style="font-size:10px;letter-spacing:3px;background:linear-gradient(90deg,var(--cyan),#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700">DEVSECOPS PLATFORM</small></div></div>
+
+        <h2 style="font-size:20px;margin-bottom:6px">Sign in to ForgeOps</h2>
+        <p style="color:var(--text-soft);font-size:13px;margin-bottom:24px">Connect with your GitHub account to view pipelines, create PRs, and manage deployments.</p>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+            <span style="font-size:22px;line-height:1">①</span>
+            <div>
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px">Create a GitHub access token</div>
+              <p style="font-size:12px;color:var(--text-soft);margin-bottom:10px">Click below to open GitHub with the right permissions pre-selected. Just click "Generate token" and copy it.</p>
+              <a href=${TOKEN_URL} target="_blank" rel="noopener" class="btn btn-primary" style="font-size:13px;padding:8px 16px">Create Token on GitHub →</a>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <span style="font-size:22px;line-height:1">②</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px;margin-bottom:8px">Paste your token below</div>
+              <form onSubmit=${submit}>
+                <input class="input" type="password" value=${pat} onInput=${function(e){setPat(e.target.value)}} placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="margin-bottom:10px;font-family:var(--mono);font-size:13px"/>
+
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-soft);margin-bottom:12px;user-select:none">
+                  <input type="checkbox" checked=${remember} onChange=${function(){setRemember(!remember)}} style="width:auto;accent-color:var(--cyan)"/>
+                  Remember me on this browser
+                </label>
+
+                <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:15px" disabled=${loading}>${loading?'Signing in...':'Sign In'}</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.6">
+          ${remember
+            ?html`<span>✓ Token will be saved in this browser. Sign out anytime from Settings.</span>`
+            :html`<span>Token stored for this tab only. Closing the tab clears it.</span>`}
+        </div>
       </div>
     </div>
     <div class="login-right">
