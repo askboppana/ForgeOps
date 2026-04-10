@@ -37,7 +37,21 @@ select{-webkit-appearance:none;appearance:none}
 .toast-err{border-left-color:var(--er)}
 .spark-btn{position:absolute;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:var(--pn);border:1.5px solid var(--in);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.1);transition:transform .15s;z-index:50}.spark-btn:hover{transform:scale(1.08)}
 .spark-panel{position:absolute;bottom:76px;right:20px;width:320px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;max-height:480px;overflow-y:auto;padding:16px}
-@media(max-width:900px){.sb{display:none}.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.spark-panel{width:calc(100vw - 40px);right:10px}}
+.log-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:90;transition:opacity .2s}
+.log-panel{position:fixed;top:0;right:0;width:50%;height:100vh;background:var(--pn);border-left:1px solid var(--bd);z-index:100;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;box-shadow:-4px 0 24px rgba(0,0,0,.1)}
+.log-panel.open{transform:translateX(0)}
+.log-header{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.log-tabs{display:flex;gap:0;border-bottom:1px solid var(--bd);overflow-x:auto;flex-shrink:0}
+.log-tab{padding:8px 16px;font-size:12px;font-weight:500;color:var(--ts);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.log-tab.ac{color:var(--pr);border-color:var(--pr);font-weight:600}
+.log-body{flex:1;overflow-y:auto;padding:12px}
+.log-step{border:1px solid var(--bd);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.log-step-header{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:12px}
+.log-step-header:hover{background:var(--sf)}
+.log-code{background:#1e1e2e;color:#cdd6f4;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;padding:12px;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre;margin:0}
+.log-line-err{background:rgba(220,38,38,.15)}.log-line-warn{background:rgba(217,119,6,.12)}.log-line-ok{color:#a6e3a1}
+.log-linenum{color:#585b70;min-width:40px;display:inline-block;text-align:right;padding-right:10px;user-select:none}
+@media(max-width:900px){.sb{display:none}.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.spark-panel{width:calc(100vw - 40px);right:10px}.log-panel{width:100%}}
 </style>
 </head>
 <body>
@@ -143,6 +157,101 @@ function SparkPanel(p){
   </div>`;
 }
 
+function LogPanel(p){
+  var jb=useState([]);var jobs=jb[0];var setJobs=jb[1];
+  var at=useState(0);var activeTab=at[0];var setActiveTab=at[1];
+  var ex=useState(null);var expandedStep=ex[0];var setExpStep=ex[1];
+  var lg=useState({});var logs=lg[0];var setLogs=lg[1];
+  var ld=useState(true);var loading=ld[0];var setLoading=ld[1];
+
+  useEffect(function(){
+    if(!p.run)return;
+    setLoading(true);setJobs([]);setActiveTab(0);setExpStep(null);setLogs({});
+    var repo=p.run.repository?p.run.repository.full_name:'';
+    api('/repos/'+repo+'/actions/runs/'+p.run.id+'/jobs').then(function(d){
+      setJobs((d&&d.jobs)||[]);setLoading(false);
+    }).catch(function(){setLoading(false)});
+  },[p.run&&p.run.id]);
+
+  function fetchLog(jobId){
+    if(logs[jobId])return;
+    setLogs(function(prev){var n={};Object.keys(prev).forEach(function(k){n[k]=prev[k]});n[jobId]='loading';return n});
+    var repo=p.run.repository?p.run.repository.full_name:'';
+    api('/repos/'+repo+'/actions/jobs/'+jobId+'/logs').then(function(text){
+      setLogs(function(prev){var n={};Object.keys(prev).forEach(function(k){n[k]=prev[k]});n[jobId]=typeof text==='string'?text:'Log loaded';return n});
+    }).catch(function(){
+      setLogs(function(prev){var n={};Object.keys(prev).forEach(function(k){n[k]=prev[k]});n[jobId]='cors_blocked';return n});
+    });
+  }
+
+  function toggleStep(jobId,stepIdx){
+    var key=jobId+'-'+stepIdx;
+    if(expandedStep===key){setExpStep(null)}
+    else{setExpStep(key);fetchLog(jobId)}
+  }
+
+  function formatLog(text){
+    if(!text||text==='loading'||text==='cors_blocked')return '';
+    var lines=(text+'').split('\n');
+    return lines.map(function(line,i){
+      var cls='';
+      var upper=line.toUpperCase();
+      if(upper.indexOf('ERROR')>=0||upper.indexOf('FAIL')>=0||upper.indexOf('FATAL')>=0)cls=' log-line-err';
+      else if(upper.indexOf('WARNING')>=0||upper.indexOf('WARN')>=0)cls=' log-line-warn';
+      else if(upper.indexOf('SUCCESS')>=0||upper.indexOf('PASS')>=0||upper.indexOf('PASSED')>=0)cls=' log-line-ok';
+      return html`<div key=${i} class=${cls}><span class="log-linenum">${i+1}</span>${line}</div>`;
+    });
+  }
+
+  var job=jobs[activeTab];
+  var steps=(job&&job.steps)||[];
+  var repo=p.run&&p.run.repository?p.run.repository.full_name:'';
+
+  return html`<${Fragment}>
+    ${p.run&&html`<div class="log-backdrop" onClick=${p.onClose}></div>`}
+    <div class=${'log-panel'+(p.run?' open':'')}>
+      <div class="log-header">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${repo}</div>
+          <div style="font-size:11px;color:var(--td)">Run #${p.run&&p.run.run_number||''} -- ${p.run&&(p.run.head_branch||'')} -- ${p.run&&(p.run.conclusion||p.run.status||'')}</div>
+        </div>
+        <span class="badge" style=${'background:'+sCol(p.run&&(p.run.conclusion||p.run.status)).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(p.run&&(p.run.conclusion||p.run.status))}>${p.run&&(p.run.conclusion||p.run.status||'')}</span>
+        <button onClick=${p.onClose} style="font-size:20px;color:var(--td);padding:4px">x</button>
+      </div>
+      <div class="log-tabs">
+        ${jobs.map(function(j,i){return html`<div key=${j.id} class=${'log-tab'+(activeTab===i?' ac':'')} onClick=${function(){setActiveTab(i);setExpStep(null)}}>${j.name}</div>`})}
+      </div>
+      <div class="log-body">
+        ${loading&&html`<${Skel}/><${Skel}/><${Skel}/>`}
+        ${!loading&&jobs.length===0&&html`<div style="text-align:center;padding:20px;color:var(--td)">No jobs found</div>`}
+        ${!loading&&steps.map(function(s,i){
+          var key=(job&&job.id||0)+'-'+i;
+          var isExp=expandedStep===key;
+          var dur='';
+          if(s.started_at&&s.completed_at){var secs=Math.round((new Date(s.completed_at)-new Date(s.started_at))/1000);dur=secs<60?secs+'s':Math.floor(secs/60)+'m '+secs%60+'s'}
+          var dotCol=s.conclusion==='success'?'var(--ok)':s.conclusion==='failure'?'var(--er)':s.conclusion==='skipped'?'var(--td)':'var(--in)';
+          var logContent=logs[job&&job.id];
+          return html`<div key=${i} class="log-step">
+            <div class="log-step-header" onClick=${function(){toggleStep(job&&job.id,i)}}>
+              <span style=${'display:inline-block;width:8px;height:8px;border-radius:50%;background:'+dotCol+';flex-shrink:0'}></span>
+              <span style="flex:1;font-weight:500">${s.name}</span>
+              <span class="mono" style="font-size:10px;color:var(--td)">${dur}</span>
+              <span style="font-size:10px;color:var(--td)">${isExp?'v':'>'}</span>
+            </div>
+            ${isExp&&html`<div>
+              ${logContent==='loading'&&html`<div style="padding:12px;color:var(--td);font-size:11px">Loading logs...</div>`}
+              ${logContent==='cors_blocked'&&html`<div style="padding:12px"><div style="font-size:11px;color:var(--ts);margin-bottom:8px">Full log preview unavailable (CORS). Step details shown above.</div><a href=${(p.run&&p.run.html_url||'#')+'/jobs/'+(job&&job.id||'')} target="_blank" rel="noopener" class="bt bs" style="font-size:10px">View full log on GitHub</a></div>`}
+              ${logContent&&logContent!=='loading'&&logContent!=='cors_blocked'&&html`<pre class="log-code">${formatLog(logContent)}</pre>`}
+              ${!logContent&&html`<div style="padding:12px;color:var(--td);font-size:11px">Click to load log...</div>`}
+            </div>`}
+          </div>`;
+        })}
+        ${!loading&&job&&html`<div style="padding:8px 0;text-align:center"><a href=${(p.run&&p.run.html_url||'#')} target="_blank" rel="noopener" style="font-size:11px;color:var(--td)">Open full run on GitHub</a></div>`}
+      </div>
+    </div>
+  <//>`;
+}
+
 function App(){
   var us=useState(null);var user=us[0];var setUser=us[1];
   var pg=useState('overview');var page=pg[0];var setPage=pg[1];
@@ -151,6 +260,7 @@ function App(){
   var pr=useState([]);var prs=pr[0];var setPrs=pr[1];
   var ld=useState(true);var loading=ld[0];var setLoading=ld[1];
   var sk=useState(false);var sparkOpen=sk[0];var setSpark=sk[1];
+  var lr=useState(null);var logRun=lr[0];var setLogRun=lr[1];
   // PR create state
   var prc=useState({repo:'',src:'',tgt:'',title:'',desc:'',jira:''});var prForm=prc[0];var setPrForm=prc[1];
   var brs=useState([]);var branches=brs[0];var setBranches=brs[1];
@@ -277,7 +387,7 @@ function App(){
         <div class="c" style="border-left:4px solid var(--pr);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Open PRs</div><div style="font-size:24px;font-weight:700;color:var(--pr)">${openPrs.length}</div></div>
         <div class="c" style="border-left:4px solid var(--wa);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Approvals</div><div style="font-size:24px;font-weight:700;color:var(--wa)">${waitingRuns.length}</div></div>
       </div>
-      <div class="c"><div style="font-size:11px;font-weight:600;color:var(--ts);margin-bottom:6px">Recent Activity</div>${runs.slice(0,12).map(function(r){return html`<div class="lr" key=${r.id}><span class="badge" style=${'background:'+sCol(r.conclusion||r.status).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(r.conclusion||r.status)}>${r.conclusion||r.status||'pending'}</span><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.repository?r.repository.full_name:''}</div><div class="mono" style="font-size:9px;color:var(--td)">${r.head_branch||''}</div></div><span style="font-size:9px;color:var(--td)">${ago(r.created_at)}</span></div>`})}</div>
+      <div class="c"><div style="font-size:11px;font-weight:600;color:var(--ts);margin-bottom:6px">Recent Activity</div>${runs.slice(0,12).map(function(r){return html`<div class="lr" key=${r.id} style="cursor:pointer" onClick=${function(){setLogRun(r)}}><span class="badge" style=${'background:'+sCol(r.conclusion||r.status).replace('var(','rgba(').replace(/\)/,',.1)')+';color:'+sCol(r.conclusion||r.status)}>${r.conclusion||r.status||'pending'}</span><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.repository?r.repository.full_name:''}</div><div class="mono" style="font-size:9px;color:var(--td)">${r.head_branch||''}</div></div><span style="font-size:9px;color:var(--td)">${ago(r.created_at)}</span></div>`})}</div>
     </div>`;
 
     if(page==='pipelines')return html`<div class="fu">
@@ -289,7 +399,7 @@ function App(){
             <div style="flex:1;min-width:0;cursor:pointer" onClick=${function(){toggleExpand(repo,r.id)}}><div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${repo}</div><div style="font-size:9px;color:var(--td)">${r.name||''} -- ${r.head_branch||''}</div></div>
             <span class="mono" style="font-size:9px;color:var(--td)">${ago(r.created_at)}</span>
             <button class="bt bs" style="font-size:9px;padding:3px 7px" onClick=${function(){openRunModal(r.repository?r.repository.name:'')}}>Run</button>
-            <a href=${r.html_url||'#'} target="_blank" rel="noopener" class="bt bs" style="font-size:9px;padding:3px 7px">Logs</a>
+            <button class="bt bs" style="font-size:9px;padding:3px 7px" onClick=${function(){setLogRun(r)}}>Logs</button>
           </div>
           ${isExp&&html`<div style="padding:8px 0 8px 20px;border-bottom:1px solid var(--bd)">${jobs.length>0?jobs.map(function(j){return html`<div key=${j.id} style="display:flex;gap:6px;padding:3px 0;font-size:10px"><span class="badge" style=${'background:'+sCol(j.conclusion||j.status).replace('var(','rgba(').replace(/\)/,',.08)')+';color:'+sCol(j.conclusion||j.status)+';font-size:9px'}>${j.conclusion||j.status}</span><span style="flex:1;color:var(--ts)">${j.name}</span><a href=${j.html_url||'#'} target="_blank" rel="noopener" style="font-size:9px;color:var(--pr)">Log</a></div>`}):html`<div style="color:var(--td);font-size:10px">Loading jobs...</div>`}</div>`}
         </div>`})}</div>
@@ -344,6 +454,7 @@ function App(){
       <div class="ct">${renderPage()}</div>
       <div class="spark-btn" onClick=${function(){setSpark(!sparkOpen)}}><svg width="20" height="20" viewBox="0 0 40 40"><path d="M20 8L11 22h6.5l-2 10L27 18h-6.5l2-10z" fill="var(--in)" style="animation:sparkGlow 3s infinite"/></svg></div>
       ${sparkOpen&&html`<${SparkPanel} pg=${page} close=${function(){setSpark(false)}}/>`}
+      <${LogPanel} run=${logRun} onClose=${function(){setLogRun(null)}}/>
     </div>
   </div>`;
 }
