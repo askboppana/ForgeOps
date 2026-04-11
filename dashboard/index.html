@@ -428,35 +428,62 @@ function renderPage(){
   </div>`}
 
   // ── PULL REQUESTS ──
-  if(page==='prs'){var jiraQ=useState('');var jiraResults=useState([]);var jiraAllOpen=useState([]);var jiraLoading=useState(false);var jiraDdOpen=useState(false);var jiraHlIdx=useState(-1);var ddRef=useRef(null);
-  // Load open tickets on mount
-  useEffect(function(){var cfg=getJiraConfig();if(!cfg.url||!cfg.project)return;jiraLoading[1](true);
-    jiraFetch('/rest/api/2/search?jql='+encodeURIComponent('project='+cfg.project+' AND status!=Done ORDER BY updated DESC')+'&maxResults=50&fields=summary,status,assignee,priority').then(function(d){
-      if(d&&d.issues)jiraAllOpen[1](d.issues);jiraLoading[1](false)
+  if(page==='prs'){
+  var jiraQ=useState('');var jiraAllOpen=useState([]);var jiraLoading=useState(false);var jiraDdOpen=useState(false);var jiraHlIdx=useState(-1);var ddRef=useRef(null);
+  var jiraTypeFilter=useState('All');var jiraVersionFilter=useState('All');var jiraQuickFilter=useState('');
+  var jiraVersions=useState([]);var jiraSelected=useState(null);var jiraTotalCount=useState(0);
+  var TYPE_ICONS={Story:'\u{1F4D7}',Bug:'\u{1F41B}',Task:'\u2705',Epic:'\u{1F3AF}',Defect:'\u{1F41B}'};
+  var PRI_ICONS={Highest:'\u{1F534}',High:'\u{1F7E0}',Medium:'\u{1F7E1}',Low:'\u{1F7E2}',Lowest:'\u26AA'};
+  // Fetch tickets with current filters
+  function fetchPrTickets(){var cfg=getJiraConfig();if(!cfg.url||!cfg.project)return;jiraLoading[1](true);
+    var jql='project='+cfg.project;
+    var tf=jiraTypeFilter[0];if(tf!=='All')jql+=' AND issuetype='+tf;
+    var vf=jiraVersionFilter[0];if(vf==='Unassigned')jql+=' AND fixVersion is EMPTY';else if(vf!=='All')jql+=' AND fixVersion="'+vf+'"';
+    var qf=jiraQuickFilter[0];if(qf==='mine')jql+=' AND assignee=currentUser()';else if(qf==='unassigned')jql+=' AND assignee is EMPTY';else if(qf==='high')jql+=' AND priority in (Highest,High)';else if(qf==='recent')jql+=' AND updated>=-7d';
+    jql+=' AND status!=Done ORDER BY updated DESC';
+    jiraFetch('/rest/api/2/search?jql='+encodeURIComponent(jql)+'&maxResults=100&fields=summary,status,assignee,priority,issuetype,fixVersions').then(function(d){
+      if(d&&d.issues){jiraAllOpen[1](d.issues);jiraTotalCount[1](d.total||d.issues.length)}jiraLoading[1](false)
     }).catch(function(){jiraLoading[1](false)})
-  },[]);
-  // Client-side filter
-  var jiraFiltered=jiraQ[0].length>=1?jiraAllOpen[0].filter(function(iss){var q=jiraQ[0].toLowerCase();return iss.key.toLowerCase().indexOf(q)>=0||(iss.fields.summary||'').toLowerCase().indexOf(q)>=0}).slice(0,15):jiraAllOpen[0].slice(0,15);
-  function onJiraInput(e){var v=e.target.value;jiraQ[1](v);prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,jira:v}});jiraDdOpen[1](true);jiraHlIdx[1](-1)}
-  function selectJiraTicket(issue){var key=issue.key;var summary=issue.fields.summary;prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:'['+key+'] '+summary,jira:key}});jiraQ[1](key);jiraDdOpen[1](false)}
-  function onJiraKeyDown(e){
-    if(!jiraDdOpen[0]||jiraFiltered.length===0)return;
-    if(e.key==='ArrowDown'){e.preventDefault();jiraHlIdx[1](function(i){return Math.min(i+1,jiraFiltered.length-1)})}
-    else if(e.key==='ArrowUp'){e.preventDefault();jiraHlIdx[1](function(i){return Math.max(i-1,0)})}
-    else if(e.key==='Enter'&&jiraHlIdx[0]>=0){e.preventDefault();selectJiraTicket(jiraFiltered[jiraHlIdx[0]])}
-    else if(e.key==='Escape'){jiraDdOpen[1](false)}
   }
-  // Close dropdown on outside click
+  useEffect(function(){fetchPrTickets();
+    var cfg=getJiraConfig();if(cfg.url&&cfg.project)jiraFetch('/rest/api/2/project/'+cfg.project+'/versions').then(function(d){if(d&&Array.isArray(d))jiraVersions[1](d)})
+  },[]);
+  useEffect(function(){fetchPrTickets()},[jiraTypeFilter[0],jiraVersionFilter[0],jiraQuickFilter[0]]);
+  // Client-side text filter
+  var jiraFiltered=jiraQ[0].length>=1?jiraAllOpen[0].filter(function(iss){var q=jiraQ[0].toLowerCase();return iss.key.toLowerCase().indexOf(q)>=0||(iss.fields.summary||'').toLowerCase().indexOf(q)>=0}):jiraAllOpen[0];
+  function onJiraInput(e){var v=e.target.value;jiraQ[1](v);prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,jira:v}});jiraDdOpen[1](true);jiraHlIdx[1](-1);jiraSelected[1](null)}
+  function selectJiraTicket(iss){var key=iss.key;var summary=iss.fields.summary;prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:'['+key+'] '+summary,jira:key}});jiraQ[1](key);jiraDdOpen[1](false);jiraSelected[1](iss)}
+  function onJiraKeyDown(e){if(!jiraDdOpen[0]||jiraFiltered.length===0)return;if(e.key==='ArrowDown'){e.preventDefault();jiraHlIdx[1](function(i){return Math.min(i+1,jiraFiltered.length-1)})}else if(e.key==='ArrowUp'){e.preventDefault();jiraHlIdx[1](function(i){return Math.max(i-1,0)})}else if(e.key==='Enter'&&jiraHlIdx[0]>=0){e.preventDefault();selectJiraTicket(jiraFiltered[jiraHlIdx[0]])}else if(e.key==='Escape'){jiraDdOpen[1](false)}}
   useEffect(function(){function h(e){if(ddRef.current&&!ddRef.current.contains(e.target))jiraDdOpen[1](false)}document.addEventListener('mousedown',h);return function(){document.removeEventListener('mousedown',h)}},[]);
+  var cfg=getJiraConfig();
   return html`<div class="fu" data-tour="prs-page">
     <div class="c" data-tour="quick-actions"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Quick Promote</div><div style="display:flex;gap:6px;flex-wrap:wrap">${[{l:'Feature > INT',s:'feature/',t:'int'},{l:'INT > QA',s:'int',t:'qa'},{l:'QA > Stage',s:'qa',t:'stage'},{l:'Stage > Prod',s:'stage',t:'main'}].map(function(p){return html`<button key=${p.l} class="bt bs" style="font-size:10px" onClick=${function(){prForm[1](function(f){return{repo:f.repo,src:p.s,tgt:p.t,title:f.title,jira:f.jira}})}}>${p.l}</button>`})}</div></div>
     <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Create Pull Request</div><div class="fl">
       <div data-tour="repo-select"><div class="lb">Repository</div><select value=${prForm[0].repo} onChange=${function(e){var v=e.target.value;prForm[1](function(p){return{repo:v,src:'',tgt:p.tgt,title:p.title,jira:p.jira}});if(v)loadBranches(v).then(function(res){branches[1](res.branches)})}}><option value="">Select repo...</option>${repoNames.slice(0,100).map(function(name){return html`<option key=${name} value=${name}>${name}</option>`})}</select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Source Branch</div><select value=${prForm[0].src} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:e.target.value,tgt:p.tgt,title:p.title,jira:p.jira}})}}><option value="">Select...</option>${branches[0].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div><div><div class="lb">Target Branch</div><select value=${prForm[0].tgt} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:e.target.value,title:p.title,jira:p.jira}})}}>${['int','qa','stage','main'].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div></div>
-      <div style="position:relative" ref=${ddRef}><div class="lb">Jira Ticket</div><input value=${jiraQ[0]||prForm[0].jira} onInput=${onJiraInput} onFocus=${function(){jiraDdOpen[1](true)}} onKeyDown=${onJiraKeyDown} placeholder=${jiraLoading[0]?'Loading tickets...':'Search or type SCRUM-123...'}/>
-      ${jiraDdOpen[0]&&jiraFiltered.length>0&&html`<div style="position:absolute;top:100%;left:0;right:0;background:var(--pn);border:1px solid var(--bd);border-radius:0 0 8px 8px;max-height:240px;overflow-y:auto;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.1)">${jiraFiltered.map(function(iss,idx){var st=iss.fields.status&&iss.fields.status.name||'';return html`<div key=${iss.key} style=${'padding:8px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;background:'+(jiraHlIdx[0]===idx?'var(--pl)':'transparent')} onClick=${function(){selectJiraTicket(iss)}} onMouseEnter=${function(){jiraHlIdx[1](idx)}}><span style="font-weight:700;color:var(--pr);white-space:nowrap">${iss.key}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ts)">${iss.fields.summary||''}</span><span class="badge" style=${'background:'+jiraStatusColor(st).replace('var(','rgba(').replace(/\)/,',.08)')+';color:'+jiraStatusColor(st)+';font-size:9px;flex-shrink:0'}>${st}</span></div>`})}</div>`}
-      ${jiraLoading[0]&&html`<div style="font-size:10px;color:var(--td);margin-top:4px;display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border:2px solid var(--bd);border-top-color:var(--pr);border-radius:50%;animation:shimmer .8s linear infinite"></span>Loading Jira tickets...</div>`}
-      ${!jiraLoading[0]&&jiraAllOpen[0].length===0&&getJiraConfig().url&&html`<div style="font-size:10px;color:var(--td);margin-top:4px">No open tickets found. Check Jira config in Settings.</div>`}</div>
+
+      <div style="border:1px solid var(--bd);border-radius:var(--r);padding:12px;background:var(--sf)">
+        <div class="lb" style="margin-bottom:6px">Jira Ticket</div>
+        ${jiraSelected[0]?html`<div style="background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px">${TYPE_ICONS[jiraSelected[0].fields.issuetype&&jiraSelected[0].fields.issuetype.name]||'\u{1F4CB}'}</span>
+          <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--pr)">${jiraSelected[0].key}</div><div style="font-size:11px;color:var(--ts);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${jiraSelected[0].fields.summary||''}</div>
+          <div style="display:flex;gap:6px;margin-top:4px;align-items:center">${function(){var f=jiraSelected[0].fields;var st=f.status&&f.status.name||'';var pr=f.priority&&f.priority.name||'';var asg=f.assignee&&f.assignee.displayName||'Unassigned';return html`<span class="badge" style=${'background:'+jiraStatusColor(st).replace('var(','rgba(').replace(/\)/,',.08)')+';color:'+jiraStatusColor(st)+';font-size:9px'}>${st}</span><span style="font-size:9px;color:var(--td)">${PRI_ICONS[pr]||''} ${pr}</span><span style="font-size:9px;color:var(--td)">${asg}</span>`}()}</div></div>
+          <a href=${cfg.url?cfg.url+'/browse/'+jiraSelected[0].key:'#'} target="_blank" rel="noopener noreferrer" class="bt bs" style="font-size:9px;padding:3px 8px;flex-shrink:0">Open</a>
+          <button class="bt bs" style="font-size:9px;padding:3px 8px;flex-shrink:0" onClick=${function(){jiraSelected[1](null);jiraQ[1]('');prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:'',jira:''}});jiraDdOpen[1](true)}}>Change</button>
+        </div>`:html`<div ref=${ddRef} style="position:relative">
+          <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+            <select style="width:auto;padding:6px 10px;font-size:10px" value=${jiraTypeFilter[0]} onChange=${function(e){jiraTypeFilter[1](e.target.value)}}><option value="All">All Types</option><option value="Story">Story</option><option value="Bug">Bug</option><option value="Task">Task</option><option value="Epic">Epic</option></select>
+            <select style="width:auto;padding:6px 10px;font-size:10px" value=${jiraVersionFilter[0]} onChange=${function(e){jiraVersionFilter[1](e.target.value)}}><option value="All">All Releases</option><option value="Unassigned">Unassigned</option>${jiraVersions[0].map(function(v){return html`<option key=${v.id} value=${v.name}>${v.name}${v.released?' (released)':''}</option>`})}</select>
+          </div>
+          <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">${[{k:'',l:'All'},{k:'mine',l:'My Tickets'},{k:'unassigned',l:'Unassigned'},{k:'high',l:'High Priority'},{k:'recent',l:'Recently Updated'}].map(function(f){return html`<button key=${f.k} style=${'padding:3px 10px;border-radius:20px;font-size:9px;font-weight:600;border:1px solid var(--bd);cursor:pointer;background:'+(jiraQuickFilter[0]===f.k?'var(--pr)':'var(--pn)')+';color:'+(jiraQuickFilter[0]===f.k?'#fff':'var(--ts)')} onClick=${function(){jiraQuickFilter[1](f.k)}}>${f.l}</button>`})}</div>
+          <input value=${jiraQ[0]} onInput=${onJiraInput} onFocus=${function(){jiraDdOpen[1](true)}} onKeyDown=${onJiraKeyDown} placeholder=${jiraLoading[0]?'Loading tickets...':'Search or type SCRUM-123...'} style="font-size:12px"/>
+          <div style="font-size:9px;color:var(--td);margin-top:3px">Showing ${jiraFiltered.length} of ${jiraTotalCount[0]} tickets</div>
+          ${jiraDdOpen[0]&&jiraFiltered.length>0&&html`<div style="position:absolute;top:100%;left:0;right:0;background:var(--pn);border:1px solid var(--bd);border-radius:0 0 8px 8px;max-height:280px;overflow-y:auto;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.1)">${jiraFiltered.slice(0,30).map(function(iss,idx){var f=iss.fields;var st=f.status&&f.status.name||'';var tp=f.issuetype&&f.issuetype.name||'';var pr=f.priority&&f.priority.name||'';return html`<div key=${iss.key} style=${'padding:8px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;background:'+(jiraHlIdx[0]===idx?'var(--pl)':'transparent')} onClick=${function(){selectJiraTicket(iss)}} onMouseEnter=${function(){jiraHlIdx[1](idx)}}><span style="font-size:13px;flex-shrink:0">${TYPE_ICONS[tp]||'\u{1F4CB}'}</span><span style="font-weight:700;color:var(--pr);white-space:nowrap;flex-shrink:0">${iss.key}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ts)">${f.summary||''}</span><span style="font-size:10px;flex-shrink:0">${PRI_ICONS[pr]||''}</span><span class="badge" style=${'background:'+jiraStatusColor(st).replace('var(','rgba(').replace(/\)/,',.08)')+';color:'+jiraStatusColor(st)+';font-size:9px;flex-shrink:0'}>${st}</span></div>`})}</div>`}
+          ${jiraLoading[0]&&html`<div style="font-size:10px;color:var(--td);margin-top:4px;display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border:2px solid var(--bd);border-top-color:var(--pr);border-radius:50%;animation:shimmer .8s linear infinite"></span>Loading...</div>`}
+          ${!jiraLoading[0]&&jiraAllOpen[0].length===0&&cfg.url&&html`<div style="font-size:10px;color:var(--td);margin-top:4px">No tickets found for current filters.</div>`}
+        </div>`}
+      </div>
+
       <div><div class="lb">Title</div><input value=${prForm[0].title} onInput=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:e.target.value,jira:p.jira}})}} placeholder="Add feature X"/></div>
       <button data-tour="create-pr-btn" class="bt bp" onClick=${function(){var f=prForm[0];if(!f.repo||!f.src||!f.title){toast('Fill repo, source, title','err');return}var t=encodeURIComponent((f.jira?'['+f.jira+'] ':'')+f.title);var url='https://github.com/'+ORG+'/'+f.repo+'/compare/'+f.tgt+'...'+f.src+'?expand=1&title='+t;window.open(url,'_blank','noopener,noreferrer');toast('Opening GitHub...')}}>Create on GitHub</button>
     </div></div>
