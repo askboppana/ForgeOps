@@ -90,12 +90,38 @@ var html=htm.bind(h);
 var ORG='askboppana';
 var cache={};
 function getToken(){return localStorage.getItem('fg_pat')||''}
-var rateLimit={remaining:60,limit:60,reset:0};
-function apiGet(url){var k=url;if(cache[k]&&Date.now()-cache[k].t<120000)return Promise.resolve(cache[k].d);var h={Accept:'application/vnd.github.v3+json'};var tk=getToken();if(tk)h.Authorization='token '+tk;return fetch(url,{headers:h}).then(function(r){var rem=r.headers.get('x-ratelimit-remaining');var lim=r.headers.get('x-ratelimit-limit');var rst=r.headers.get('x-ratelimit-reset');if(rem!==null)rateLimit.remaining=parseInt(rem);if(lim!==null)rateLimit.limit=parseInt(lim);if(rst!==null)rateLimit.reset=parseInt(rst);if(r.status===403)throw new Error('RATE_LIMITED');if(!r.ok)throw new Error(r.status+'');return r.json()}).then(function(d){cache[k]={d:d,t:Date.now()};return d})}
-function api(path,opts){var url='https://api.github.com'+path;if(!opts)return apiGet(url);var tk=getToken();var h={Accept:'application/vnd.github.v3+json'};if(tk)h.Authorization='token '+tk;if(opts.body)h['Content-Type']='application/json';return fetch(url,{method:opts.method||'POST',headers:h,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){if(!r.ok)return r.json().then(function(e){throw new Error(e.message||r.status)});if(r.status===204)return null;return r.json()})}
+var rateLimit={remaining:5000,limit:5000};
+function api(path,opts){
+  var url=(path.indexOf('http')===0)?path:'https://api.github.com'+path;
+  var k=url+JSON.stringify(opts||'');var method=(opts&&opts.method)||'GET';
+  if(method==='GET'&&cache[k]&&Date.now()-cache[k].t<300000)return Promise.resolve(cache[k].d);
+  var headers={Accept:'application/vnd.github.v3+json'};var tk=getToken();
+  if(tk)headers.Authorization='token '+tk;
+  if(opts&&opts.body)headers['Content-Type']='application/json';
+  return fetch(url,{method:method,headers:headers,body:opts&&opts.body?JSON.stringify(opts.body):undefined}).then(function(r){
+    var rem=r.headers.get('x-ratelimit-remaining');var lim=r.headers.get('x-ratelimit-limit');
+    if(rem)rateLimit.remaining=parseInt(rem);if(lim)rateLimit.limit=parseInt(lim);
+    if(r.status===403||r.status===429){console.warn('API rate limited: '+path);return cache[k]?cache[k].d:null}
+    if(!r.ok){console.warn('API '+r.status+': '+path);if(method!=='GET')return r.json().then(function(e){throw new Error(e.message||r.status)}).catch(function(){throw new Error('API '+r.status)});return null}
+    if(r.status===204)return null;return r.json();
+  }).then(function(d){if(d&&method==='GET')cache[k]={d:d,t:Date.now()};return d}).catch(function(e){if(method!=='GET')throw e;console.warn('API fetch failed: '+path);return cache[k]?cache[k].d:null})
+}
 function clearCache(){Object.keys(cache).forEach(function(k){delete cache[k]})}
-function fetchCmdData(){return fetch('https://raw.githubusercontent.com/'+ORG+'/ForgeOps/main/dashboard-data.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
+function fetchCmdData(){return fetch('https://raw.githubusercontent.com/'+ORG+'/ForgeOps/main/dashboard-data.json').then(function(r){if(!r.ok){console.warn('dashboard-data.json not found (expected on first deploy)');return null}return r.json()}).catch(function(){return null})}
 function fetchConfig(){return fetch('https://raw.githubusercontent.com/'+ORG+'/ForgeOps/main/forgeops-config.json').then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
+function getRepoList(config,cmdData){
+  var repos=[];
+  if(cmdData&&cmdData.repos){cmdData.repos.forEach(function(r){repos.push(typeof r==='string'?r:r.name||'')})}
+  else if(config&&config.projects){Object.keys(config.projects).forEach(function(pn){var p=config.projects[pn];if(p.sample_repos)(p.sample_repos||[]).forEach(function(r){repos.push(r)});if(p.repos)(p.repos||[]).forEach(function(r){repos.push(typeof r==='string'?r:r.name||'')})})}
+  return repos.filter(function(r){return r&&r.length>0})
+}
+function fetchBranches(repo){
+  var defaults=['main','int','qa','stage'];
+  return api('/repos/'+ORG+'/'+repo+'/branches?per_page=100').then(function(d){
+    if(d&&d.length>0){var names=[];for(var i=0;i<d.length;i++){names.push(d[i].name)}return{branches:names,fromApi:true}}
+    return{branches:defaults,fromApi:false}
+  }).catch(function(){return{branches:defaults,fromApi:false}})
+}
 function toast(msg,type){var d=document.createElement('div');d.className='toast'+(type==='err'?' toast-err':type==='warn'?' toast-warn':'');d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},4000)}
 function ago(d){if(!d)return'';var s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
 function sCol(s){return{success:'var(--ok)',completed:'var(--ok)',failure:'var(--er)',in_progress:'var(--in)',queued:'var(--wa)',waiting:'var(--wa)'}[s]||'var(--td)'}
@@ -271,6 +297,7 @@ function paginate(arr,key){var pg=getPage(key);return arr.slice(0,pg*pageSize)}
 function nav(p){setPage(p);setSideOpen(false);setPageNums({})}
 
 var projects=(cmdData&&cmdData.projects)||((config&&config.projects)||{});
+var knownRepoNames=getRepoList(config,cmdData);
 var projNames=Object.keys(projects);
 var allRepos=[];var totalRepos=0;var passing=0;var failing=0;var running=0;var allRuns=[];
 projNames.forEach(function(pn){var proj=projects[pn];(proj.repos||[]).forEach(function(r){totalRepos++;allRepos.push({name:typeof r==='string'?r:r.name,project:pn,runs:(r&&r.runs)||[]});var latest=(r&&r.runs&&r.runs[0]);if(!latest)return;if(latest.conclusion==='success')passing++;else if(latest.conclusion==='failure')failing++;else if(latest.status==='in_progress')running++;allRuns.push({id:latest.id||Math.random(),conclusion:latest.conclusion,status:latest.status,branch:latest.branch,created:latest.created,repo:typeof r==='string'?r:r.name,project:pn,html_url:'https://github.com/'+ORG+'/'+(typeof r==='string'?r:r.name)+'/actions',repository:{full_name:ORG+'/'+(typeof r==='string'?r:r.name),name:typeof r==='string'?r:r.name},head_branch:latest.branch,run_number:latest.id,created_at:latest.created})})});
@@ -322,7 +349,7 @@ function renderPage(){
   if(page==='prs')return html`<div class="fu" data-tour="prs-page">
     <div class="tabs"><div class=${'tab'+(prTab[0]==='create'?' ac':'')} onClick=${function(){prTab[1]('create')}}>Create PR</div></div>
     <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Create Pull Request</div><div class="fl">
-      <div><div class="lb">Repository</div><select value=${prForm[0].repo} onChange=${function(e){var v=e.target.value;prForm[1](function(p){return{repo:v,src:'',tgt:p.tgt,title:p.title,jira:p.jira}});if(v)api('/repos/'+ORG+'/'+v+'/branches?per_page=100').then(function(b){branches[1]((b||[]).map(function(x){return x.name}))}).catch(function(){branches[1]([])})}}><option value="">Select repo...</option>${filteredRepos.slice(0,50).map(function(r){return html`<option key=${r.name} value=${r.name}>${r.name}</option>`})}</select></div>
+      <div><div class="lb">Repository</div><select value=${prForm[0].repo} onChange=${function(e){var v=e.target.value;prForm[1](function(p){return{repo:v,src:'',tgt:p.tgt,title:p.title,jira:p.jira}});if(v)fetchBranches(v).then(function(res){branches[1](res.branches)})}}><option value="">Select repo...</option>${(filteredRepos.length>0?filteredRepos.map(function(r){return r.name}):knownRepoNames).slice(0,100).map(function(name){return html`<option key=${name} value=${name}>${name}</option>`})}</select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Source Branch</div><select value=${prForm[0].src} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:e.target.value,tgt:p.tgt,title:p.title,jira:p.jira}})}}><option value="">Select...</option>${branches[0].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div><div><div class="lb">Target Branch</div><select value=${prForm[0].tgt} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:e.target.value,title:p.title,jira:p.jira}})}}>${['int','qa','stage','main'].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div></div>
       <div><div class="lb">Jira Ticket</div><input value=${prForm[0].jira} onInput=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,jira:e.target.value}})}} placeholder="PROJ-123"/></div>
       <div><div class="lb">Title</div><input value=${prForm[0].title} onInput=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:e.target.value,jira:p.jira}})}} placeholder="Add feature X"/></div>
