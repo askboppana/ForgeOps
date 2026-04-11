@@ -311,14 +311,41 @@ var tour=useState(null);var tourStep=useState(0);
 var showWelcome=useState(!localStorage.getItem('fg_tour_completed')&&!localStorage.getItem('fg_tour_dismissed'));
 // Jira state
 var jiraCfg=useState(getJiraConfig());
-var jiraTickets=useState([]);
 var jiraConnected=useState(false);
-var jiraSearch=useState([]);
-var jiraDetail=useState(null);
 var jiraData=useState(null);
+var jiraLiveTickets=useState([]);
+var jiraLiveLoading=useState(false);
+var jiraOpenCount=useState(0);
+var jiraEnvCounts=useState({});
+var jiraEnvTickets=useState({});
+var jiraRecentActivity=useState([]);
 
 function startTour(id){var t=TOURS[id];if(t){tour[1](t);tourStep[1](0);showWelcome[1](false);setSpark(false)}};
 function endTour(){tour[1](null);tourStep[1](0);localStorage.setItem('fg_tour_completed','1')}
+
+function fetchJiraLive(){
+  var cfg=getJiraConfig();if(!cfg.url||!cfg.token||!cfg.project)return;
+  jiraLiveLoading[1](true);
+  // Fetch all non-Done tickets for kanban + counts
+  jiraFetch('/rest/api/3/search?jql='+encodeURIComponent('project='+cfg.project+' AND status!=Done ORDER BY status ASC, updated DESC')+'&maxResults=100&fields=summary,status,assignee,priority,updated').then(function(d){
+    if(!d||!d.issues){jiraLiveLoading[1](false);return}
+    var issues=d.issues;jiraOpenCount[1](d.total||issues.length);jiraLiveTickets[1](issues);
+    // Build env counts and ticket lists
+    var ec={};var et={};
+    issues.forEach(function(iss){
+      var st=iss.fields&&iss.fields.status&&iss.fields.status.name||'';
+      ec[st]=(ec[st]||0)+1;
+      if(!et[st])et[st]=[];
+      et[st].push({key:iss.key,summary:iss.fields.summary||'',assignee:iss.fields.assignee&&iss.fields.assignee.displayName||'',priority:iss.fields.priority&&iss.fields.priority.name||''});
+    });
+    jiraEnvCounts[1](ec);jiraEnvTickets[1](et);
+    jiraLiveLoading[1](false);
+  }).catch(function(){jiraLiveLoading[1](false)});
+  // Recent activity
+  jiraFetch('/rest/api/3/search?jql='+encodeURIComponent('project='+cfg.project+' ORDER BY updated DESC')+'&maxResults=10&fields=summary,status,updated').then(function(d){
+    if(d&&d.issues){jiraRecentActivity[1](d.issues.map(function(iss){return{key:iss.key,summary:iss.fields.summary||'',status:iss.fields.status&&iss.fields.status.name||'',updated:iss.fields.updated||''}}))}
+  });
+}
 
 useEffect(function(){
   var tk=getToken();
@@ -330,9 +357,9 @@ useEffect(function(){
     setLoading(false);lastRef[1](new Date());
     if(res.source==='none')console.warn('No data source available');
   }).catch(function(){setLoading(false)});
-  // Test Jira connection
+  // Test Jira connection and fetch live data
   var jc=getJiraConfig();
-  if(jc.url&&jc.token){jiraApi('/rest/api/3/myself').then(function(u){if(u)jiraConnected[1](true)})}
+  if(jc.url&&jc.token){jiraFetch('/rest/api/3/myself').then(function(u){if(u){jiraConnected[1](true);fetchJiraLive()}})}
 },[]);
 
 function refresh(){clearCache();setLoading(true);loadData().then(function(res){
@@ -340,21 +367,13 @@ function refresh(){clearCache();setLoading(true);loadData().then(function(res){
   if(res.repos)setCmdData({repos:res.repos,source:res.source});
   if(res.jira)jiraData[1](res.jira);
   setLoading(false);lastRef[1](new Date());toast('Refreshed');
+  fetchJiraLive();
 }).catch(function(){setLoading(false)})}
 function onSearch(e){var v=e.target.value;setSearch(v);clearTimeout(debounceRef.current);debounceRef.current=setTimeout(function(){setPageNums({})},300)}
 function getPage(key){return pageNums[key]||1}
 function nextPage(key){setPageNums(function(p){var n={};Object.keys(p).forEach(function(k){n[k]=p[k]});n[key]=(p[key]||1)+1;return n})}
 function paginate(arr,key){var pg=getPage(key);return arr.slice(0,pg*pageSize)}
 function nav(p){setPage(p);setSideOpen(false);setPageNums({})}
-function loadJiraTickets(jql){
-  var cfg=getJiraConfig();if(!cfg.project)return Promise.resolve([]);
-  return jiraApi('/rest/api/3/search?jql='+encodeURIComponent(jql)+'&maxResults=50&fields=summary,status,assignee,priority,updated,labels').then(function(d){return d&&d.issues?d.issues:[]}).catch(function(){return[]})
-}
-function searchJira(text){
-  var cfg=getJiraConfig();if(!cfg.project||!text)return;
-  loadJiraTickets('project='+cfg.project+' AND summary~"'+text+'" AND status!=Done ORDER BY updated DESC').then(function(issues){jiraSearch[1](issues)})
-}
-
 var projects=(config&&config.projects)||{};
 var projNames=Object.keys(projects);
 var repoSource=(cmdData&&cmdData.repos)||[];
@@ -373,7 +392,7 @@ if(!user&&!getToken()&&!loading)return html`<div style="display:flex;align-items
 var sections={DELIVERY:['overview','pipelines','prs','deploy','environments'],QUALITY:['security','alm'],OPERATIONS:['users','settings']};
 var labels={overview:'Overview',pipelines:'Pipelines',prs:'Pull Requests',deploy:'Deploy',environments:'Environments',security:'Security',alm:'ALM / Jira',users:'Team',settings:'Settings'};
 var ROLE_DESC={developer:'Can commit code, create PRs to INT, view own pipelines',tech_lead:'Can review PRs, approve merges, view security, monitor analytics',release_engineer:'Can promote code between environments, deploy, rollback',qa_team:'Can view QA environment, mark SIT testing complete',uat_team:'Can view Stage environment, mark UAT testing complete',admin:'Full control over all features and settings'};
-var openTicketCount=jiraData[0]&&jiraData[0].open_count||0;
+var openTicketCount=jiraOpenCount[0]||(jiraData[0]&&jiraData[0].open_count)||0;
 
 function renderPage(){
   if(loading)return html`<${Skels}/>`;
@@ -382,7 +401,7 @@ function renderPage(){
   if(noData)return html`<${Empty} msg="Command center data not generated yet. Go to GitHub Actions > generate-dashboard-data > Run workflow."/>`;
 
   // ── OVERVIEW ──
-  if(page==='overview'){var notifs=buildNotifications();var jd=jiraData[0];var recentJira=jd&&jd.recent||[];return html`<div class="fu">${dataWarning}
+  if(page==='overview'){var notifs=buildNotifications();var recentJira=jiraRecentActivity[0].length>0?jiraRecentActivity[0]:(jiraData[0]&&jiraData[0].recent||[]);return html`<div class="fu">${dataWarning}
     <div class="g4" data-tour="stat-cards">
       <div class="c" style="border-left:4px solid var(--pr);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Repos</div><div style="font-size:24px;font-weight:700">${totalRepos}</div></div>
       <div class="c" style="border-left:4px solid var(--ok);text-align:center"><div style="font-size:9px;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Passing</div><div style="font-size:24px;font-weight:700;color:var(--ok)">${passing}</div></div>
@@ -409,17 +428,35 @@ function renderPage(){
   </div>`}
 
   // ── PULL REQUESTS ──
-  if(page==='prs'){var jiraQ=useState('');var jiraResults=useState([]);var jiraLoading=useState(false);var jiraDebounce=useRef(null);
-  function onJiraSearch(e){var v=e.target.value;jiraQ[1](v);prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,jira:v}});clearTimeout(jiraDebounce.current);if(v.length>=2){jiraLoading[1](true);jiraDebounce.current=setTimeout(function(){var cfg=getJiraConfig();if(cfg.url&&cfg.project){loadJiraTickets('project='+cfg.project+' AND text~"'+v+'" AND status!=Done ORDER BY updated DESC').then(function(r){jiraResults[1](r);jiraLoading[1](false)})}else{jiraLoading[1](false)}},400)}else{jiraResults[1]([])}}
-  function selectJiraTicket(issue){var key=issue.key;var summary=issue.fields.summary;prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:'['+key+'] '+summary,jira:key}});jiraQ[1](key);jiraResults[1]([])}
+  if(page==='prs'){var jiraQ=useState('');var jiraResults=useState([]);var jiraAllOpen=useState([]);var jiraLoading=useState(false);var jiraDdOpen=useState(false);var jiraHlIdx=useState(-1);var ddRef=useRef(null);
+  // Load open tickets on mount
+  useEffect(function(){var cfg=getJiraConfig();if(!cfg.url||!cfg.project)return;jiraLoading[1](true);
+    jiraFetch('/rest/api/3/search?jql='+encodeURIComponent('project='+cfg.project+' AND status!=Done ORDER BY updated DESC')+'&maxResults=50&fields=summary,status,assignee,priority').then(function(d){
+      if(d&&d.issues)jiraAllOpen[1](d.issues);jiraLoading[1](false)
+    }).catch(function(){jiraLoading[1](false)})
+  },[]);
+  // Client-side filter
+  var jiraFiltered=jiraQ[0].length>=1?jiraAllOpen[0].filter(function(iss){var q=jiraQ[0].toLowerCase();return iss.key.toLowerCase().indexOf(q)>=0||(iss.fields.summary||'').toLowerCase().indexOf(q)>=0}).slice(0,15):jiraAllOpen[0].slice(0,15);
+  function onJiraInput(e){var v=e.target.value;jiraQ[1](v);prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:p.title,jira:v}});jiraDdOpen[1](true);jiraHlIdx[1](-1)}
+  function selectJiraTicket(issue){var key=issue.key;var summary=issue.fields.summary;prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:'['+key+'] '+summary,jira:key}});jiraQ[1](key);jiraDdOpen[1](false)}
+  function onJiraKeyDown(e){
+    if(!jiraDdOpen[0]||jiraFiltered.length===0)return;
+    if(e.key==='ArrowDown'){e.preventDefault();jiraHlIdx[1](function(i){return Math.min(i+1,jiraFiltered.length-1)})}
+    else if(e.key==='ArrowUp'){e.preventDefault();jiraHlIdx[1](function(i){return Math.max(i-1,0)})}
+    else if(e.key==='Enter'&&jiraHlIdx[0]>=0){e.preventDefault();selectJiraTicket(jiraFiltered[jiraHlIdx[0]])}
+    else if(e.key==='Escape'){jiraDdOpen[1](false)}
+  }
+  // Close dropdown on outside click
+  useEffect(function(){function h(e){if(ddRef.current&&!ddRef.current.contains(e.target))jiraDdOpen[1](false)}document.addEventListener('mousedown',h);return function(){document.removeEventListener('mousedown',h)}},[]);
   return html`<div class="fu" data-tour="prs-page">
     <div class="c" data-tour="quick-actions"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Quick Promote</div><div style="display:flex;gap:6px;flex-wrap:wrap">${[{l:'Feature > INT',s:'feature/',t:'int'},{l:'INT > QA',s:'int',t:'qa'},{l:'QA > Stage',s:'qa',t:'stage'},{l:'Stage > Prod',s:'stage',t:'main'}].map(function(p){return html`<button key=${p.l} class="bt bs" style="font-size:10px" onClick=${function(){prForm[1](function(f){return{repo:f.repo,src:p.s,tgt:p.t,title:f.title,jira:f.jira}})}}>${p.l}</button>`})}</div></div>
     <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Create Pull Request</div><div class="fl">
       <div data-tour="repo-select"><div class="lb">Repository</div><select value=${prForm[0].repo} onChange=${function(e){var v=e.target.value;prForm[1](function(p){return{repo:v,src:'',tgt:p.tgt,title:p.title,jira:p.jira}});if(v)loadBranches(v).then(function(res){branches[1](res.branches)})}}><option value="">Select repo...</option>${repoNames.slice(0,100).map(function(name){return html`<option key=${name} value=${name}>${name}</option>`})}</select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div class="lb">Source Branch</div><select value=${prForm[0].src} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:e.target.value,tgt:p.tgt,title:p.title,jira:p.jira}})}}><option value="">Select...</option>${branches[0].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div><div><div class="lb">Target Branch</div><select value=${prForm[0].tgt} onChange=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:e.target.value,title:p.title,jira:p.jira}})}}>${['int','qa','stage','main'].map(function(b){return html`<option key=${b} value=${b}>${b}</option>`})}</select></div></div>
-      <div style="position:relative"><div class="lb">Jira Ticket (search or type ID)</div><input value=${jiraQ[0]||prForm[0].jira} onInput=${onJiraSearch} placeholder="Search tickets or type SCRUM-123..."/>
-      ${jiraResults[0].length>0&&html`<div style="position:absolute;top:100%;left:0;right:0;background:var(--pn);border:1px solid var(--bd);border-radius:8px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.1)">${jiraResults[0].map(function(iss){return html`<div key=${iss.key} style="padding:8px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bd)" onClick=${function(){selectJiraTicket(iss)}}><span style="font-weight:600;color:var(--pr)">${iss.key}</span> <span style="color:var(--ts)">-- ${iss.fields.summary}</span></div>`})}</div>`}
-      ${jiraLoading[0]&&html`<div style="font-size:10px;color:var(--td);margin-top:4px">Searching Jira...</div>`}</div>
+      <div style="position:relative" ref=${ddRef}><div class="lb">Jira Ticket</div><input value=${jiraQ[0]||prForm[0].jira} onInput=${onJiraInput} onFocus=${function(){jiraDdOpen[1](true)}} onKeyDown=${onJiraKeyDown} placeholder=${jiraLoading[0]?'Loading tickets...':'Search or type SCRUM-123...'}/>
+      ${jiraDdOpen[0]&&jiraFiltered.length>0&&html`<div style="position:absolute;top:100%;left:0;right:0;background:var(--pn);border:1px solid var(--bd);border-radius:0 0 8px 8px;max-height:240px;overflow-y:auto;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.1)">${jiraFiltered.map(function(iss,idx){var st=iss.fields.status&&iss.fields.status.name||'';return html`<div key=${iss.key} style=${'padding:8px 12px;cursor:pointer;font-size:11px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;background:'+(jiraHlIdx[0]===idx?'var(--pl)':'transparent')} onClick=${function(){selectJiraTicket(iss)}} onMouseEnter=${function(){jiraHlIdx[1](idx)}}><span style="font-weight:700;color:var(--pr);white-space:nowrap">${iss.key}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ts)">${iss.fields.summary||''}</span><span class="badge" style=${'background:'+jiraStatusColor(st).replace('var(','rgba(').replace(/\)/,',.08)')+';color:'+jiraStatusColor(st)+';font-size:9px;flex-shrink:0'}>${st}</span></div>`})}</div>`}
+      ${jiraLoading[0]&&html`<div style="font-size:10px;color:var(--td);margin-top:4px;display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border:2px solid var(--bd);border-top-color:var(--pr);border-radius:50%;animation:shimmer .8s linear infinite"></span>Loading Jira tickets...</div>`}
+      ${!jiraLoading[0]&&jiraAllOpen[0].length===0&&getJiraConfig().url&&html`<div style="font-size:10px;color:var(--td);margin-top:4px">No open tickets found. Check Jira config in Settings.</div>`}</div>
       <div><div class="lb">Title</div><input value=${prForm[0].title} onInput=${function(e){prForm[1](function(p){return{repo:p.repo,src:p.src,tgt:p.tgt,title:e.target.value,jira:p.jira}})}} placeholder="Add feature X"/></div>
       <button data-tour="create-pr-btn" class="bt bp" onClick=${function(){var f=prForm[0];if(!f.repo||!f.src||!f.title){toast('Fill repo, source, title','err');return}var t=encodeURIComponent((f.jira?'['+f.jira+'] ':'')+f.title);var url='https://github.com/'+ORG+'/'+f.repo+'/compare/'+f.tgt+'...'+f.src+'?expand=1&title='+t;window.open(url,'_blank','noopener,noreferrer');toast('Opening GitHub...')}}>Create on GitHub</button>
     </div></div>
@@ -432,12 +469,12 @@ function renderPage(){
   </div>`}
 
   // ── ENVIRONMENTS ──
-  if(page==='environments'){var envs=['INT','QA','STAGE','PROD'];var cols=['var(--in)','var(--wa)','var(--wa)','var(--er)'];var jiraMap={INT:{status:'Ready for Unit Testing',next:'Unit Testing Complete'},QA:{status:'Ready for SIT',next:'SIT Complete'},STAGE:{status:'Ready for UAT',next:'UAT Complete'},PROD:{status:'Deployed to Production',next:null}};var jd=jiraData[0];var byStatus=jd&&jd.by_status||{};return html`<div class="fu" data-tour="env-cards"><div style="display:flex;gap:6px;overflow-x:auto;flex-wrap:wrap">${envs.map(function(e,i){var info=jiraMap[e];var count=byStatus[info.status]||0;var tickets=(jd&&jd.tickets_by_status&&jd.tickets_by_status[info.status])||[];var ex=useState(false);return html`<div key=${e} style="flex:1;min-width:200px"><div class="c" style=${'border-top:4px solid '+cols[i]}>
+  if(page==='environments'){var envs=['INT','QA','STAGE','PROD'];var cols=['var(--in)','var(--wa)','var(--wa)','var(--er)'];var jiraMap={INT:{status:'Ready for Unit Testing',alt:'Unit Testing Complete',next:'Unit Testing Complete'},QA:{status:'Ready for SIT',alt:'SIT Complete',next:'SIT Complete'},STAGE:{status:'Ready for UAT',alt:'UAT Complete',next:'UAT Complete'},PROD:{status:'Deployed to Production',alt:null,next:null}};var liveEc=jiraEnvCounts[0];var liveEt=jiraEnvTickets[0];var jd=jiraData[0];return html`<div class="fu" data-tour="env-cards"><div style="display:flex;gap:6px;overflow-x:auto;flex-wrap:wrap">${envs.map(function(e,i){var info=jiraMap[e];var count=(liveEc[info.status]||0)+(info.alt?liveEc[info.alt]||0:0);if(!count&&jd&&jd.by_status)count=(jd.by_status[info.status]||0)+(info.alt?jd.by_status[info.alt]||0:0);var tickets=(liveEt[info.status]||[]).concat(info.alt?liveEt[info.alt]||[]:[]);if(tickets.length===0&&jd&&jd.tickets_by_status)tickets=(jd.tickets_by_status[info.status]||[]).concat(info.alt?jd.tickets_by_status[info.alt]||[]:[]);var ex=useState(false);var cfg=getJiraConfig();return html`<div key=${e} style="flex:1;min-width:200px"><div class="c" style=${'border-top:4px solid '+cols[i]}>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><div style="font-weight:700;font-size:13px">${e}</div>${count>0&&html`<span class="ni-badge">${count}</span>`}</div>
     <div style="font-size:10px;color:var(--ts)">${totalRepos} repos registered</div>
     <div style="font-size:9px;color:var(--in);margin-top:4px;font-weight:600">Jira: ${info.status}</div>
-    ${tickets.length>0&&html`<div style="margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">${tickets.slice(0,ex[0]?20:3).map(function(t){return html`<div key=${t.key} style="font-size:10px;margin-bottom:4px;display:flex;gap:4px;align-items:center"><span style="font-weight:600;color:var(--pr)">${t.key}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ts)">${t.summary||''}</span></div>`})}${tickets.length>3&&html`<button style="font-size:9px;color:var(--pr);margin-top:4px" onClick=${function(){ex[1](!ex[0])}}>${ex[0]?'Show less':'Show all '+tickets.length}</button>`}</div>`}
-    ${info.next&&count>0&&html`<button class="bt bok" style="width:100%;justify-content:center;margin-top:8px;font-size:10px" onClick=${function(){toast('Transition requires direct Jira API access. Configure in Settings.','warn')}}>Mark Testing Complete</button>`}
+    ${tickets.length>0&&html`<div style="margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">${tickets.slice(0,ex[0]?20:3).map(function(t){return html`<div key=${t.key} style="font-size:10px;margin-bottom:4px;display:flex;gap:4px;align-items:center"><a href=${cfg.url?cfg.url+'/browse/'+t.key:'#'} target="_blank" rel="noopener noreferrer" style="font-weight:600;color:var(--pr);text-decoration:none;white-space:nowrap">${t.key}</a><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ts)">${t.summary||''}</span></div>`})}${tickets.length>3&&html`<button style="font-size:9px;color:var(--pr);margin-top:4px" onClick=${function(){ex[1](!ex[0])}}>${ex[0]?'Show less':'Show all '+tickets.length}</button>`}</div>`}
+    ${info.next&&count>0&&jiraConnected[0]&&html`<button class="bt bok" style="width:100%;justify-content:center;margin-top:8px;font-size:10px" onClick=${function(){var tks=liveEt[info.status]||[];if(!tks.length){toast('No tickets to transition','warn');return}Promise.all(tks.map(function(t){return jiraTransition(t.key,info.next)})).then(function(){toast(tks.length+' ticket(s) transitioned to '+info.next);fetchJiraLive()}).catch(function(){toast('Transition failed','err')})}}>Mark Testing Complete (${liveEc[info.status]||0})</button>`}
   </div></div>`})}</div></div>`}
 
   // ── SECURITY ──
@@ -447,21 +484,27 @@ function renderPage(){
   </div>`;
 
   // ── ALM / JIRA ──
-  if(page==='alm'){var tickets=extractTickets();var jd=jiraData[0];var allJiraTickets=jd&&jd.all_tickets||[];var jiraStatuses=['To Do','In Progress','Ready for Unit Testing','Unit Testing Complete','Ready for SIT','SIT Complete','Ready for UAT','UAT Complete','Deployed to Production','Done'];var byStatus=jd&&jd.by_status||{};
+  if(page==='alm'){var tickets=extractTickets();
+  // Use live data if available, fall back to dashboard-data.json
+  var liveIssues=jiraLiveTickets[0];var jd=jiraData[0];
+  var allJiraTickets=liveIssues.length>0?liveIssues.map(function(iss){return{key:iss.key,summary:iss.fields&&iss.fields.summary||'',status:iss.fields&&iss.fields.status&&iss.fields.status.name||'',assignee:iss.fields&&iss.fields.assignee&&iss.fields.assignee.displayName||'',priority:iss.fields&&iss.fields.priority&&iss.fields.priority.name||''}}):(jd&&jd.all_tickets||[]);
+  var jiraStatuses=['To Do','In Progress','Ready for Unit Testing','Unit Testing Complete','Ready for SIT','SIT Complete','Ready for UAT','UAT Complete','Deployed to Production','Done'];
+  var liveEc=jiraEnvCounts[0];var byStatus=Object.keys(liveEc).length>0?liveEc:(jd&&jd.by_status||{});
   var grouped={};jiraStatuses.forEach(function(s){grouped[s]=[]});allJiraTickets.forEach(function(t){var s=t.status||'To Do';if(grouped[s])grouped[s].push(t);else{if(!grouped['To Do'])grouped['To Do']=[];grouped['To Do'].push(t)}});
+  var cfg=getJiraConfig();
   return html`<div class="fu" data-tour="kanban">
-    <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Jira Status Flow</div>
+    <div class="c"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;flex:1">Jira Status Flow</div><button class="bt bs" style="font-size:10px;padding:4px 10px" onClick=${function(){clearCache();fetchJiraLive();toast('Refreshing Jira...')}}>${jiraLiveLoading[0]?'...':'Refresh'}</button></div>
     <div class="jira-flow">${jiraStatuses.map(function(st,i){var count=byStatus[st]||grouped[st].length||0;var items=[html`<div key=${st} class="jira-node" style=${'border-color:'+jiraStatusColor(st)}><div>${st}</div>${count>0&&html`<div style="font-size:14px;font-weight:700;margin-top:2px;color:${jiraStatusColor(st)}">${count}</div>`}</div>`];if(i<jiraStatuses.length-1)items.push(html`<div key=${'a'+i} class="jira-arrow">></div>`);return items})}</div></div>
 
-    ${allJiraTickets.length>0?html`<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:12px">${jiraStatuses.filter(function(s){return grouped[s].length>0}).map(function(st){return html`<div key=${st} class="jira-col"><div style="font-size:10px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:4px"><span style=${'display:inline-block;width:8px;height:8px;border-radius:50%;background:'+jiraStatusColor(st)}></span>${st} <span class="ni-badge">${grouped[st].length}</span></div>${grouped[st].map(function(t){var cfg=getJiraConfig();return html`<a key=${t.key} href=${cfg.url?cfg.url+'/browse/'+t.key:'#'} target="_blank" rel="noopener noreferrer" class="jira-card" style="text-decoration:none;color:inherit"><div style="font-weight:600;color:var(--pr);margin-bottom:2px">${t.key}</div><div style="color:var(--ts);line-height:1.4">${t.summary||''}</div>${t.assignee&&html`<div style="font-size:9px;color:var(--td);margin-top:4px">${t.assignee}</div>`}</a>`})}</div>`})}</div>`:html`
+    ${allJiraTickets.length>0?html`<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:12px">${jiraStatuses.filter(function(s){return grouped[s].length>0}).map(function(st){return html`<div key=${st} class="jira-col"><div style="font-size:10px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:4px"><span style=${'display:inline-block;width:8px;height:8px;border-radius:50%;background:'+jiraStatusColor(st)}></span>${st} <span class="ni-badge">${grouped[st].length}</span></div>${grouped[st].map(function(t){return html`<a key=${t.key} href=${cfg.url?cfg.url+'/browse/'+t.key:'#'} target="_blank" rel="noopener noreferrer" class="jira-card" style="text-decoration:none;color:inherit"><div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="font-weight:600;color:var(--pr)">${t.key}</span>${t.priority&&html`<span style=${'font-size:9px;color:'+(t.priority==='Highest'||t.priority==='High'?'var(--er)':'var(--td)')}>${t.priority==='Highest'?'!!':t.priority==='High'?'!':''}</span>`}</div><div style="color:var(--ts);line-height:1.4">${t.summary||''}</div>${t.assignee&&html`<div style="font-size:9px;color:var(--td);margin-top:4px">${t.assignee}</div>`}</a>`})}</div>`})}</div>`:html`
     <div class="c"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Ticket Tracker</div>
-    ${tickets.length>0?html`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+    ${jiraLiveLoading[0]?html`<${Skels}/>`:tickets.length>0?html`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
     <thead><tr style="border-bottom:2px solid var(--bd)"><th style="text-align:left;padding:6px 8px;color:var(--ts);font-size:10px">Ticket</th><th style="text-align:left;padding:6px 8px;color:var(--ts);font-size:10px">Repository</th><th style="text-align:left;padding:6px 8px;color:var(--ts);font-size:10px">Environment</th><th style="text-align:left;padding:6px 8px;color:var(--ts);font-size:10px">Time</th></tr></thead>
     <tbody>${tickets.slice(0,20).map(function(t,i){return html`<tr key=${i} style="border-bottom:1px solid var(--bd)"><td style="padding:6px 8px;font-weight:600;color:var(--pr)">${t.ticket}</td><td style="padding:6px 8px">${t.repo}</td><td style="padding:6px 8px"><span class="badge" style="background:var(--sf);color:var(--ts)">${t.env}</span></td><td style="padding:6px 8px;color:var(--td)">${ago(t.time)}</td></tr>`})}</tbody>
     </table></div>`:html`<div style="color:var(--td);font-size:11px;text-align:center;padding:12px">No Jira tickets found. Configure Jira in Settings to see the Kanban board, or use branch naming like feature/PROJ-123-description.</div>`}
     </div>`}
 
-    <div class="c" style="border-left:4px solid var(--in)"><div style="font-size:12px;font-weight:600;margin-bottom:4px">Jira Integration</div><div style="font-size:11px;color:var(--ts);line-height:1.6">${jiraConnected[0]?'Connected to Jira. Ticket data flows from the generate-dashboard-data workflow.':'Go to Settings > Jira to configure your connection. Ticket data is fetched by the generate-dashboard-data workflow every 15 minutes.'}</div><div style="margin-top:8px"><button class="bt bp" style="font-size:10px" onClick=${function(){nav('settings')}}>Configure in Settings</button></div></div>
+    <div class="c" style="border-left:4px solid var(--in)"><div style="font-size:12px;font-weight:600;margin-bottom:4px">Jira Integration</div><div style="font-size:11px;color:var(--ts);line-height:1.6">${jiraConnected[0]?'Connected to Jira via proxy. Live data displayed above.':'Go to Settings > Jira to configure your connection. All API calls route through the CORS proxy.'}</div>${!jiraConnected[0]&&html`<div style="margin-top:8px"><button class="bt bp" style="font-size:10px" onClick=${function(){nav('settings')}}>Configure in Settings</button></div>`}</div>
   </div>`}
 
   // ── TEAM ──
