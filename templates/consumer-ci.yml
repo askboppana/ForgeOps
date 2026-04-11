@@ -1,0 +1,13 @@
+# ForgeOps Consumer CI Template
+# Copy this file to your repo at .github/workflows/ci.yml
+# Change the workflow reference to match your tech stack:
+#   reusable-build-java.yml, reusable-build-javascript.yml,
+#   reusable-build-uipath.yml, reusable-build-salesforce.yml,
+#   reusable-build-informatica.yml, reusable-build-dotnet.yml
+
+name: CI/CD
+on: [push, pull_request]
+jobs:
+  pipeline:
+    uses: YOUR_ORG/ForgeOps/.github/workflows/_deploy.yml@main
+    secrets: inherit

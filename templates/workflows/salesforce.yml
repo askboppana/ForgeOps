@@ -82,7 +82,7 @@ jobs:
         run: |
           curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
           chmod +x gitleaks
-          ./gitleaks detect --source . --no-git --verbose
+          ./gitleaks detect --source . --no-git --verbose --exit-code 1
 
       - name: Scan Apex for Injection Patterns
         run: |
@@ -111,7 +111,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "Deploying ${{ env.APP_NAME }} to INT sandbox"
+        run: # Real deploy command goes here (sfdx force:source:deploy, etc.)
 
       - name: Transition Jira Ticket
         if: always()
@@ -170,7 +170,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "Deploying ${{ env.APP_NAME }} to QA sandbox"
+        run: # Real deploy command goes here (sfdx force:source:deploy, etc.)
 
       - name: Transition Jira Ticket
         if: always()
@@ -229,7 +229,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "Deploying ${{ env.APP_NAME }} to Stage sandbox"
+        run: # Real deploy command goes here (sfdx force:source:deploy, etc.)
 
       - name: Transition Jira Ticket
         if: always()
@@ -288,7 +288,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "Deploying ${{ env.APP_NAME }} to Production org"
+        run: # Real deploy command goes here (sfdx force:source:deploy --target-org prod)
 
       - name: Transition Jira Ticket
         if: always()

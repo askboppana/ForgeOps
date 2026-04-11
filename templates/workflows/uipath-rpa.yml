@@ -73,7 +73,7 @@ jobs:
         run: |
           curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
           chmod +x gitleaks
-          ./gitleaks detect --source . --no-git --verbose
+          ./gitleaks detect --source . --no-git --verbose --exit-code 1
 
       - name: Scan XAML for Hardcoded Credentials
         run: |
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "Deploying ${{ env.APP_NAME }} to QA via UiPath Orchestrator"
+        run: # Real deploy command goes here (UiPath CLI, Orchestrator API, etc.)
 
       - name: Transition Jira Ticket
         if: always()
@@ -150,7 +150,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "Deploying ${{ env.APP_NAME }} to Stage via UiPath Orchestrator"
+        run: # Real deploy command goes here (UiPath CLI, Orchestrator API, etc.)
 
       - name: Transition Jira Ticket
         if: always()
@@ -209,7 +209,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "Deploying ${{ env.APP_NAME }} to Prod via UiPath Orchestrator"
+        run: # Real deploy command goes here (UiPath CLI, Orchestrator API, etc.)
 
       - name: Transition Jira Ticket
         if: always()
