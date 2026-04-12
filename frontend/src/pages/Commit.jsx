@@ -486,7 +486,7 @@ export default function Commit() {
           <span style={{ fontWeight: 600 }}>Create Branch from Ticket</span>
         </div>
         <div style={{ padding: 16 }}>
-          <ALMSelector compact onTicketSelect={setSelectedTicket} />
+          <ALMSelector compact requireRelease onTicketSelect={setSelectedTicket} />
 
           {selectedTicket && (
             <div className="animate-fade" style={{ marginTop: 16, padding: 16, background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>

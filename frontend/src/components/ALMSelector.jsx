@@ -12,6 +12,7 @@ export default function ALMSelector({
   multiSelect = false,
   onSelectionChange,
   showExpandedDetail = false,
+  requireRelease = false,
 }) {
   const [releases, setReleases] = useState([]);
   const [releaseCounts, setReleaseCounts] = useState({});
@@ -44,6 +45,11 @@ export default function ALMSelector({
   }, [selectedRelease, selectedType, selectedStatus]);
 
   async function fetchTickets() {
+    if (requireRelease && !selectedRelease) {
+      setTickets([]);
+      setTotalFromServer(0);
+      return;
+    }
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -125,7 +131,7 @@ export default function ALMSelector({
             value={selectedRelease}
             onChange={e => setSelectedRelease(e.target.value)}
           >
-            <option value="">All Releases</option>
+            <option value="">{requireRelease ? 'Select a release...' : 'All Releases'}</option>
             {releases.map(v => (
               <option key={v.id || v.name} value={v.name}>
                 {v.name}{releaseCounts[v.name] != null ? ` (${releaseCounts[v.name]})` : ''}
@@ -185,7 +191,9 @@ export default function ALMSelector({
       )}
 
       {/* Ticket list */}
-      {loading ? (
+      {requireRelease && !selectedRelease ? (
+        <div className="empty-state" style={{ padding: compact ? 20 : 40 }}>Select a release to view tickets</div>
+      ) : loading ? (
         <div className="loading-center"><span className="spinner" /> Loading tickets...</div>
       ) : filteredTickets.length === 0 ? (
         <div className="empty-state">No tickets found</div>
