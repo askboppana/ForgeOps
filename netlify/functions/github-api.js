@@ -88,14 +88,18 @@ exports.handler = async (event) => {
 
     // POST /repos/:owner/:repo/branches/create
     if (route[0] === 'repos' && route[3] === 'branches' && route[4] === 'create' && method === 'POST') {
+      const newBranch = body.branchName || body.branch;
+      const baseBranch = body.fromBranch || body.from || 'main';
+      // Get base branch SHA
+      const { data: refData } = await ghFetch(`/repos/${owner}/${repo}/git/ref/heads/${baseBranch}`);
+      const sha = refData?.object?.sha;
+      if (!sha) return respond(404, { error: `Base branch "${baseBranch}" not found` });
+      // Create new ref
       const { data } = await ghFetch(`/repos/${owner}/${repo}/git/refs`, {
         method: 'POST',
-        body: JSON.stringify({
-          ref: `refs/heads/${body.branch}`,
-          sha: body.sha
-        })
+        body: JSON.stringify({ ref: `refs/heads/${newBranch}`, sha })
       });
-      return respond(201, data);
+      return respond(201, { success: true, branch: newBranch, sha });
     }
 
     // GET /repos/:owner/:repo/commits

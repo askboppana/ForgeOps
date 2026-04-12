@@ -27,17 +27,21 @@ export default function Commit() {
   const [commitResult, setCommitResult] = useState(null);
 
   useEffect(() => {
-    async function loadVersions() {
+    async function loadData() {
       try {
-        const [v, r] = await Promise.all([api.jira.versions(), api.discovery.forgeopsRepos()]);
+        const v = await api.jira.versions();
         setVersions(v || []);
-        const repoList = r?.repos || r || [];
-        setRepos(Array.isArray(repoList) ? repoList : []);
+      } catch {}
+      try {
+        // Try fast repo list first
+        const r = await api.github.repos();
+        const list = Array.isArray(r) ? r : [];
+        setRepos(list);
       } catch {
-        // silent
+        setRepos([]);
       }
     }
-    loadVersions();
+    loadData();
   }, []);
 
   useEffect(() => {
