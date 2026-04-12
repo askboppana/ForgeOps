@@ -5,7 +5,6 @@ const sections = [
     label: 'DELIVERY',
     items: [
       { to: '/overview', icon: '\u{1F4CA}', label: 'Overview' },
-      { to: '/pipelines', icon: '\u{1F504}', label: 'Pipelines' },
       { to: '/commit', icon: '\u270F\uFE0F', label: 'Commit' },
       { to: '/pull-requests', icon: '\u{1F500}', label: 'Merge' },
       { to: '/deploy', icon: '\u{1F680}', label: 'CI/CD' },

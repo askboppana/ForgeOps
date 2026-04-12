@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Landing from './pages/Landing';
 import Overview from './pages/Overview';
-import Pipelines from './pages/Pipelines';
 import PullRequests from './pages/PullRequests';
 import Deploy from './pages/Deploy';
 import Environments from './pages/Environments';
@@ -25,7 +24,6 @@ import AIBot from './components/AIBot';
 
 const PAGE_TITLES = {
   '/overview': 'Overview',
-  '/pipelines': 'Pipelines',
   '/pull-requests': 'Merge',
   '/deploy': 'CI/CD',
   '/environments': 'Environments',
@@ -142,10 +140,9 @@ function DashboardLayout() {
       if (e.metaKey || e.ctrlKey) {
         if (e.key === 'k') { e.preventDefault(); /* focus search if exists */ }
         if (e.key === '1') { e.preventDefault(); navigate('/overview'); }
-        if (e.key === '2') { e.preventDefault(); navigate('/pipelines'); }
+        if (e.key === '2') { e.preventDefault(); navigate('/commit'); }
         if (e.key === '3') { e.preventDefault(); navigate('/pull-requests'); }
         if (e.key === '4') { e.preventDefault(); navigate('/deploy'); }
-        if (e.key === '5') { e.preventDefault(); navigate('/alm-jira'); }
       }
     }
     window.addEventListener('keydown', handleKey);
@@ -160,7 +157,6 @@ function DashboardLayout() {
         <main className="main-content">
           <Routes>
             <Route path="/overview" element={<Overview />} />
-            <Route path="/pipelines" element={<Pipelines />} />
             <Route path="/pull-requests" element={<PullRequests />} />
             <Route path="/deploy" element={<Deploy />} />
             <Route path="/environments" element={<Environments />} />
