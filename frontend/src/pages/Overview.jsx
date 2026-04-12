@@ -97,16 +97,6 @@ export default function Overview() {
         <StatCard label="DORA: Deploy Freq" value={'\u2014'} color="var(--info)" icon={'\u{1F680}'} subtitle="Coming soon" />
       </div>
 
-      {/* Quick actions */}
-      <div className="card mb-4 animate-fade" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06))' }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <a href="/pull-requests" className="btn" style={{ textDecoration: 'none' }}>{'\u{1F500}'} Merge</a>
-          <a href="/deploy" className="btn" style={{ textDecoration: 'none' }}>{'\u{1F680}'} Deploy</a>
-          <a href="/alm-jira" className="btn" style={{ textDecoration: 'none' }}>{'\u{1F4CB}'} Jira Board</a>
-          <a href="/meetings" className="btn" style={{ textDecoration: 'none' }}>{'\u{1F399}'} Analyze Meeting</a>
-          <a href="/security" className="btn" style={{ textDecoration: 'none' }}>{'\u{1F6E1}'} Security Scan</a>
-        </div>
-      </div>
 
       {/* Activity feed */}
       <div className="card animate-fade">
