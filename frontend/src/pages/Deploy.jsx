@@ -98,19 +98,6 @@ export default function Deploy() {
             </div>
           </div>
 
-          {/* Quick environment status */}
-          <div className="env-grid">
-            {ENVS.map((env) => (
-              <div key={env.name} className="env-card" style={{ borderTop: `3px solid ${env.color}` }}>
-                <div className="env-card-header">
-                  <div>
-                    <div className="env-name" style={{ color: env.color }}>{env.name}</div>
-                    <div className="text-dim text-sm">{env.label}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </>
       )}
 

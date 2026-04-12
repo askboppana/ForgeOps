@@ -189,7 +189,7 @@ export default function Pipelines() {
             <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>
               Scan complete: {scanResult?.summary?.total || 0} repos classified
             </span>
-            <span className="text-dim text-sm">{new Date(scanResult.scannedAt).toLocaleString()}</span>
+            <span className="text-dim text-sm">{new Date(scanResult?.scannedAt).toLocaleString()}</span>
             <button className="btn btn-sm" onClick={doScan} disabled={scanning}>{scanning ? '...' : 'Re-scan'}</button>
           </div>
         )}
@@ -201,7 +201,7 @@ export default function Pipelines() {
           {/* Classification cards */}
           <div className="stat-grid">
             {Object.entries(STATUS_META).map(([key, meta]) => {
-              const count = scanResult.summary[key] || 0;
+              const count = scanResult?.summary?.[key] || 0;
               return (
                 <div key={key} className="stat-card" style={{ borderTop: `3px solid ${meta.color}`, cursor: 'pointer', outline: activeTab === key ? `2px solid ${meta.color}` : 'none' }} onClick={() => setActiveTab(key)}>
                   <div className="stat-label">{meta.icon} {meta.label}</div>
@@ -216,7 +216,7 @@ export default function Pipelines() {
           <div className="card mb-4">
             <div className="card-header">Technology Stack</div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              {Object.entries(scanResult.summary.languages || {}).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([lang, count]) => (
+              {Object.entries(scanResult?.summary?.languages || {}).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([lang, count]) => (
                 <div key={lang} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: STACK_COLORS[lang?.toLowerCase()] || '#6b7280' }} />
                   <span style={{ fontWeight: 600 }}>{lang}</span>

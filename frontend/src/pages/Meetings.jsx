@@ -77,7 +77,7 @@ export default function Meetings() {
             <p className="text-dim">{data.summary}</p>
           </div>
         )}
-        {data.actionItems && data.actionItems.length > 0 && (
+        {data?.actionItems && data.actionItems.length > 0 && (
           <div className="mb-4">
             <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 14, color: 'var(--primary)' }}>Action Items</div>
             <ul style={{ paddingLeft: 20 }}>
