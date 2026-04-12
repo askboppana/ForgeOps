@@ -189,17 +189,23 @@ function DashboardLayout() {
 function LandingGate() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [showLanding, setShowLanding] = useState(true);
+  const hasEntered = sessionStorage.getItem('fg_entered') === '1';
+  const [showLanding, setShowLanding] = useState(!hasEntered);
 
-  // On every fresh page load, redirect to landing
+  function handleEnter() {
+    sessionStorage.setItem('fg_entered', '1');
+    setShowLanding(false);
+  }
+
+  // Only redirect to landing on cold start if user hasn't entered this session
   useEffect(() => {
-    if (location.pathname !== '/' && location.pathname !== '/landing') {
+    if (!hasEntered && location.pathname !== '/' && location.pathname !== '/landing') {
       navigate('/', { replace: true });
     }
   }, []);
 
   if (showLanding && (location.pathname === '/' || location.pathname === '/landing')) {
-    return <Landing onEnter={() => setShowLanding(false)} />;
+    return <Landing onEnter={handleEnter} />;
   }
 
   return (

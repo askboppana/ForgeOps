@@ -5,58 +5,75 @@ const corsHeaders = {
 };
 
 function respond(statusCode, body) {
-  return {
-    statusCode,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  };
+  return { statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 }
 
-function generateMockLogs(query, count) {
-  const severities = ['INFO', 'WARN', 'ERROR', 'DEBUG'];
-  const hosts = ['runner-01', 'runner-02', 'runner-03', 'build-agent-01', 'build-agent-02'];
-  const sources = ['forgeops-pipeline', 'github-actions', 'deploy-service', 'test-runner', 'artifact-manager'];
-  const messageTemplates = [
-    'Pipeline started for {query}',
-    'Building artifact for {query}',
-    'Running unit tests for {query}',
-    'Deploying {query} to staging',
-    'Health check passed for {query}',
-    'Container image pushed for {query}',
-    'Code analysis completed for {query}',
-    'Integration tests passed for {query}',
-    'Rollback triggered for {query}',
-    'Scaling service {query} to 3 replicas',
-    'Cache invalidated for {query}',
-    'Security scan completed for {query}',
-    'Dependency check passed for {query}',
-    'Notification sent for {query}',
-    'Metrics collected for {query}',
-    'Log rotation completed for {query}',
-    'Backup snapshot created for {query}',
-    'SSL certificate verified for {query}',
-    'DNS resolution completed for {query}',
-    'Load balancer updated for {query}',
-  ];
-
-  const numEntries = Math.min(count || 15, 50);
+function generateLogs(context, count) {
+  const hosts = ['runner-east-01', 'runner-west-02', 'runner-central-03'];
+  const severities = ['INFO', 'INFO', 'INFO', 'WARN', 'ERROR', 'INFO', 'DEBUG', 'INFO'];
   const now = Date.now();
-  const results = [];
+  const logs = [];
 
-  for (let i = 0; i < numEntries; i++) {
-    const timestamp = new Date(now - i * 30000).toISOString();
-    const template = messageTemplates[i % messageTemplates.length];
-    const message = template.replace('{query}', query || 'unknown-service');
-    results.push({
-      timestamp,
-      source: sources[i % sources.length],
+  const templates = {
+    pipeline: [
+      'Pipeline triggered by push event on {branch}',
+      'Checkout: fetching repository {repo}',
+      'Build started: {repo} on {host}',
+      'Running unit tests: 142 tests found',
+      'Test suite passed: 142/142 (100%)',
+      'SCA scan initiated: Gitleaks + OWASP DC',
+      'Gitleaks: scanning for secrets... 0 findings',
+      'OWASP DC: checking 87 dependencies... 0 critical',
+      'Build artifact created: {repo}-1.0.0.jar (24MB)',
+      'Deploying to {env} environment...',
+      'Health check passed: HTTP 200 in 1.2s',
+      'Pipeline completed successfully in 4m 32s',
+    ],
+    deploy: [
+      'Deployment initiated: {repo} → {env}',
+      'Pulling image: registry.internal/{repo}:latest',
+      'Rolling update started: 3 replicas',
+      'Pod {repo}-7d8f9c-xk2pl: Running',
+      'Pod {repo}-7d8f9c-m4n5o: Running',
+      'Pod {repo}-7d8f9c-p6q7r: Running',
+      'Service endpoint healthy: {env}.internal:443',
+      'Deployment verified: all pods running',
+      'Jira ticket transitioned: Ready for {env_status}',
+      'Teams notification sent to #forgeops-alerts',
+    ],
+    error: [
+      'ERROR: Connection refused to {env}-db-01:5432',
+      'WARN: Retry 1/3 for database connection',
+      'ERROR: Build failed: test suite error in LoginTest.java',
+      'WARN: SCA finding: CVE-2024-38816 in spring-webmvc:6.1.6',
+      'ERROR: Deploy health check failed: HTTP 503',
+      'WARN: Memory usage at 85% on {host}',
+    ],
+  };
+
+  const queryType = (context || '').toLowerCase().includes('error') ? 'error' :
+                    (context || '').toLowerCase().includes('deploy') ? 'deploy' : 'pipeline';
+  const msgs = templates[queryType];
+
+  for (let i = 0; i < (count || 15); i++) {
+    const msg = msgs[i % msgs.length]
+      .replace('{repo}', 'forgeopstest-java-auth-svc')
+      .replace('{branch}', 'feature/US-301')
+      .replace('{host}', hosts[i % hosts.length])
+      .replace('{env}', ['INT', 'QA', 'STAGE', 'PROD'][i % 4])
+      .replace('{env_status}', ['Unit Testing', 'SIT', 'UAT', 'Production'][i % 4]);
+
+    logs.push({
+      timestamp: new Date(now - (count - i) * 30000).toISOString(),
+      source: 'forgeops-pipeline',
       host: hosts[i % hosts.length],
-      message,
-      severity: severities[Math.floor(Math.random() * severities.length)],
+      message: msg,
+      severity: msg.startsWith('ERROR') ? 'ERROR' : msg.startsWith('WARN') ? 'WARN' : severities[i % severities.length],
+      index: 'forgeops',
+      sourcetype: '_json',
     });
   }
-
-  return results;
+  return logs;
 }
 
 exports.handler = async (event) => {
@@ -66,31 +83,41 @@ exports.handler = async (event) => {
   const pathParts = fullPath.split('/').filter(Boolean);
   let segments = [];
   for (let i = 0; i < pathParts.length; i++) {
-    if (pathParts[i] === 'splunk') {
-      segments = pathParts.slice(i + 1);
-      break;
-    }
+    if (pathParts[i] === 'splunk') { segments = pathParts.slice(i + 1); break; }
   }
   const method = event.httpMethod;
   const query = event.queryStringParameters || {};
 
   try {
+    const isConnected = !!process.env.SPLUNK_URL;
+
     // GET /search
     if (segments[0] === 'search' && method === 'GET') {
-      const results = generateMockLogs(query.query, parseInt(query.count, 10) || 15);
-      return respond(200, { results });
+      if (isConnected) {
+        // Real Splunk query would go here
+        return respond(200, { results: [], mock: false, message: 'Splunk integration configured but query not implemented yet' });
+      }
+      const results = generateLogs(query.query, parseInt(query.count) || 15);
+      return respond(200, { results, mock: true, message: 'Mock data — configure SPLUNK_URL for real logs' });
     }
 
     // GET /logs/:runId
-    if (segments[0] === 'logs' && segments.length === 2 && method === 'GET') {
-      const runId = segments[1];
-      const results = generateMockLogs(`run-${runId}`, 20);
-      return respond(200, { results });
+    if (segments[0] === 'logs' && segments[1] && method === 'GET') {
+      const results = generateLogs('pipeline', 20);
+      return respond(200, { results, runId: segments[1], mock: !isConnected });
     }
 
-    return respond(404, { error: 'Not found' });
+    // GET /status
+    if (segments[0] === 'status' && method === 'GET') {
+      return respond(200, {
+        connected: isConnected,
+        url: isConnected ? process.env.SPLUNK_URL : null,
+        message: isConnected ? 'Connected to Splunk' : 'Not configured — set SPLUNK_URL and SPLUNK_TOKEN',
+      });
+    }
+
+    return respond(404, { error: 'Not found', path: segments.join('/') });
   } catch (err) {
-    console.error('Splunk function error:', err.message);
     return respond(500, { error: err.message });
   }
 };
