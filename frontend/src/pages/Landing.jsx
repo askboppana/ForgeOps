@@ -14,7 +14,7 @@ export default function Landing() {
   const nav = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #0F1117 0%, #161B22 50%, #0F1117 100%)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #F0F1F6 0%, #FFFFFF 40%, #EEF0FF 100%)' }}>
       {/* Nav */}
       <header className="flex items-center justify-between px-8 py-5">
         <div className="flex items-center gap-2">

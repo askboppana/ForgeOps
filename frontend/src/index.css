@@ -1,29 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #0F1117;
-  --bg-secondary: #161B22;
-  --bg-card: #1C2128;
-  --border: #30363D;
-  --text-primary: #E6EDF3;
-  --text-secondary: #8B949E;
-  --text-tertiary: #6E7681;
-  --accent: #7F77DD;
-  --success: #3FB950;
-  --warning: #D29922;
-  --danger: #F85149;
-  --info: #58A6FF;
+  --bg-primary: #F4F5F7;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --border: #E1E4E8;
+  --border-hover: #C8CCD1;
+  --text-primary: #1B1F23;
+  --text-secondary: #57606A;
+  --text-tertiary: #8B949E;
+  --accent: #6C63FF;
+  --accent-light: #EEF0FF;
+  --accent-hover: #5B52E5;
+  --success: #1A7F37;
+  --success-light: #DAFBE1;
+  --warning: #9A6700;
+  --warning-light: #FFF8C5;
+  --danger: #CF222E;
+  --danger-light: #FFEBE9;
+  --info: #0969DA;
+  --info-light: #DDF4FF;
+  --shadow-sm: 0 1px 2px rgba(27,31,35,0.04);
+  --shadow-md: 0 3px 6px rgba(27,31,35,0.06), 0 2px 4px rgba(27,31,35,0.04);
+  --shadow-lg: 0 8px 24px rgba(27,31,35,0.08);
 }
 
 body {
   margin: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #C8CCD1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #8B949E; }
+
+/* Global card polish */
+.card-base {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.card-base:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-hover);
+}
+
+/* Code blocks stay dark for readability */
+.code-dark {
+  background: #0D1117;
+  color: #E6EDF3;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
