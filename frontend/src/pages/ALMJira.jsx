@@ -3,7 +3,7 @@ import { displayKey, typeIcon, statusColor, priorityColor } from '../api';
 import ALMSelector from '../components/ALMSelector';
 import TicketDetailPanel from '../components/TicketDetailPanel';
 
-const API = 'http://localhost:3001/api';
+const API = '/api';
 const BOARD_COLUMNS = ['To Do', 'In Progress', 'In Review', 'Done'];
 
 function classifyColumn(statusName) {
