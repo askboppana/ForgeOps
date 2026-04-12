@@ -10,7 +10,6 @@ export default function Commit() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [loading, setLoading] = useState(false);
   const [ticketLoading, setTicketLoading] = useState(false);
-  const [typeFilter, setTypeFilter] = useState('all');
 
   // Branch creation
   const [repos, setRepos] = useState([]);
@@ -130,22 +129,11 @@ export default function Commit() {
         </select>
       </div>
 
-      {/* Type filter + Tickets */}
+      {/* Tickets */}
       {selectedVersion && (
         <div className="rounded-lg overflow-hidden mb-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Tickets in {selectedVersion}</span>
-            <select
-              className="px-2 py-1 rounded text-xs border-none outline-none"
-              style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="all">All Types</option>
-              <option value="story">Stories</option>
-              <option value="defect">Defects</option>
-            </select>
-            {!ticketLoading && <span className="text-xs ml-auto" style={{ color: 'var(--text-tertiary)' }}>{tickets.length} tickets</span>}
+          <div className="px-4 py-3 text-sm font-semibold" style={{ borderBottom: '1px solid var(--border)' }}>
+            Tickets in {selectedVersion}
           </div>
           {ticketLoading ? (
             <div className="flex justify-center py-8">
@@ -153,41 +141,11 @@ export default function Commit() {
             </div>
           ) : tickets.length === 0 ? (
             <div className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No tickets found for this release</div>
-          ) : (() => {
-            const isDefect = (t) => {
-              const tp = t.fields?.issuetype?.name || '';
-              const summary = t.fields?.summary || '';
-              const labels = t.fields?.labels || [];
-              return tp === 'Bug' || summary.startsWith('[Defect]') || labels.includes('defect') || labels.includes('bug');
-            };
-            const stories = tickets.filter(t => !isDefect(t));
-            const defects = tickets.filter(t => isDefect(t));
-            const showStories = typeFilter === 'all' || typeFilter === 'story';
-            const showDefects = typeFilter === 'all' || typeFilter === 'defect';
-            return (
-              <div>
-                {showStories && stories.length > 0 && (
-                  <>
-                    <div className="px-4 py-2 text-xs font-semibold tracking-wide" style={{ color: 'var(--text-tertiary)', background: 'var(--bg-primary)' }}>
-                      Stories ({stories.length})
-                    </div>
-                    {stories.map(t => <TicketRow key={t.key} issue={t} onClick={handleSelectTicket} />)}
-                  </>
-                )}
-                {showDefects && defects.length > 0 && (
-                  <>
-                    <div className="px-4 py-2 text-xs font-semibold tracking-wide" style={{ color: 'var(--danger)', background: 'var(--bg-primary)' }}>
-                      Defects ({defects.length})
-                    </div>
-                    {defects.map(t => <TicketRow key={t.key} issue={t} onClick={handleSelectTicket} />)}
-                  </>
-                )}
-                {showStories && stories.length === 0 && showDefects && defects.length === 0 && (
-                  <div className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No tickets match the selected type</div>
-                )}
-              </div>
-            );
-          })()}
+          ) : (
+            tickets.map((t) => (
+              <TicketRow key={t.key} issue={t} onClick={handleSelectTicket} />
+            ))
+          )}
         </div>
       )}
 

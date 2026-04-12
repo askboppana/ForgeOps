@@ -123,36 +123,26 @@ exports.handler = async (event) => {
         return respond(200, forgeopsReposCache);
       }
 
-      const allRepos = await getAllRepos();
-      // Sort by most recently pushed, limit to 50 to avoid Netlify timeout
-      const repos = allRepos
-        .filter(r => !r.archived && !r.fork)
-        .sort((a, b) => new Date(b.pushed_at || 0) - new Date(a.pushed_at || 0))
-        .slice(0, 50);
+      const repos = await getAllRepos();
       const ciRepos = [];
 
-      // Check in parallel batches of 10
-      for (let i = 0; i < repos.length; i += 10) {
-        const batch = repos.slice(i, i + 10);
-        const results = await Promise.all(batch.map(async (repo) => {
-          try {
-            const { data } = await ghFetch(`/repos/${repo.full_name}/contents/.github/workflows`);
-            if (Array.isArray(data) && data.length > 0) {
-              return {
-                name: repo.name,
-                full_name: repo.full_name,
-                description: repo.description,
-                default_branch: repo.default_branch,
-                language: repo.language,
-                pushed_at: repo.pushed_at,
-                workflows: data.map(f => f.name),
-                has_ci: true
-              };
-            }
-          } catch {}
-          return null;
-        }));
-        ciRepos.push(...results.filter(Boolean));
+      for (const repo of repos) {
+        if (repo.archived) continue;
+        try {
+          await ghFetch(`/repos/${repo.full_name}/contents/.github/workflows`);
+          ciRepos.push({
+            name: repo.name,
+            full_name: repo.full_name,
+            description: repo.description,
+            default_branch: repo.default_branch,
+            language: repo.language,
+            pushed_at: repo.pushed_at,
+            html_url: repo.html_url,
+            has_ci: true
+          });
+        } catch {
+          // No workflows directory — skip
+        }
       }
 
       const result = { repos: ciRepos, total: ciRepos.length, scanned: repos.length, cachedAt: new Date().toISOString() };
