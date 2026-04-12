@@ -6,3 +6,68 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/jira/*"
+  to = "/.netlify/functions/jira"
+  status = 200
+
+[[redirects]]
+  from = "/api/github/*"
+  to = "/.netlify/functions/github-api"
+  status = 200
+
+[[redirects]]
+  from = "/api/ai/*"
+  to = "/.netlify/functions/ai"
+  status = 200
+
+[[redirects]]
+  from = "/api/teams/*"
+  to = "/.netlify/functions/teams"
+  status = 200
+
+[[redirects]]
+  from = "/api/onboarding/*"
+  to = "/.netlify/functions/onboarding"
+  status = 200
+
+[[redirects]]
+  from = "/api/discovery/*"
+  to = "/.netlify/functions/discovery"
+  status = 200
+
+[[redirects]]
+  from = "/api/sca/*"
+  to = "/.netlify/functions/sca"
+  status = 200
+
+[[redirects]]
+  from = "/api/support/*"
+  to = "/.netlify/functions/support"
+  status = 200
+
+[[redirects]]
+  from = "/api/splunk/*"
+  to = "/.netlify/functions/splunk"
+  status = 200
+
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
+  status = 200
+
+[[redirects]]
+  from = "/api/releases/*"
+  to = "/.netlify/functions/releases"
+  status = 200
+
+[[redirects]]
+  from = "/api/cherwell/*"
+  to = "/.netlify/functions/cherwell"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

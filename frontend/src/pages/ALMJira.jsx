@@ -3,7 +3,7 @@ import { displayKey, typeIcon, statusColor, priorityColor } from '../api';
 import ALMSelector from '../components/ALMSelector';
 import TicketDetailPanel from '../components/TicketDetailPanel';
 
-const API_JIRA = '/.netlify/functions/jira';
+const API = '/api';
 const BOARD_COLUMNS = ['To Do', 'In Progress', 'In Review', 'Done'];
 
 function classifyColumn(statusName) {
@@ -23,7 +23,7 @@ export default function ALMJira() {
 
   // Fetch stats from release-counts
   useEffect(() => {
-    fetch(`${API_JIRA}/release-counts`)
+    fetch(`${API}/jira/release-counts`)
       .then(r => r.ok ? r.json() : {})
       .then(d => {
         if (d && typeof d === 'object') {
@@ -37,7 +37,7 @@ export default function ALMJira() {
       .catch(() => {});
 
     // Also fetch a general search for stat cards
-    fetch(`${API_JIRA}/tickets?maxResults=200`)
+    fetch(`${API}/jira/tickets?maxResults=200`)
       .then(r => r.ok ? r.json() : {})
       .then(data => {
         const issues = data?.issues || data || [];
@@ -59,7 +59,7 @@ export default function ALMJira() {
   useEffect(() => {
     if (view === 'board' && boardTickets.length === 0) {
       setLoadingBoard(true);
-      fetch(`${API_JIRA}/tickets?maxResults=200`)
+      fetch(`${API}/jira/tickets?maxResults=200`)
         .then(r => r.ok ? r.json() : {})
         .then(data => {
           const issues = data?.issues || data || [];
@@ -79,7 +79,7 @@ export default function ALMJira() {
   });
 
   function handleRefresh() {
-    fetch(`${API_JIRA}/tickets?maxResults=200`)
+    fetch(`${API}/jira/tickets?maxResults=200`)
       .then(r => r.ok ? r.json() : {})
       .then(data => {
         const issues = data?.issues || data || [];

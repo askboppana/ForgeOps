@@ -142,7 +142,7 @@ export default function Settings() {
       <div className="card">
         <div className="card-header">Backend Status</div>
         <div style={{ fontSize: 13 }}>
-          <div className="mb-2"><span className="text-dim">API: </span><code style={{ color: 'var(--primary)' }}>/.netlify/functions/*</code></div>
+          <div className="mb-2"><span className="text-dim">API: </span><code style={{ color: 'var(--primary)' }}>/api/* (Netlify Functions)</code></div>
           <div className="mb-2"><span className="text-dim">Platform: </span><code style={{ color: 'var(--primary)' }}>Netlify Serverless</code></div>
           <div className="mb-2"><span className="text-dim">SCA Scanners: </span><code style={{ color: 'var(--success)' }}>5 active</code></div>
         </div>

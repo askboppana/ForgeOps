@@ -1,0 +1,13 @@
+/api/jira/* /.netlify/functions/jira 200
+/api/github/* /.netlify/functions/github-api 200
+/api/ai/* /.netlify/functions/ai 200
+/api/teams/* /.netlify/functions/teams 200
+/api/onboarding/* /.netlify/functions/onboarding 200
+/api/discovery/* /.netlify/functions/discovery 200
+/api/sca/* /.netlify/functions/sca 200
+/api/support/* /.netlify/functions/support 200
+/api/splunk/* /.netlify/functions/splunk 200
+/api/health /.netlify/functions/health 200
+/api/releases/* /.netlify/functions/releases 200
+/api/cherwell/* /.netlify/functions/cherwell 200
+/* /index.html 200

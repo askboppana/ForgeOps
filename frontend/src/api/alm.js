@@ -1,18 +1,18 @@
-const API_JIRA = '/.netlify/functions/jira';
+const API = '/api';
 
 const ALM_TOOLS = {
   jira: {
     name: 'Jira',
     icon: '\u{1F537}',
-    getReleases: async () => { const r = await fetch(API_JIRA + '/versions'); return r.json(); },
-    getReleaseCounts: async () => { const r = await fetch(API_JIRA + '/release-counts'); return r.json(); },
-    getTickets: async (params) => { const r = await fetch(API_JIRA + '/tickets?' + new URLSearchParams(params)); return r.json(); },
-    getTicket: async (key) => { const r = await fetch(API_JIRA + '/issue/' + key); return r.json(); },
-    getTransitions: async (key) => { const r = await fetch(API_JIRA + '/issue/' + key + '/transitions'); return r.json(); },
-    transitionTicket: async (key, tid) => { const r = await fetch(API_JIRA + '/issue/' + key + '/transition', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transitionId: tid }) }); return r.json(); },
-    addComment: async (key, body) => { const r = await fetch(API_JIRA + '/issue/' + key + '/comment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) }); return r.json(); },
-    getComments: async (key) => { const r = await fetch(API_JIRA + '/issue/' + key + '/comment'); return r.json(); },
-    createTicket: async (data) => { const r = await fetch(API_JIRA + '/issue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return r.json(); },
+    getReleases: async () => { const r = await fetch(API + '/jira/versions'); return r.json(); },
+    getReleaseCounts: async () => { const r = await fetch(API + '/jira/release-counts'); return r.json(); },
+    getTickets: async (params) => { const r = await fetch(API + '/jira/tickets?' + new URLSearchParams(params)); return r.json(); },
+    getTicket: async (key) => { const r = await fetch(API + '/jira/issue/' + key); return r.json(); },
+    getTransitions: async (key) => { const r = await fetch(API + '/jira/issue/' + key + '/transitions'); return r.json(); },
+    transitionTicket: async (key, tid) => { const r = await fetch(API + '/jira/issue/' + key + '/transition', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transitionId: tid }) }); return r.json(); },
+    addComment: async (key, body) => { const r = await fetch(API + '/jira/issue/' + key + '/comment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) }); return r.json(); },
+    getComments: async (key) => { const r = await fetch(API + '/jira/issue/' + key + '/comment'); return r.json(); },
+    createTicket: async (data) => { const r = await fetch(API + '/jira/issue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); return r.json(); },
     types: ['Story', 'Bug', 'Epic', 'Task'],
     statuses: ['To Do', 'In Progress', 'In Review', 'Ready for Unit Testing', 'Unit Testing Complete', 'Ready for SIT', 'SIT Complete', 'Ready for UAT', 'UAT Complete', 'Deployed to Production', 'Done'],
   },

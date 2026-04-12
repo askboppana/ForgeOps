@@ -17,9 +17,16 @@ function respond(statusCode, body) {
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders, body: '' };
 
+  const fullPath = event.path || '';
+  const pathParts = fullPath.split('/').filter(Boolean);
+  let segments = [];
+  for (let i = 0; i < pathParts.length; i++) {
+    if (pathParts[i] === 'sca') {
+      segments = pathParts.slice(i + 1);
+      break;
+    }
+  }
   const method = event.httpMethod;
-  const path = event.path.replace(/^\/.netlify\/functions\/[^/]+\/?/, '').replace(/^api\/[^/]+\/?/, '');
-  const segments = path.split('/').filter(Boolean);
   const body = event.body ? JSON.parse(event.body) : {};
 
   try {

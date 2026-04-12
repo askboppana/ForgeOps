@@ -1,19 +1,9 @@
-const FN = '/.netlify/functions';
-const API_JIRA = `${FN}/jira`;
-const API_GITHUB = `${FN}/github-api`;
-const API_AI = `${FN}/ai`;
-const API_TEAMS = `${FN}/teams`;
-const API_ONBOARDING = `${FN}/onboarding`;
-const API_DISCOVERY = `${FN}/discovery`;
-const API_SCA = `${FN}/sca`;
-const API_SUPPORT = `${FN}/support`;
-const API_SPLUNK = `${FN}/splunk`;
-const API_HEALTH = `${FN}/health`;
+const API = '/api';
 
 /* ── Jira helpers ───────────────────────────────────────────────── */
 
 export async function jiraSearch(jql, fields = [], maxResults = 50, startAt = 0) {
-  const res = await fetch(`${API_JIRA}/search`, {
+  const res = await fetch(`${API}/jira/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jql, fields, maxResults, startAt }),
@@ -24,19 +14,19 @@ export async function jiraSearch(jql, fields = [], maxResults = 50, startAt = 0)
 
 export async function jiraSearchAll(jql, fields = []) {
   const params = new URLSearchParams({ jql, fields: fields.join(',') });
-  const res = await fetch(`${API_JIRA}/search-all?${params}`);
+  const res = await fetch(`${API}/jira/search-all?${params}`);
   if (!res.ok) throw new Error(`jiraSearchAll failed: ${res.status}`);
   return res.json();
 }
 
 export async function jiraGet(path) {
-  const res = await fetch(`${API_JIRA}${path}`);
+  const res = await fetch(`${API}/jira${path}`);
   if (!res.ok) throw new Error(`jiraGet ${path} failed: ${res.status}`);
   return res.json();
 }
 
 export async function jiraPost(path, body) {
-  const res = await fetch(`${API_JIRA}${path}`, {
+  const res = await fetch(`${API}/jira${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -46,7 +36,7 @@ export async function jiraPost(path, body) {
 }
 
 export async function jiraPut(path, body) {
-  const res = await fetch(`${API_JIRA}${path}`, {
+  const res = await fetch(`${API}/jira${path}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -58,33 +48,33 @@ export async function jiraPut(path, body) {
 /* ── GitHub helpers ─────────────────────────────────────────────── */
 
 export async function getRepos() {
-  const res = await fetch(`${API_GITHUB}/repos`);
+  const res = await fetch(`${API}/github/repos`);
   if (!res.ok) throw new Error(`getRepos failed: ${res.status}`);
   return res.json();
 }
 
 export async function getBranches(owner, repo) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/branches`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/branches`);
   if (!res.ok) throw new Error(`getBranches failed: ${res.status}`);
   return res.json();
 }
 
 export async function getCommits(owner, repo, branch) {
   const qs = branch ? `?branch=${encodeURIComponent(branch)}` : '';
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/commits${qs}`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/commits${qs}`);
   if (!res.ok) throw new Error(`getCommits failed: ${res.status}`);
   return res.json();
 }
 
 export async function compareBranches(owner, repo, base, head) {
   const qs = new URLSearchParams({ base, head });
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/compare?${qs}`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/compare?${qs}`);
   if (!res.ok) throw new Error(`compareBranches failed: ${res.status}`);
   return res.json();
 }
 
 export async function mergeBranches(owner, repo, base, head, commitMessage) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/merge`, {
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/merge`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ base, head, commit_message: commitMessage }),
   });
@@ -93,13 +83,13 @@ export async function mergeBranches(owner, repo, base, head, commitMessage) {
 
 export async function getFileContent(owner, repo, path, ref) {
   const qs = ref ? `?ref=${encodeURIComponent(ref)}` : '';
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/contents/${path}${qs}`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/contents/${path}${qs}`);
   if (!res.ok) throw new Error(`getFileContent failed: ${res.status}`);
   return res.json();
 }
 
 export async function updateFileContent(owner, repo, path, body) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/contents/${path}`, {
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/contents/${path}`, {
     method: 'PUT', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(body),
   });
@@ -107,7 +97,7 @@ export async function updateFileContent(owner, repo, path, body) {
 }
 
 export async function createPR(owner, repo, title, head, base, body) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/pulls`, {
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/pulls`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ title, head, base, body }),
   });
@@ -115,38 +105,38 @@ export async function createPR(owner, repo, title, head, base, body) {
 }
 
 export async function getRuns(owner, repo) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/runs`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/runs`);
   if (!res.ok) throw new Error(`getRuns failed: ${res.status}`);
   return res.json();
 }
 
 export async function getBuildHistory(params = {}) {
   const qs = new URLSearchParams(params);
-  const res = await fetch(`${API_GITHUB}/build-history?${qs}`);
+  const res = await fetch(`${API}/github/build-history?${qs}`);
   if (!res.ok) throw new Error(`getBuildHistory failed: ${res.status}`);
   return res.json();
 }
 
 export async function getRunJobs(owner, repo, runId) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/runs/${runId}/jobs`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/runs/${runId}/jobs`);
   if (!res.ok) throw new Error(`getRunJobs failed: ${res.status}`);
   return res.json();
 }
 
 export async function getJobLogs(owner, repo, jobId) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/jobs/${jobId}/logs`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/jobs/${jobId}/logs`);
   if (!res.ok) throw new Error(`getJobLogs failed: ${res.status}`);
   return res.text();
 }
 
 export async function getReadme(owner, repo) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/readme`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/readme`);
   if (!res.ok) throw new Error(`getReadme failed: ${res.status}`);
   return res.json();
 }
 
 export async function getPulls(owner, repo) {
-  const res = await fetch(`${API_GITHUB}/repos/${owner}/${repo}/pulls`);
+  const res = await fetch(`${API}/github/repos/${owner}/${repo}/pulls`);
   if (!res.ok) throw new Error(`getPulls failed: ${res.status}`);
   return res.json();
 }
@@ -163,17 +153,17 @@ export function timeAgo(dateStr) {
 /* ── Discovery helpers ─────────────────────────────────────────── */
 
 export async function runDiscoveryScan() {
-  const res = await fetch(`${API_DISCOVERY}/scan`, { method: 'POST' });
+  const res = await fetch(`${API}/discovery/scan`, { method: 'POST' });
   return res.json();
 }
 
 export async function getQuickDiscovery() {
-  const res = await fetch(`${API_DISCOVERY}/quick`);
+  const res = await fetch(`${API}/discovery/quick`);
   return res.json();
 }
 
 export async function getForgeOpsRepos() {
-  const res = await fetch(`${API_DISCOVERY}/forgeops-repos`);
+  const res = await fetch(`${API}/discovery/forgeops-repos`);
   if (!res.ok) throw new Error(`getForgeOpsRepos failed: ${res.status}`);
   return res.json();
 }
@@ -181,7 +171,7 @@ export async function getForgeOpsRepos() {
 /* ── Onboarding helpers ────────────────────────────────────────── */
 
 export async function onboardRepo(owner, repo, stack) {
-  const res = await fetch(`${API_ONBOARDING}/add-ci`, {
+  const res = await fetch(`${API}/onboarding/add-ci`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ owner, repo, stack }),
   });
@@ -189,7 +179,7 @@ export async function onboardRepo(owner, repo, stack) {
 }
 
 export async function bulkOnboard(repos, stack) {
-  const res = await fetch(`${API_ONBOARDING}/bulk`, {
+  const res = await fetch(`${API}/onboarding/bulk`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ repos, stack }),
   });
@@ -197,14 +187,14 @@ export async function bulkOnboard(repos, stack) {
 }
 
 export async function getCiTemplate(stack) {
-  const res = await fetch(`${API_ONBOARDING}/template?stack=${stack || 'default'}`);
+  const res = await fetch(`${API}/onboarding/template?stack=${stack || 'default'}`);
   return res.json();
 }
 
 /* ── SCA helpers ───────────────────────────────────────────────── */
 
 export async function runScaScan(owner, repo, base, head) {
-  const res = await fetch(`${API_SCA}/scan`, {
+  const res = await fetch(`${API}/sca/scan`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ owner, repo, base, head }),
   });
@@ -212,14 +202,14 @@ export async function runScaScan(owner, repo, base, head) {
 }
 
 export async function getScaConfig() {
-  const res = await fetch(`${API_SCA}/config`);
+  const res = await fetch(`${API}/sca/config`);
   return res.json();
 }
 
 /* ── AI helpers ─────────────────────────────────────────────────── */
 
 export async function analyzeTranscript(data) {
-  const res = await fetch(`${API_AI}/analyze-transcript`, {
+  const res = await fetch(`${API}/ai/analyze-transcript`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -229,7 +219,7 @@ export async function analyzeTranscript(data) {
 }
 
 export async function aiCodeReview(diff, repo, branch) {
-  const res = await fetch(`${API_AI}/code-review`, {
+  const res = await fetch(`${API}/ai/code-review`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ diff, repo, branch }),
@@ -239,7 +229,7 @@ export async function aiCodeReview(diff, repo, branch) {
 }
 
 export async function aiPrDescription(diff, commits, ticketKey, ticketSummary) {
-  const res = await fetch(`${API_AI}/pr-description`, {
+  const res = await fetch(`${API}/ai/pr-description`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ diff, commits, ticketKey, ticketSummary }),
@@ -249,7 +239,7 @@ export async function aiPrDescription(diff, commits, ticketKey, ticketSummary) {
 }
 
 export async function aiRootCause(logs, error, repo, branch) {
-  const res = await fetch(`${API_AI}/root-cause`, {
+  const res = await fetch(`${API}/ai/root-cause`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ logs, error, repo, branch }),
@@ -259,7 +249,7 @@ export async function aiRootCause(logs, error, repo, branch) {
 }
 
 export async function aiChangelog(tickets, fromVersion, toVersion) {
-  const res = await fetch(`${API_AI}/changelog`, {
+  const res = await fetch(`${API}/ai/changelog`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ tickets, fromVersion, toVersion }),
@@ -271,7 +261,7 @@ export async function aiChangelog(tickets, fromVersion, toVersion) {
 /* ── Teams helpers ──────────────────────────────────────────────── */
 
 export async function sendTeamsNotification(card) {
-  const res = await fetch(`${API_TEAMS}/notify`, {
+  const res = await fetch(`${API}/teams/notify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(card),

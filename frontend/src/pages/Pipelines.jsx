@@ -187,7 +187,7 @@ export default function Pipelines() {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>
-              Scan complete: {scanResult.summary.total} repos classified
+              Scan complete: {scanResult?.summary?.total || 0} repos classified
             </span>
             <span className="text-dim text-sm">{new Date(scanResult.scannedAt).toLocaleString()}</span>
             <button className="btn btn-sm" onClick={doScan} disabled={scanning}>{scanning ? '...' : 'Re-scan'}</button>
