@@ -89,11 +89,11 @@ export default function Meetings() {
             </ul>
           </div>
         )}
-        {data.decisions && data.decisions.length > 0 && (
+        {data?.decisions && data.decisions.length > 0 && (
           <div className="mb-4">
             <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 14, color: 'var(--primary)' }}>Decisions</div>
             <ul style={{ paddingLeft: 20 }}>
-              {data.decisions.map((d, i) => (
+              {data.decisions?.map((d, i) => (
                 <li key={i} className="text-dim" style={{ marginBottom: 6, lineHeight: 1.6 }}>
                   {d}
                 </li>
@@ -101,11 +101,11 @@ export default function Meetings() {
             </ul>
           </div>
         )}
-        {data.risks && data.risks.length > 0 && (
+        {data?.risks && data.risks.length > 0 && (
           <div className="mb-4">
             <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 14, color: 'var(--warn)' }}>Risks / Blockers</div>
             <ul style={{ paddingLeft: 20 }}>
-              {data.risks.map((r, i) => (
+              {data.risks?.map((r, i) => (
                 <li key={i} className="text-dim" style={{ marginBottom: 6 }}>{r}</li>
               ))}
             </ul>

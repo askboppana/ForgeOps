@@ -338,11 +338,11 @@ function TicketDetailPanel({ ticket, onClose, onUpdate }) {
           {data.resolvedAt && <div className="dp-field"><div className="dp-field-label">Resolved</div><div className="dp-field-value">{new Date(data.resolvedAt).toLocaleString()}</div></div>}
           <div className="dp-field"><div className="dp-field-label">Assignee</div><div className="dp-field-value">{data.assignee}</div></div>
 
-          {data.screenshots && data.screenshots.length > 0 && (
+          {data?.screenshots && data.screenshots.length > 0 && (
             <div className="dp-field">
               <div className="dp-field-label">Screenshots</div>
               <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop:4 }}>
-                {data.screenshots.map((src, i) => (
+                {data.screenshots?.map((src, i) => (
                   <img key={i} src={src} alt="" style={{ width:100, height:75, objectFit:'cover', borderRadius:'var(--radius)', border:'1px solid var(--border)', cursor:'pointer' }} onClick={() => setLightbox(src)} />
                 ))}
               </div>
