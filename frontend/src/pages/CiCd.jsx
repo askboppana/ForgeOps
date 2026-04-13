@@ -3,6 +3,26 @@ import { Loader2, Rocket, History, Play, CheckCircle2, XCircle, Clock, Eye, Chev
 import { api, timeAgo } from '../api';
 import Badge from '../components/Badge';
 import LogViewer from '../components/LogViewer';
+import EnvFlow from '../components/EnvFlow';
+import { getRepoProfile, getNextEnv } from '../data/envProfiles';
+
+const MOCK_REPOS_FALLBACK = [
+  { name: 'ForgeOps', full_name: 'askboppana/ForgeOps' },
+  { name: 'admin-dashboard-web', full_name: 'askboppana/admin-dashboard-web' },
+  { name: 'auth-service', full_name: 'askboppana/auth-service' },
+  { name: 'java-svc-payments', full_name: 'company/java-svc-payments' },
+  { name: 'spring-boot-orders', full_name: 'company/spring-boot-orders' },
+  { name: 'react-customer-portal', full_name: 'company/react-customer-portal' },
+  { name: 'node-api-gateway', full_name: 'company/node-api-gateway' },
+  { name: 'py-data-pipeline', full_name: 'company/py-data-pipeline' },
+  { name: 'dotnet-billing', full_name: 'company/dotnet-billing' },
+  { name: 'uipath-bot-invoicing', full_name: 'company/uipath-bot-invoicing' },
+  { name: 'sf-apex-triggers', full_name: 'company/sf-apex-triggers' },
+  { name: 'informatica-etl-pipeline', full_name: 'company/informatica-etl-pipeline' },
+  { name: 'rpa-expense-processor', full_name: 'company/rpa-expense-processor' },
+  { name: 'devops-scripts', full_name: 'company/devops-scripts' },
+  { name: 'infrastructure-config', full_name: 'company/infrastructure-config' },
+];
 
 const stageStatusColor = (s) => {
   if (s === 'success') return 'var(--success)';
@@ -61,7 +81,7 @@ export default function CiCd() {
   const [branches, setBranches] = useState([]);
   const [selectedRepo, setSelectedRepo] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('main');
-  const [env, setEnv] = useState('staging');
+  const [env, setEnv] = useState('');
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState(null);
 
@@ -75,14 +95,19 @@ export default function CiCd() {
   // Environments
   const [environments, setEnvironments] = useState([]);
 
+  // Profile for selected repo
+  const repoName = selectedRepo ? selectedRepo.split('/').pop() : '';
+  const profile = repoName ? getRepoProfile(repoName) : null;
+  const profileEnvs = profile?.environments || ['DEV', 'INT', 'QA', 'STAGE', 'PROD'];
+
   useEffect(() => {
     async function load() {
       try {
-        const r = await api.discovery.forgeopsRepos();
-        const list = r?.repos || r || [];
-        setRepos(Array.isArray(list) ? list : []);
+        const r = await api.github.repos();
+        const list = Array.isArray(r) ? r : r?.repos || [];
+        setRepos(list.length > 0 ? list : MOCK_REPOS_FALLBACK);
       } catch {
-        // silent
+        setRepos(MOCK_REPOS_FALLBACK);
       }
     }
     load();
@@ -100,6 +125,13 @@ export default function CiCd() {
       }
     }
     loadBranches();
+  }, [selectedRepo]);
+
+  // Reset env when profile changes
+  useEffect(() => {
+    if (profileEnvs.length > 0 && !profileEnvs.includes(env)) {
+      setEnv(profileEnvs[0]);
+    }
   }, [selectedRepo]);
 
   useEffect(() => {
@@ -160,7 +192,6 @@ export default function CiCd() {
           return;
         }
       }
-      // Fall back to mock logs
       setJobLogs(generateMockLogs(build));
     } catch {
       setJobLogs(generateMockLogs(build));
@@ -243,18 +274,14 @@ export default function CiCd() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Environment</label>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Target Environment</label>
                 <select
                   className="w-full px-3 py-2 rounded-lg text-sm"
                   style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
                   value={env}
                   onChange={(e) => setEnv(e.target.value)}
                 >
-                  <option value="INT">INT</option>
-                  <option value="QA">QA</option>
-                  <option value="staging">Staging</option>
-                  <option value="uat">UAT</option>
-                  <option value="production">Production</option>
+                  {profileEnvs.map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
               </div>
               <div>
@@ -272,6 +299,25 @@ export default function CiCd() {
                 </select>
               </div>
             </div>
+
+            {/* Profile flow visualization */}
+            {profile && selectedRepo && (
+              <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full" style={{ background: profile.color }} />
+                  <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    {profile.name} Profile — {profile.description}
+                  </span>
+                </div>
+                <EnvFlow profile={profile} currentEnv={env} />
+                {getNextEnv(profile, env) && (
+                  <div className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    Next promotion: {env} → {getNextEnv(profile, env)}
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               onClick={deploy}
               disabled={deploying || !selectedRepo}
@@ -279,7 +325,7 @@ export default function CiCd() {
               style={{ background: 'var(--success)', color: 'white', opacity: deploying ? 0.6 : 1 }}
             >
               {deploying ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-              Deploy to {env}
+              Deploy to {env || '...'}
             </button>
             {deployResult && (
               <div className="mt-3 text-sm px-3 py-2 rounded" style={{

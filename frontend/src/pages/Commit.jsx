@@ -3,6 +3,24 @@ import { Loader2, GitBranch, FolderOpen, File, Save, Search, BookOpen, Bug } fro
 import { api, displayKey, typeLabel } from '../api';
 import TicketRow from '../components/TicketRow';
 
+const MOCK_REPOS_FALLBACK = [
+  { name: 'ForgeOps', full_name: 'askboppana/ForgeOps' },
+  { name: 'admin-dashboard-web', full_name: 'askboppana/admin-dashboard-web' },
+  { name: 'auth-service', full_name: 'askboppana/auth-service' },
+  { name: 'java-svc-payments', full_name: 'company/java-svc-payments' },
+  { name: 'spring-boot-orders', full_name: 'company/spring-boot-orders' },
+  { name: 'react-customer-portal', full_name: 'company/react-customer-portal' },
+  { name: 'node-api-gateway', full_name: 'company/node-api-gateway' },
+  { name: 'py-data-pipeline', full_name: 'company/py-data-pipeline' },
+  { name: 'dotnet-billing', full_name: 'company/dotnet-billing' },
+  { name: 'uipath-bot-invoicing', full_name: 'company/uipath-bot-invoicing' },
+  { name: 'sf-apex-triggers', full_name: 'company/sf-apex-triggers' },
+  { name: 'informatica-etl-pipeline', full_name: 'company/informatica-etl-pipeline' },
+  { name: 'rpa-expense-processor', full_name: 'company/rpa-expense-processor' },
+  { name: 'devops-scripts', full_name: 'company/devops-scripts' },
+  { name: 'infrastructure-config', full_name: 'company/infrastructure-config' },
+];
+
 function isDefect(issue) {
   const tp = issue?.fields?.issuetype?.name || '';
   const summary = issue?.fields?.summary || '';
@@ -44,10 +62,11 @@ export default function Commit() {
       try { setVersions((await api.jira.versions()) || []); } catch {}
       try {
         const r = await api.github.repos();
-        setRepos(Array.isArray(r) ? r : []);
+        const list = Array.isArray(r) ? r : [];
+        setRepos(list.length > 0 ? list : MOCK_REPOS_FALLBACK);
         setRepoError(false);
       } catch {
-        setRepos([]);
+        setRepos(MOCK_REPOS_FALLBACK);
         setRepoError(true);
       }
     }

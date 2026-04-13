@@ -7,6 +7,25 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# Branch deploys
+[context.int]
+  command = "npm install && cd frontend && npm install && npm run build"
+
+[context.int.environment]
+  VITE_DEPLOY_ENV = "INT"
+
+[context.qa]
+  command = "npm install && cd frontend && npm install && npm run build"
+
+[context.qa.environment]
+  VITE_DEPLOY_ENV = "QA"
+
+[context.staging]
+  command = "npm install && cd frontend && npm install && npm run build"
+
+[context.staging.environment]
+  VITE_DEPLOY_ENV = "STAGE"
+
 [[redirects]]
   from = "/api/jira/*"
   to = "/.netlify/functions/jira"
