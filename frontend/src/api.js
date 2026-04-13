@@ -42,6 +42,7 @@ export const api = {
     repos: () => get(`${API}/github/repos`),
     branches: (o,r) => get(`${API}/github/repos/${o}/${r}/branches`),
     commits: (o,r,b) => get(`${API}/github/repos/${o}/${r}/commits${b?'?branch='+encodeURIComponent(b):''}`),
+    commitDetail: (o,r,sha) => get(`${API}/github/repos/${o}/${r}/commits/${sha}`),
     compare: (o,r,base,head) => get(`${API}/github/repos/${o}/${r}/compare?base=${encodeURIComponent(base)}&head=${encodeURIComponent(head)}`),
     pulls: (o,r) => get(`${API}/github/repos/${o}/${r}/pulls`),
     merge: (o,r,base,head,msg) => postRaw(`${API}/github/repos/${o}/${r}/merge`, { base, head, commit_message: msg }),

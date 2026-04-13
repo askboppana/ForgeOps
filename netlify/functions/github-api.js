@@ -294,7 +294,18 @@ exports.handler = async (event) => {
       return respond(201, { success: true, branch: newBranch, sha });
     }
 
-    // GET /repos/:owner/:repo/commits
+    // GET /repos/:owner/:repo/commits/:sha (single commit with files)
+    if (route[0] === 'repos' && route[3] === 'commits' && route[4]) {
+      const sha = route[4];
+      try {
+        const { data } = await ghFetch(`/repos/${owner}/${repo}/commits/${sha}`);
+        return respond(200, data);
+      } catch {
+        return respond(200, { sha, files: [] });
+      }
+    }
+
+    // GET /repos/:owner/:repo/commits (list commits)
     if (route[0] === 'repos' && route[3] === 'commits') {
       const params = new URLSearchParams({ per_page: '30' });
       if (query.branch) params.set('sha', query.branch);
