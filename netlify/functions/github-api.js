@@ -402,6 +402,26 @@ exports.handler = async (event) => {
       }
     }
 
+    // PUT /repos/:owner/:repo/contents/:path
+    if (route[0] === 'repos' && route[3] === 'contents' && method === 'PUT') {
+      const filePath = route.slice(4).join('/');
+      if (!filePath) return respond(400, { error: 'File path required' });
+      try {
+        const { data } = await ghFetch(`/repos/${owner}/${repo}/contents/${filePath}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            message: body.message,
+            content: body.content,
+            sha: body.sha,
+            branch: body.branch
+          })
+        });
+        return respond(200, data);
+      } catch (err) {
+        return respond(500, { error: err.message });
+      }
+    }
+
     // POST /repos/:owner/:repo/commit-multiple
     if (route[0] === 'repos' && route[3] === 'commit-multiple' && method === 'POST') {
       const { branch, message, files } = body;

@@ -45,6 +45,7 @@ export const api = {
     readme: (o,r) => get(`${API}/github/repos/${o}/${r}/readme`),
     createBranch: (o,r,name,from) => post(`${API}/github/repos/${o}/${r}/branches/create`, { branchName: name, fromBranch: from }),
     commitFiles: (o,r,files,msg,branch) => post(`${API}/github/repos/${o}/${r}/commit-multiple`, { files, message: msg, branch }),
+    updateFile: (o,r,path,content,sha,msg,branch) => put(`${API}/github/repos/${o}/${r}/contents/${path}`, { content, sha, message: msg, branch }),
     runJobs: (o,r,runId) => get(`${API}/github/repos/${o}/${r}/runs/${runId}/jobs`),
     buildHistory: (params) => get(`${API}/github/build-history?${new URLSearchParams(params||{})}`),
     environments: () => get(`${API}/github/environments`),
