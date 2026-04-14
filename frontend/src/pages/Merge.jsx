@@ -10,7 +10,7 @@ const MOCK_REPOS_FALLBACK = [
   { name: 'auth-service', full_name: 'askboppana/auth-service' },
 ];
 
-const MR_STORAGE_KEY = 'forgeops_merge_requests';
+const MR_STORAGE_KEY = 'axops_merge_requests';
 
 const FLOW_STEPS = [
   { id: 'select', label: 'Select commits' },
