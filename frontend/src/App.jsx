@@ -12,6 +12,7 @@ import Team from './pages/Team';
 import Support from './pages/Support';
 import Settings from './pages/Settings';
 import Pipelines from './pages/Pipelines';
+import Policies from './pages/Policies';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="cicd" element={<CiCd />} />
           <Route path="pipelines" element={<Pipelines />} />
           <Route path="security" element={<Security />} />
+          <Route path="policies" element={<Policies />} />
           <Route path="meetings" element={<Meetings />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="team" element={<Team />} />

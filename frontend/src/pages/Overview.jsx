@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { FolderGit2, Ticket, Activity, Loader2, Server, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { FolderGit2, Ticket, Activity, Loader2, Server, CheckCircle2, XCircle, Clock, ShieldCheck } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import TicketRow from '../components/TicketRow';
 import Badge from '../components/Badge';
 import { api, displayKey, timeAgo } from '../api';
+import { getComplianceScore } from '../data/policyEngine';
 
 export default function Overview() {
   const [loading, setLoading] = useState(true);
@@ -72,10 +73,11 @@ export default function Overview() {
       <h1 className="text-xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Overview</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard value={repoCount} label="ForgeOps Repos" icon={FolderGit2} color="var(--accent)" />
         <StatCard value={ticketCount} label="Open Tickets" icon={Ticket} color="var(--info)" />
         <StatCard value={pipelineHealth != null ? `${pipelineHealth}%` : '--'} label="Pipeline Health" icon={Activity} color="var(--success)" />
+        <StatCard value={`${getComplianceScore().score}%`} label="Policy Compliance" icon={ShieldCheck} color="var(--warning)" />
       </div>
 
       {/* Environment Status */}

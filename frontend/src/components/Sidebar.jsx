@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { BarChart3, Pencil, GitMerge, Rocket, Layers, Shield, Mic, Bell, Users, Headphones, Settings } from 'lucide-react';
+import { BarChart3, Pencil, GitMerge, Rocket, Layers, Shield, ShieldCheck, Mic, Bell, Users, Headphones, Settings } from 'lucide-react';
 
 const sections = [
   {
@@ -16,6 +16,7 @@ const sections = [
     label: 'QUALITY',
     items: [
       { to: '/app/security', icon: Shield, text: 'Security' },
+      { to: '/app/policies', icon: ShieldCheck, text: 'Policies' },
     ],
   },
   {
